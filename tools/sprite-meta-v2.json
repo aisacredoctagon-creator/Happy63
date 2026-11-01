@@ -1,0 +1,173 @@
+{
+  "gasing": {
+    "width": 900,
+    "height": 1074
+  },
+  "awan1.webp": {
+    "width": 1200,
+    "height": 587
+  },
+  "awan2.webp": {
+    "width": 1200,
+    "height": 584
+  },
+  "planeMascot": {
+    "width": 1000,
+    "height": 452
+  },
+  "gifts": [
+    {
+      "closed": [
+        296,
+        308
+      ],
+      "open": [
+        308,
+        389
+      ]
+    },
+    {
+      "closed": [
+        302,
+        311
+      ],
+      "open": [
+        304,
+        381
+      ]
+    },
+    {
+      "closed": [
+        308,
+        315
+      ],
+      "open": [
+        308,
+        383
+      ]
+    },
+    {
+      "closed": [
+        306,
+        311
+      ],
+      "open": [
+        310,
+        387
+      ]
+    },
+    {
+      "closed": [
+        302,
+        311
+      ],
+      "open": [
+        309,
+        377
+      ]
+    },
+    {
+      "closed": [
+        315,
+        323
+      ],
+      "open": [
+        331,
+        400
+      ]
+    },
+    {
+      "closed": [
+        314,
+        319
+      ],
+      "open": [
+        314,
+        400
+      ]
+    },
+    {
+      "closed": [
+        320,
+        326
+      ],
+      "open": [
+        321,
+        407
+      ]
+    },
+    {
+      "closed": [
+        330,
+        322
+      ],
+      "open": [
+        336,
+        403
+      ]
+    }
+  ],
+  "bags": [
+    [
+      360,
+      344
+    ],
+    [
+      360,
+      346
+    ],
+    [
+      360,
+      339
+    ],
+    [
+      360,
+      340
+    ]
+  ],
+  "chars": {
+    "man": {
+      "width": 456,
+      "height": 768
+    },
+    "boy": {
+      "width": 409,
+      "height": 580
+    },
+    "girl": {
+      "width": 384,
+      "height": 476
+    },
+    "zz": {
+      "width": 76,
+      "height": 63
+    },
+    "woman": {
+      "width": 407,
+      "height": 742
+    }
+  },
+  "charsB": {
+    "bMan": {
+      "width": 465,
+      "height": 764
+    },
+    "bBoy": {
+      "width": 455,
+      "height": 608
+    },
+    "bGirl": {
+      "width": 421,
+      "height": 549
+    },
+    "bWoman": {
+      "width": 437,
+      "height": 745
+    }
+  },
+  "cabinColors": {
+    "ceil": "#97ccf0",
+    "wall": "#f4e4c6",
+    "floor": "#123e82"
+  }
+}

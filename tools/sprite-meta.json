@@ -1,0 +1,42 @@
+{
+  "scene1": {
+    "width": 1983,
+    "height": 1115,
+    "offsetY": 161,
+    "srcHeight": 793
+  },
+  "scene2Plane": {
+    "x": 458,
+    "y": 338,
+    "width": 755,
+    "height": 236,
+    "bgWidth": 1672,
+    "bgHeight": 941
+  },
+  "scene3Plane": {
+    "x": 115,
+    "y": 149,
+    "width": 267,
+    "height": 125,
+    "bgWidth": 1672,
+    "bgHeight": 941
+  },
+  "gasingS4": {
+    "x": 489,
+    "y": 392,
+    "width": 264,
+    "height": 285,
+    "feetY": 673,
+    "bgWidth": 1983,
+    "bgHeight": 793
+  },
+  "gasingS5": {
+    "x": 413,
+    "y": 436,
+    "width": 235,
+    "height": 252,
+    "feetY": 684,
+    "bgWidth": 1983,
+    "bgHeight": 793
+  }
+}
