@@ -3,6 +3,7 @@ import type { Variants } from 'framer-motion'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AudioToggle } from './components/AudioToggle'
 import { CloudTransition } from './components/CloudTransition'
+import { FullscreenToggle } from './components/FullscreenToggle'
 import { LoadingScreen } from './components/LoadingScreen'
 import { RotateNotice } from './components/RotateNotice'
 import { Stage } from './components/Stage'
@@ -156,6 +157,7 @@ export default function App() {
 
 
         <AudioToggle />
+        <FullscreenToggle />
         <LoadingScreen progress={progress} ready={done} visible={!started} onStart={() => {
             audio.unlock() // interaksi pertama: buka audio (aturan autoplay browser)
             setStarted(true)

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import type { MotionValue } from 'framer-motion'
+import { PartyHat } from './PartyHat'
 
 export type GasingState = 'idle' | 'walk' | 'ready' | 'pop'
 
@@ -29,6 +30,7 @@ export function GasingSprite({ src, width, height, x, y, state }: Props) {
       </div>
       <div className={`g-body g-${state}`} style={{ width, height, left: -width / 2, top: -height }}>
         <img src={src} alt="Gasing" draggable={false} style={{ width, height }} />
+        <PartyHat />
       </div>
     </motion.div>
   )

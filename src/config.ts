@@ -20,6 +20,8 @@ export const IMG = {
   scene2Plane: asset('images/scene2-plane.png'),
   scene3Bg: asset('images/scene3-bg.webp'),
   planeMascot: asset('images/plane-mascot.png'),
+  partyHat: asset('images/party-hat.svg'),
+  btnMendarat: asset('images/btn-mendarat.png'),
   bandara: asset('images/bandara.webp'),
   scene5Bg: asset('images/scene5-bg.webp'),
   gasing: asset('images/gasing.png'),

@@ -2,6 +2,7 @@ import { motion, useMotionValue } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { useLoop } from '../audio/audio'
 import { DriftClouds } from '../components/Atmosphere'
+import { PartyHat } from '../components/PartyHat'
 import { CABIN, CABIN_COLORS, GASING_ASPECT, IMG, STAGE_H, STAGE_W } from '../config'
 import { useSequence } from '../hooks/useSequence'
 
@@ -330,6 +331,7 @@ export function Scene1({ onDone }: Props) {
             <div className="char-body gasing-bob">
               <img className="char-img" src={IMG.gasing} alt="Gasing" draggable={false} style={{ width: 900, height: 1074, clipPath: 'inset(0 0 17% 0)' }} />
               <Lid e={{ cx: 420, cy: 405, rx: 92, ry: 142, rot: -10, color: '#b2d34b', delay: -0.5 }} edge="#26300a" />
+              <PartyHat />
               <Lid e={{ cx: 611, cy: 347, rx: 88, ry: 138, rot: -12, color: '#b2d34b', delay: -0.5 }} edge="#26300a" />
             </div>
           </div>

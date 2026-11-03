@@ -2,6 +2,9 @@
 :root {
   --font-display: 'Fredoka Variable', 'Fredoka', 'Baloo 2', 'Comic Sans MS', sans-serif;
   --font-body: 'Nunito Variable', 'Nunito', system-ui, sans-serif;
+  /* Satu-satunya font pop-up (surat dan kartu penutup): ganti di sini untuk mengubah semuanya. Nunito dimuat dari Google Fonts
+     (index.html, 400/500/700, font-display: swap); fontsource Nunito jadi cadangan bila offline. */
+  --font-popup: 'Nunito', 'Nunito Variable', ui-rounded, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --ink: #5a3a1a;
   --sky-1: #2a8cf0;
   --sky-2: #6fd0ff;
@@ -53,6 +56,11 @@ button {
   inset: 0;
   background: #000;
   overflow: hidden;
+  /* clip (bukan hanya hidden): elemen overflow:hidden tetap bisa di-scroll lewat kode/fokus/scrollIntoView, yang menggeser
+     seluruh kanvas dari tengah. clip tidak punya posisi scroll sama sekali. */
+  overflow: clip;
+  overscroll-behavior: none;
+  touch-action: manipulation;
 }
 .stage {
   position: absolute;
@@ -123,7 +131,8 @@ button {
   line-height: 1.1;
   letter-spacing: 0.01em;
   cursor: pointer;
-  overflow: hidden;
+  background-clip: padding-box; /* gradien tidak boleh menyelip di bawah border putih (garis halus di tepi melengkung) */
+  isolation: isolate;
   box-shadow: 0 9px 0 rgba(10, 60, 140, 0.18), 0 20px 36px rgba(10, 70, 160, 0.38);
   white-space: nowrap;
 }
@@ -132,19 +141,20 @@ button {
   filter: grayscale(0.4);
 }
 .pill-sun {
-  background: linear-gradient(var(--sun-1), var(--sun-2));
+  background-image: linear-gradient(var(--sun-1), var(--sun-2));
   color: #7a3b00;
   text-shadow: 0 2px 0 rgba(255, 255, 255, 0.6);
 }
 .pill-sky {
-  background: linear-gradient(var(--sky-2), var(--sky-1));
+  background-image: linear-gradient(var(--sky-2), var(--sky-1));
   color: #fff;
   text-shadow: 0 3px 0 rgba(10, 60, 150, 0.5);
 }
 .pill-shine {
   position: absolute;
-  inset: 0 0 52% 0;
-  background: linear-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+  inset: 0;
+  border-radius: 999px; /* sama dengan lengkung dalam pill, jadi tidak perlu overflow:hidden (sumber garis tipis di tepi) */
+  background: linear-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 48%);
   pointer-events: none;
 }
 .pill-label {
@@ -316,27 +326,52 @@ button {
 }
 
 /* ============ surat ============ */
+/* Pop-up selalu di tengah layar: .letter-backdrop selalu satu pusat dengan .stage (meluap simetris 800px ke tiap sisi supaya
+   peredam gelapnya menutup seluruh viewport), dan .stage selalu berpusat di .viewport. */
 .letter-backdrop {
   position: absolute;
-  inset: 0;
+  inset: -800px;
+  padding: 800px;
   z-index: 160; /* di atas semua kado, tombol, progres, dan tombol suara (150); di bawah awan transisi (300) */
   background: rgba(8, 40, 100, 0.3);
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  padding-top: 84px;
+  align-items: center;
+  animation: dimIn 0.35s ease-out both;
+}
+.letter-backdrop.is-closing {
+  animation: dimOut 0.52s ease-in both;
+  pointer-events: none;
+}
+@keyframes dimIn {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes dimOut {
+  to {
+    opacity: 0;
+  }
 }
 .letter {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: 860px;
+  /* batas = bagian kanvas yang terlihat (dikurangi bagian terpotong --crop-*) dikurangi ruang amplop/tombol tutup yang menonjol */
+  max-width: calc(1920px - 2 * var(--crop-x, 0px) - 120px);
+  max-height: calc(1080px - 2 * var(--crop-y, 0px) - 150px);
   padding: 74px 70px 40px;
   color: var(--ink);
   text-align: center;
+  font-family: var(--font-popup);
+  font-weight: 400;
   background: #fff8e3 repeating-linear-gradient(transparent 0 51px, rgba(212, 168, 88, 0.2) 51px 53px);
   background-position: 0 150px;
   border: 9px solid #fff;
   border-radius: 34px;
   box-shadow: 0 0 0 4px #f2d99a, 0 34px 70px rgba(5, 40, 100, 0.5);
+  outline: none;
 }
 .letter-envelope {
   position: absolute;
@@ -354,6 +389,7 @@ button {
   border-radius: 50%;
   border: 6px solid #fff;
   background: linear-gradient(#ff8a80, #f2494b);
+  background-clip: padding-box;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -364,18 +400,30 @@ button {
   transform: scale(1.1) rotate(8deg);
 }
 .letter-title {
-  margin: 8px 0 14px;
-  font-family: var(--font-display);
+  flex: none;
+  margin: 8px 0 16px;
+  font-family: var(--font-popup);
   font-weight: 700;
-  font-size: 58px;
-  line-height: 1.1;
+  font-size: calc(48px * var(--fs, 1));
+  line-height: 1.18;
   color: #b4560f;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.letter-title[data-size='m'] {
+  font-size: calc(42px * var(--fs, 1));
+}
+.letter-title[data-size='s'] {
+  font-size: calc(37px * var(--fs, 1));
 }
 .letter-chip {
-  display: inline-block;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 30px;
+  flex: none;
+  align-self: center;
+  max-width: 100%;
+  font-family: var(--font-popup);
+  font-weight: 700;
+  font-size: calc(28px * var(--fs, 1));
+  line-height: 1.25;
   color: #fff;
   padding: 4px 28px 6px;
   border-radius: 99px;
@@ -384,21 +432,24 @@ button {
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.22);
 }
 .letter-body {
+  flex: 1 1 auto;
+  min-height: 0; /* boleh mengecil di dalam kartu bertinggi terbatas; isi yang panjang di-scroll di sini */
+  max-height: 560px;
   margin-top: 22px;
-  max-height: 500px;
   overflow-y: auto;
   padding-right: 14px;
   text-align: left;
-  font-size: 30px;
+  font-size: calc(30px * var(--fs, 1));
   line-height: 48px;
-  font-weight: 600;
+  font-weight: 500;
   user-select: text;
   scrollbar-width: thin;
   scrollbar-color: #d9a84c rgba(212, 168, 88, 0.2);
   overscroll-behavior: contain;
+  overflow-wrap: anywhere;
 }
 .letter-body.is-long {
-  font-size: 26px;
+  font-size: calc(26px * var(--fs, 1));
   line-height: 40px;
 }
 .letter-body p {
@@ -416,13 +467,84 @@ button {
   background: rgba(212, 168, 88, 0.2);
   border-radius: 99px;
 }
-.letter-from {
-  margin: 12px 0 0;
-  text-align: right;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 30px;
+.letter-members {
+  flex: none;
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 3px dashed rgba(212, 168, 88, 0.55);
+  text-align: left;
+  font-size: calc(26px * var(--fs, 1));
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.letter-members-label {
+  font-family: var(--font-popup);
+  font-weight: 700;
   color: #b4560f;
+}
+
+/* layar kecil (ponsel landscape, kanvas diperkecil): kartu dilebarkan dan teks diperbesar relatif ke kanvas agar terbaca */
+.stage[data-compact] .letter {
+  width: 1120px;
+  padding: 70px 64px 34px;
+}
+.stage[data-compact] .letter-title {
+  font-size: calc(56px * var(--fs, 1));
+}
+.stage[data-compact] .letter-title[data-size='m'] {
+  font-size: calc(50px * var(--fs, 1));
+}
+.stage[data-compact] .letter-title[data-size='s'] {
+  font-size: calc(44px * var(--fs, 1));
+}
+.stage[data-compact] .letter-chip {
+  font-size: calc(32px * var(--fs, 1));
+}
+.stage[data-compact] .letter-body {
+  max-height: none;
+  font-size: calc(34px * var(--fs, 1));
+  line-height: 52px;
+}
+.stage[data-compact] .letter-body.is-long {
+  font-size: calc(32px * var(--fs, 1));
+  line-height: 48px;
+}
+.stage[data-compact] .letter-members {
+  font-size: calc(30px * var(--fs, 1));
+}
+
+/* salinan kartu untuk animasi Genie (lihat genie.ts): tanpa bayangan besar supaya ringan, tidak bisa diklik */
+.genie-ghost {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 161;
+  pointer-events: none;
+}
+.genie-slice {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  transform-origin: 0 0;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+.letter.is-clone {
+  box-shadow: none;
+  pointer-events: none;
+}
+.letter.is-clone .letter-body {
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .letter-backdrop,
+  .letter-backdrop.is-closing {
+    animation-duration: 0.18s;
+  }
 }
 
 /* ============ kado ============ */
@@ -483,6 +605,7 @@ button {
   transform: translateY(10px) scale(0.9);
   transition: opacity 0.18s, transform 0.25s cubic-bezier(0.2, 1.4, 0.4, 1);
   pointer-events: none;
+  z-index: 2; /* label selalu di depan kado (kado terbuka lebih tinggi dan sebelumnya menutupi label) */
 }
 .gift-tip::after {
   content: '';
@@ -533,15 +656,6 @@ button {
   display: block;
   pointer-events: none;
   transform-origin: 50% 100%;
-}
-.gift-check {
-  position: absolute;
-  left: 18px;
-  top: -52px;
-  display: block;
-  width: 26px;
-  height: 26px;
-  pointer-events: none;
 }
 
 /* ============ scene 1 ============ */
@@ -952,6 +1066,7 @@ button {
   font-size: 38px;
   text-shadow: 0 3px 0 rgba(120, 50, 0, 0.45);
   transition: transform 0.2s;
+  background-clip: padding-box;
 }
 .tv-big-play:hover {
   transform: scale(1.08);
@@ -1036,6 +1151,7 @@ button {
   padding: 8px 34px 10px;
   cursor: pointer;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+  background-clip: padding-box;
 }
 .end-card {
   position: absolute;
@@ -1051,6 +1167,7 @@ button {
   padding: 44px 70px 50px;
   text-align: center;
   color: #7a3b00;
+  font-family: var(--font-popup);
   background: #fff8e3;
   border: 10px solid #fff;
   border-radius: 48px;
@@ -1059,7 +1176,7 @@ button {
 .end-kicker {
   display: inline-block;
   margin: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-popup);
   font-weight: 700;
   font-size: 40px;
   color: #fff;
@@ -1068,10 +1185,11 @@ button {
   border-radius: 99px;
   padding: 4px 36px 6px;
   box-shadow: 0 6px 12px rgba(120, 50, 0, 0.3);
+  background-clip: padding-box;
 }
 .end-card-inner h2 {
   margin: 20px 0 12px;
-  font-family: var(--font-display);
+  font-family: var(--font-popup);
   font-weight: 700;
   font-size: 72px;
   line-height: 1.08;
@@ -1080,7 +1198,7 @@ button {
 .end-card-inner p:not(.end-kicker) {
   margin: 0 0 26px;
   font-size: 34px;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.4;
 }
 
@@ -1113,9 +1231,10 @@ button {
   place-items: center;
   box-shadow: 0 8px 18px rgba(10, 40, 100, 0.35);
   transition: transform 0.15s;
+  background-clip: padding-box;
 }
 .audio-toggle.is-on {
-  background: linear-gradient(var(--sky-2), var(--sky-1));
+  background-image: linear-gradient(var(--sky-2), var(--sky-1));
 }
 .audio-toggle:hover {
   transform: scale(1.08);
@@ -1854,10 +1973,6 @@ button {
   right: calc(30px + var(--crop-x, 0px));
   bottom: calc(26px + var(--crop-y, 0px));
 }
-.letter-backdrop {
-  padding-top: calc(84px + var(--crop-y, 0px));
-}
-
 /* matahari pada peta Pulau.png ada di sekitar (1590,150) px gambar -> (1826,172) px kanvas */
 .sun-glow {
   left: 1376px;
@@ -1868,52 +1983,7 @@ button {
   top: -578px;
 }
 
-/* ============ baris anggota divisi di bawah surat ============ */
-.letter-chip {
-  max-width: 100%;
-  line-height: 1.25;
-}
-.letter-members {
-  margin: 16px 0 0;
-  padding-top: 14px;
-  border-top: 3px dashed rgba(212, 168, 88, 0.55);
-  text-align: left;
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1.4;
-  color: var(--ink);
-}
-.letter-members-label {
-  font-family: var(--font-display);
-  font-weight: 700;
-  color: #b4560f;
-}
-
-/* ============ pop-up surat di tengah layar (gift.popup === 'center') ============ */
-.letter-backdrop.is-center {
-  align-items: center;
-  padding-top: 0;
-}
-
-/* ============ hanya landscape: tinggi layar dinamis (100dvh) + overlay putar perangkat ============ */
-html,
-body,
-#root {
-  height: 100%;
-}
-@supports (height: 100dvh) {
-  html,
-  body,
-  #root {
-    height: 100dvh;
-  }
-  .viewport {
-    height: 100dvh;
-  }
-}
-.viewport {
-  width: 100%;
-}
+/* ============ hanya landscape: overlay putar perangkat ============ */
 .rotate-overlay {
   display: none;
   position: fixed;
@@ -1987,20 +2057,18 @@ body,
   z-index: 21;
 }
 .land-spot .gift-tip {
-  top: -92px;
+  top: -104px;
 }
 .land-btn {
   position: absolute;
-  left: -46px;
-  top: -46px;
-  width: 92px;
-  height: 92px;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  border: 7px solid #fff;
+  left: -52px;
+  top: -52px;
+  width: 104px;
+  height: 104px;
+  padding: 7px; /* cincin putih seperti tombol lain (latar putih + gambar lebih kecil, tanpa border CSS agar tanpa seam) */
+  border: 0;
   border-radius: 50%;
-  background: linear-gradient(var(--sun-1), var(--sun-2));
+  background: #fff;
   box-shadow: 0 7px 0 rgba(10, 60, 140, 0.18), 0 14px 26px rgba(10, 70, 160, 0.38);
   cursor: pointer;
 }
@@ -2011,7 +2079,7 @@ body,
 .land-btn::after {
   content: '';
   position: absolute;
-  inset: -7px;
+  inset: -4px;
   border-radius: 50%;
   border: 5px solid rgba(255, 255, 255, 0.9);
   pointer-events: none;
@@ -2027,13 +2095,12 @@ body,
     opacity: 0;
   }
 }
-.land-btn .pill-shine {
-  border-radius: 50%;
-  inset: 0 0 48% 0;
-}
-.land-icon {
-  position: relative;
+.land-img {
   display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .land-btn::after {
@@ -2060,4 +2127,202 @@ body,
   position: relative;
   display: block;
   filter: var(--soft-shadow-drop);
+}
+
+/* ============ topi ulang tahun Gasing (PartyHat): posisi dalam persen terhadap kotak sprite, jadi ikut gerak/animasinya ============ */
+.party-hat {
+  position: absolute;
+  max-width: none;
+  display: block;
+  pointer-events: none;
+  transform-origin: 50% 90%;
+  filter: var(--soft-shadow-drop);
+}
+/* ============ tombol layar penuh (di kiri tombol suara) ============ */
+.fs-toggle {
+  position: absolute;
+  right: calc(120px + var(--crop-x, 0px));
+  bottom: calc(26px + var(--crop-y, 0px));
+  z-index: 210; /* di atas layar loading (200) supaya layar penuh bisa dinyalakan sejak awal; di bawah awan transisi (300) */
+  width: 74px;
+  height: 74px;
+  padding: 0;
+  border-radius: 50%;
+  border: 6px solid #fff;
+  background-color: #6e8fc4;
+  background-image: linear-gradient(var(--sky-2), var(--sky-1));
+  background-clip: padding-box;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 18px rgba(10, 40, 100, 0.35);
+  transition: transform 0.15s;
+}
+.fs-toggle:hover {
+  transform: scale(1.08);
+}
+.fs-toggle:focus-visible,
+.audio-toggle:focus-visible {
+  outline: 4px solid #17539d;
+  outline-offset: 4px;
+}
+.fs-hint {
+  position: absolute;
+  right: calc(30px + var(--crop-x, 0px));
+  bottom: calc(118px + var(--crop-y, 0px));
+  z-index: 211;
+  width: 560px;
+  padding: 18px 26px 20px;
+  font-family: var(--font-popup);
+  font-weight: 500;
+  font-size: 28px;
+  line-height: 1.35;
+  color: #17539d;
+  background: #fff;
+  border-radius: 26px;
+  box-shadow: 0 10px 26px rgba(10, 60, 140, 0.35);
+}
+.fs-hint b {
+  font-weight: 700;
+}
+.fs-hint button {
+  display: block;
+  margin: 12px 0 0 auto;
+  padding: 4px 22px 6px;
+  font-family: var(--font-popup);
+  font-weight: 700;
+  font-size: 26px;
+  color: #fff;
+  background: #3d86ee;
+  border: 0;
+  border-radius: 99px;
+  cursor: pointer;
+}
+
+/* ============ cincin putih tanpa border CSS (anti garis/seam) ============
+   Border 1 warna di sudut membulat + latar berwarna di bawahnya kadang menyisakan garis tipis (jahitan) di titik temu sisi
+   border dan latar yang "merembes" di tepi anti-alias, terutama pada skala/DPR pecahan. Di sini cincin putih adalah latar
+   elemen itu sendiri (satu bentuk utuh, tanpa border) dan warna isi digambar di ::before yang lebih kecil sebesar --ring. */
+.pill-btn,
+.letter-close,
+.letter-chip,
+.audio-toggle,
+.fs-toggle,
+.tv-big-play,
+.tv-skip,
+.end-replay,
+.end-kicker {
+  --ring: 6px;
+  border: 0;
+  background: #fff;
+  isolation: isolate;
+}
+.letter-chip,
+.tv-skip,
+.end-replay,
+.end-kicker {
+  position: relative;
+}
+.pill-btn::before,
+.letter-close::before,
+.letter-chip::before,
+.audio-toggle::before,
+.fs-toggle::before,
+.tv-big-play::before,
+.tv-skip::before,
+.end-replay::before,
+.end-kicker::before {
+  content: '';
+  position: absolute;
+  inset: var(--ring);
+  border-radius: inherit;
+  background: var(--fill);
+  z-index: -1;
+  pointer-events: none;
+}
+.pill-btn {
+  --ring: 7px;
+  padding: calc(14px + var(--ring)) calc(52px + var(--ring)) calc(16px + var(--ring));
+}
+.corner-btn .pill-btn {
+  --ring: 6px;
+  padding: calc(8px + var(--ring)) calc(30px + var(--ring)) calc(10px + var(--ring));
+}
+.pill-sun {
+  --fill: linear-gradient(var(--sun-1), var(--sun-2));
+}
+.pill-sky {
+  --fill: linear-gradient(var(--sky-2), var(--sky-1));
+}
+.pill-btn .pill-shine {
+  inset: var(--ring);
+}
+.letter-close {
+  --fill: linear-gradient(#ff8a80, #f2494b);
+}
+.letter-chip {
+  --ring: 4px;
+  padding: calc(4px + var(--ring)) calc(28px + var(--ring)) calc(6px + var(--ring));
+}
+.audio-toggle {
+  --fill: linear-gradient(#b9c5d8, #8996ab);
+}
+.audio-toggle.is-on,
+.fs-toggle {
+  --fill: linear-gradient(var(--sky-2), var(--sky-1));
+  background-image: none; /* mengalahkan aturan lama .audio-toggle.is-on */
+}
+.tv-big-play {
+  --ring: 9px;
+  --fill: linear-gradient(var(--sun-2), #ff8a1f);
+}
+.tv-skip,
+.end-replay {
+  --ring: 5px;
+  --fill: linear-gradient(var(--sky-2), var(--sky-1));
+  padding: calc(8px + var(--ring)) calc(34px + var(--ring)) calc(10px + var(--ring));
+}
+.end-kicker {
+  --ring: 5px;
+  --fill: linear-gradient(#ffa24a, #ff7a1a);
+  padding: calc(4px + var(--ring)) calc(36px + var(--ring)) calc(6px + var(--ring));
+}
+
+/* ============ font pop-up per divisi (gift.font -> data-font): 9 keluarga Google Fonts yang playful ============
+   --font-popup menimpa token global hanya di dalam kartu itu; --fs menyamakan ukuran tampak antar font (x-height berbeda). */
+.letter[data-font='mali'] {
+  --font-popup: 'Mali', 'Nunito', ui-rounded, system-ui, sans-serif;
+  --fs: 0.94;
+}
+.letter[data-font='gaegu'] {
+  --font-popup: 'Gaegu', 'Nunito', ui-rounded, system-ui, sans-serif;
+  --fs: 1.22;
+}
+.letter[data-font='grandstander'] {
+  --font-popup: 'Grandstander', 'Nunito', ui-rounded, system-ui, sans-serif;
+  --fs: 0.94;
+}
+.letter[data-font='sniglet'] {
+  --font-popup: 'Sniglet', 'Nunito', ui-rounded, system-ui, sans-serif;
+  --fs: 0.94;
+}
+.letter[data-font='baloo'] {
+  --font-popup: 'Baloo 2', 'Nunito', ui-rounded, system-ui, sans-serif;
+  --fs: 1.02;
+}
+.letter[data-font='kalam'] {
+  --font-popup: 'Kalam', 'Nunito', ui-rounded, system-ui, sans-serif;
+  --fs: 1.06;
+}
+.letter[data-font='comic-neue'] {
+  --font-popup: 'Comic Neue', 'Nunito', ui-rounded, system-ui, sans-serif;
+  --fs: 1.04;
+}
+.letter[data-font='fredoka'] {
+  --font-popup: 'Fredoka', 'Fredoka Variable', 'Nunito', ui-rounded, system-ui, sans-serif;
+  --fs: 1;
+}
+.letter[data-font='atma'] {
+  --font-popup: 'Atma', 'Nunito', ui-rounded, system-ui, sans-serif;
+  --fs: 1;
 }

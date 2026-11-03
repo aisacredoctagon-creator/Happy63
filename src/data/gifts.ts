@@ -3,19 +3,27 @@
  *
  * - x / y   : posisi pusat kado dalam PERSEN terhadap gambar peta (0-100), tetap presisi saat resize.
  * - sprite  : nomor kado pada Giftbox1.png (tertutup) / Giftbox2.png (terbuka), baris demi baris dari kiri ke kanan:
- *             0 kuning, 1 biru, 2 ungu, 3 pink, 4 hijau mint, 5 hijau lemon, 6 biru keunguan, 7 salmon, 8 cyan.
+ *             0 kuning, 1 biru, 2 ungu, 3 pink, 4 cokelat, 5 merah, 6 biru keunguan, 7 abu-abu, 8 cyan.
+ *             (4, 5, 7 berasal dari "updated giftbox.png" / "updated giftbox2.png", diproses manual; menjalankan
+ *             npm run assets:v2 akan menimpanya dengan kado lama dari Giftbox1/2.png.)
  *             (kado ke-10 di pojok kanan-bawah sheet sengaja tidak dipakai.)
+ * - font    : kunci font pop-up surat (tiap divisi beda). Definisinya (nama keluarga Google Fonts + skala ukuran) ada di blok
+ *             `.letter[data-font=...]` di src/index.css, dan fontnya dimuat lewat <link> di index.html.
+ * - title   : judul pop-up surat (ucapan singkat, berbeda untuk tiap divisi).
  * - members : nama anggota divisi; tampil sebagai baris "Anggota: ..." di bawah surat.
  * - color   : warna kado/aksen (chip nama di surat, titik progres).
- * - popup   : (opsional) 'center' = pop-up tepat di tengah layar (untuk surat pendek); default 'top'.
  * - envelope: (opsional) warna dasar amplop di atas pop-up surat. Bila kosong memakai `color`; amplop selalu
  *             ditampilkan versi pastel/pucat dari warna ini (atur kepucatannya di ENVELOPE_PASTEL, src/data/pastel.ts).
  * - letter  : teks surat. Baris kosong = pindah paragraf, satu baris baru = tetap satu paragraf (ditampilkan apa adanya).
  */
 export interface Gift {
   id: string
-  /** Nama divisi yang tampil di tooltip peta dan di judul surat */
+  /** Nama divisi yang tampil di tooltip peta dan di chip pada surat */
   name: string
+  /** Kunci font pop-up surat (lihat src/index.css, .letter[data-font]) */
+  font: string
+  /** Judul pop-up surat (ucapan singkat per divisi) */
+  title: string
   /** Nama anggota divisi (urutan tampil di surat) */
   members: string[]
   x: number
@@ -24,8 +32,6 @@ export interface Gift {
   color: string
   /** warna dasar amplop (opsional, default = color) */
   envelope?: string
-  /** posisi pop-up surat: 'top' (default, di tengah-atas) atau 'center' (tepat di tengah layar, untuk surat pendek) */
-  popup?: 'top' | 'center'
   letter: string
 }
 
@@ -35,6 +41,8 @@ const pct = (px: number, py: number) => ({ x: +((px / 1672) * 100).toFixed(2), y
 export const GIFTS: Gift[] = [
   {
     id: 'sumatra',
+    font: 'mali',
+    title: 'Terus semangat menginspirasi & mencerdaskan generasi Indonesia!',
     name: 'Divisi Finance',
     members: ['Rechi', 'Claudia', 'Angely'],
     ...pct(350, 585),
@@ -50,6 +58,8 @@ Salam hangat dan doa terbaik dari kami, Divisi Finance. 🙏`,
   },
   {
     id: 'bali',
+    font: 'gaegu',
+    title: 'Live long and prosper!',
     name: 'Divisi Digital Learning',
     members: ['Ariyana', 'Believer', 'Ibnu', 'Oka'],
     ...pct(800, 748),
@@ -63,18 +73,21 @@ Kami tim Digital Learning berharap dapat terus bersama-sama menjadi bagian dari 
   },
   {
     id: 'papua-barat',
+    font: 'grandstander',
+    title: 'Prof. Yohanes Surya, semoga senantiasa sehat, bahagia, & selalu diberkati!',
     name: 'Divisi Material Sosial Media',
-    popup: 'center',
     members: ['Clara', 'Dara'],
-    ...pct(1200, 588),
+    ...pct(1275, 588),
     sprite: 7,
-    color: '#ff7a5c',
+    color: '#7b8497',
     letter: `Kami dari tim Material mengucapkan selamat ulang tahun Prof. Yohanes.
 
 Semoga panjang umur dan sehat selalu agar lebih banyak anak Indonesia bisa merasakan manfaat belajar dengan Metode Gasing. God bless always`,
   },
   {
     id: 'kalimantan',
+    font: 'sniglet',
+    title: 'Sehat dan bahagia selalu',
     name: 'Divisi Product',
     members: ['Gina', 'Arina', 'Icha', 'Muti', 'Isa'],
     ...pct(700, 568),
@@ -91,6 +104,8 @@ Tim Product Gasing Academy`,
   },
   {
     id: 'jawa',
+    font: 'baloo',
+    title: 'Thank you for being such a wonderful blessing to us',
     name: 'Divisi Outreach & Partnership',
     members: ['Maya', 'Ajeng', 'Johanes', 'Indra'],
     ...pct(610, 715),
@@ -114,11 +129,13 @@ Gasing Academy
   },
   {
     id: 'sulawesi',
+    font: 'kalam',
+    title: 'Tuhan Yesus beserta selalu di setiap langkah Prof - Amsal 3:5',
     name: 'Divisi HR',
     members: ['Melisa', 'Felicia'],
-    ...pct(880, 618),
+    ...pct(880, 592),
     sprite: 4,
-    color: '#2fb592',
+    color: '#b9702f',
     letter: `Selamat Ulang Tahun, Profesor Yohanes Surya! ❤️
 
 Terima kasih telah menyalakan harapan dan membuka jalan bagi anak-anak Indonesia untuk percaya pada potensi diri mereka
@@ -132,11 +149,13 @@ Melisa & Felicia HR Gasing Academy`,
   },
   {
     id: 'maluku',
+    font: 'comic-neue',
+    title: 'Teruslah menjadi inspirasi dan terang bagi Indonesia',
     name: 'Divisi Formal Education & Talent Development',
     members: ['Hana', 'Ekklesia', 'Mega', 'Fera', 'Julfikri'],
     ...pct(1100, 628),
     sprite: 5,
-    color: '#8cc63f',
+    color: '#e63946',
     letter: `Selamat ulang tahun, Prof. Yohanes Surya!
 
 Kiranya Prof. senantiasa diberikan kesehatan, umur panjang, sukacita, dan kekuatan dalam menjalankan setiap panggilan dan karya yang Tuhan percayakan.
@@ -149,6 +168,8 @@ Tuhan senantiasa menyertai setiap langkah Prof., serta memberikan hikmat dan kek
   },
   {
     id: 'papua',
+    font: 'fredoka',
+    title: 'Sukses selalu dalam misi mencerdaskan anak bangsa Indonesia',
     name: 'Divisi Operasional',
     members: ['Valen', 'Nia', 'Vefy', 'Safira', 'Ridho'],
     ...pct(1430, 685),
@@ -175,10 +196,12 @@ Tim Operasional Gasing Academy`,
   },
   {
     id: 'material-kurikulum',
+    font: 'atma',
+    title: 'Kasih dan penyertaan Tuhan senantiasa menaungi setiap langkah Prof',
     name: 'Divisi Material Kurikulum',
     members: ['Asrida', 'John', 'Yoani', 'Joni'],
-    // pulau kecil di selatan (deretan Nusa Tenggara), jauh dari kado lain: >=190 px dari Sulawesi/Maluku/Bali di peta
-    ...pct(1030, 762),
+    // pulau kecil di selatan (deretan Nusa Tenggara), dijaga >=145 px (gambar peta) dari kado lain agar nyaman diklik
+    ...pct(1010, 748),
     sprite: 6,
     color: '#6b6bf0',
     letter: `Selamat Ulang Tahun, Prof. Yohanes Surya.
@@ -208,7 +231,5 @@ Divisi Material Kurikulum GASING`,
  * Posisi tombol "Mendarat" berbentuk ikon pada ronde ke-2: ujung barat Pulau Jawa (Jawa Barat), di area Divisi
  * Outreach & Partnership. Persen terhadap gambar peta (Pulau.png 1672x941), sama seperti posisi kado.
  */
-export const LAND_ICON_POS = pct(505, 712)
+export const LAND_ICON_POS = pct(490, 722)
 
-/** Judul surat (tetap sama untuk semua kado) */
-export const LETTER_TITLE = 'Untuk Prof. Yohanes Surya'

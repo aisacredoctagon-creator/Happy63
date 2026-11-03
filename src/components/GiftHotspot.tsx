@@ -61,14 +61,6 @@ export function GiftHotspot({ gift, opened, index, disabled, onOpen }: Props) {
             animate={{ scale: 1, y: 0 }}
             transition={{ type: 'spring', stiffness: 380, damping: 11 }}
           />
-          {opened && (
-            <i className="gift-check" aria-hidden>
-              <svg width="26" height="26" viewBox="0 0 26 26">
-                <circle cx="13" cy="13" r="11.5" fill="#3ec96b" stroke="#fff" strokeWidth="3" />
-                <path d="M7 13.5 L11.5 18 L19 9" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </i>
-          )}
         </span>
       </motion.button>
     </div>

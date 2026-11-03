@@ -5,6 +5,7 @@ import { useLoop } from '../audio/audio'
 import { DriftClouds, Sparkles } from '../components/Atmosphere'
 import { GiftHotspot } from '../components/GiftHotspot'
 import { LandIconButton } from '../components/LandIconButton'
+import { PartyHat } from '../components/PartyHat'
 import { EdgeExtend } from '../components/EdgeExtend'
 import { LetterModal } from '../components/LetterModal'
 import { PrimaryButton } from '../components/PrimaryButton'
@@ -37,8 +38,8 @@ interface Props {
 
 export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart }: Props) {
   const [active, setActive] = useState<Gift | null>(null)
-  /** titik pusat kado yang diklik, dalam koordinat kanvas 1920x1080 (asal animasi pop-up) */
-  const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null)
+  /** titik kado yang diklik (asal/tujuan animasi Genie pop-up); posisinya dibaca LetterModal tiap frame */
+  const [originEl, setOriginEl] = useState<HTMLElement | null>(null)
   const [landing, setLanding] = useState(false)
 
   // musik hanya ada di scene ini; saat mendarat di-fade out lalu berhenti
@@ -48,16 +49,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
   const showActions = (allOpened || hasCompletedOnce) && !landing
   const open = useCallback(
     (g: Gift, el: HTMLElement) => {
-      // titik kado pada layar -> koordinat kanvas (memperhitungkan scale/crop kanvas), bukan angka tetap
-      const stage = el.closest('.stage') as HTMLElement | null
-      const target = (el.querySelector('img') ?? el).getBoundingClientRect()
-      if (stage) {
-        const sr = stage.getBoundingClientRect()
-        const k = sr.width / STAGE_W
-        setOrigin({ x: (target.left + target.width / 2 - sr.left) / k, y: (target.top + target.height / 2 - sr.top) / k })
-      } else {
-        setOrigin(null)
-      }
+      setOriginEl(el.closest<HTMLElement>('.gift-spot') ?? el)
       setActive(g)
       onOpenGift(g.id)
     },
@@ -131,6 +123,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
           </div>
           <div className="plane3-idle">
             <img src={IMG.planeMascot} alt="Pesawat berisi Gasing" draggable={false} className="fill-img" />
+            <PartyHat variant="plane" />
           </div>
         </motion.div>
 
@@ -193,7 +186,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
         )}
       </AnimatePresence>
 
-      <LetterModal gift={active} origin={origin} onClose={close} />
+      <LetterModal gift={active} originEl={originEl} onClose={close} />
     </div>
   )
 }

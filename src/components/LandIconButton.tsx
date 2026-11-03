@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useState } from 'react'
+import { IMG } from '../config'
 
 interface Props {
   /** posisi pusat tombol dalam persen terhadap gambar peta */
@@ -9,7 +10,7 @@ interface Props {
 }
 
 /**
- * Tombol "Mendarat" versi ikon saja (ikon pesawat) yang ditaruh di peta pada ronde ke-2.
+ * Tombol "Mendarat" versi gambar saja (Button Mendarat.png) yang ditaruh di peta pada ronde ke-2.
  * Aksesibilitas: aria-label "Mendarat" + tooltip teks (tampil saat hover maupun fokus keyboard).
  */
 export function LandIconButton({ x, y, onClick }: Props) {
@@ -36,14 +37,7 @@ export function LandIconButton({ x, y, onClick }: Props) {
         whileTap={{ scale: 0.94 }}
         transition={{ type: 'spring', stiffness: 380, damping: 15 }}
       >
-        <span className="pill-shine" aria-hidden />
-        <svg className="land-icon" width="46" height="46" viewBox="0 0 24 24" aria-hidden>
-          <path
-            d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"
-            fill="#7a3b00"
-            transform="rotate(45 12 12)"
-          />
-        </svg>
+        <img className="land-img" src={IMG.btnMendarat} alt="" draggable={false} />
       </motion.button>
     </div>
   )
