@@ -1,20 +1,31 @@
 /**
- * Konfigurasi 8 kado di peta (Scene Kado) beserta isi suratnya.
+ * Konfigurasi 9 kado di peta (Scene Kado) beserta isi suratnya.
  *
  * - x / y   : posisi pusat kado dalam PERSEN terhadap gambar peta (0-100), tetap presisi saat resize.
- * - sprite  : nomor kado pada Giftbox1.png (tertutup) / Giftbox2.png (terbuka), urutan kiri-ke-kanan, atas-ke-bawah:
- *             0 kuning, 1 oranye, 2 biru, 3 ungu, 4 pink, 5 hijau, 6 kuning tua, 7 merah-oranye, 8 biru muda.
- * - color   : warna aksen (chip nama di surat, titik progres).
+ * - sprite  : nomor kado pada Giftbox1.png (tertutup) / Giftbox2.png (terbuka), baris demi baris dari kiri ke kanan:
+ *             0 kuning, 1 biru, 2 ungu, 3 pink, 4 hijau mint, 5 hijau lemon, 6 biru keunguan, 7 salmon, 8 cyan.
+ *             (kado ke-10 di pojok kanan-bawah sheet sengaja tidak dipakai.)
+ * - members : nama anggota divisi; tampil sebagai baris "Anggota: ..." di bawah surat.
+ * - color   : warna kado/aksen (chip nama di surat, titik progres).
+ * - popup   : (opsional) 'center' = pop-up tepat di tengah layar (untuk surat pendek); default 'top'.
+ * - envelope: (opsional) warna dasar amplop di atas pop-up surat. Bila kosong memakai `color`; amplop selalu
+ *             ditampilkan versi pastel/pucat dari warna ini (atur kepucatannya di ENVELOPE_PASTEL, src/data/pastel.ts).
  * - letter  : teks surat. Baris kosong = pindah paragraf, satu baris baru = tetap satu paragraf (ditampilkan apa adanya).
  */
 export interface Gift {
   id: string
-  /** Nama pulau/provinsi yang tampil di tooltip dan di surat */
+  /** Nama divisi yang tampil di tooltip peta dan di judul surat */
   name: string
+  /** Nama anggota divisi (urutan tampil di surat) */
+  members: string[]
   x: number
   y: number
   sprite: number
   color: string
+  /** warna dasar amplop (opsional, default = color) */
+  envelope?: string
+  /** posisi pop-up surat: 'top' (default, di tengah-atas) atau 'center' (tepat di tengah layar, untuk surat pendek) */
+  popup?: 'top' | 'center'
   letter: string
 }
 
@@ -24,10 +35,11 @@ const pct = (px: number, py: number) => ({ x: +((px / 1672) * 100).toFixed(2), y
 export const GIFTS: Gift[] = [
   {
     id: 'sumatra',
-    name: 'Sumatra',
+    name: 'Divisi Finance',
+    members: ['Rechi', 'Claudia', 'Angely'],
     ...pct(350, 585),
-    sprite: 1,
-    color: '#f59e2d',
+    sprite: 0,
+    color: '#ffb21a',
     letter: `Selamat ulang tahun, Prof. Yohanes Surya! 🎉
 
 Semoga Prof. senantiasa diberikan kesehatan, kebahagiaan, dan kekuatan untuk terus berkarya serta menginspirasi banyak orang.
@@ -38,10 +50,11 @@ Salam hangat dan doa terbaik dari kami, Divisi Finance. 🙏`,
   },
   {
     id: 'bali',
-    name: 'Bali',
+    name: 'Divisi Digital Learning',
+    members: ['Ariyana', 'Believer', 'Ibnu', 'Oka'],
     ...pct(800, 748),
-    sprite: 4,
-    color: '#ee4d8f',
+    sprite: 3,
+    color: '#ff6f9c',
     letter: `Selamat ulang tahun, Prof. Yohanes!
 
 Semoga Prof. Yohanes senantiasa diberikan kesehatan, kebahagiaan, dan semangat untuk terus menginspirasi dunia pendidikan Indonesia!
@@ -50,19 +63,22 @@ Kami tim Digital Learning berharap dapat terus bersama-sama menjadi bagian dari 
   },
   {
     id: 'papua-barat',
-    name: 'Papua Barat',
+    name: 'Divisi Material Sosial Media',
+    popup: 'center',
+    members: ['Clara', 'Dara'],
     ...pct(1200, 588),
     sprite: 7,
-    color: '#e5484d',
+    color: '#ff7a5c',
     letter: `Kami dari tim Material mengucapkan selamat ulang tahun Prof. Yohanes.
 
 Semoga panjang umur dan sehat selalu agar lebih banyak anak Indonesia bisa merasakan manfaat belajar dengan Metode Gasing. God bless always`,
   },
   {
     id: 'kalimantan',
-    name: 'Kalimantan',
+    name: 'Divisi Product',
+    members: ['Gina', 'Arina', 'Icha', 'Muti', 'Isa'],
     ...pct(700, 568),
-    sprite: 2,
+    sprite: 1,
     color: '#3d86ee',
     letter: `Selamat ulang tahun, Prof. Yohanes Surya.
 
@@ -75,9 +91,10 @@ Tim Product Gasing Academy`,
   },
   {
     id: 'jawa',
-    name: 'Pulau Jawa',
+    name: 'Divisi Outreach & Partnership',
+    members: ['Maya', 'Ajeng', 'Johanes', 'Indra'],
     ...pct(610, 715),
-    sprite: 3,
+    sprite: 2,
     color: '#a45ce0',
     letter: `Happy Birthday, Prof. Yohanes Surya!
 
@@ -97,10 +114,11 @@ Gasing Academy
   },
   {
     id: 'sulawesi',
-    name: 'Sulawesi',
+    name: 'Divisi HR',
+    members: ['Melisa', 'Felicia'],
     ...pct(880, 618),
-    sprite: 5,
-    color: '#41b85c',
+    sprite: 4,
+    color: '#2fb592',
     letter: `Selamat Ulang Tahun, Profesor Yohanes Surya! ❤️
 
 Terima kasih telah menyalakan harapan dan membuka jalan bagi anak-anak Indonesia untuk percaya pada potensi diri mereka
@@ -114,10 +132,11 @@ Melisa & Felicia HR Gasing Academy`,
   },
   {
     id: 'maluku',
-    name: 'Maluku',
+    name: 'Divisi Formal Education & Talent Development',
+    members: ['Hana', 'Ekklesia', 'Mega', 'Fera', 'Julfikri'],
     ...pct(1100, 628),
-    sprite: 0,
-    color: '#f6bd2a',
+    sprite: 5,
+    color: '#8cc63f',
     letter: `Selamat ulang tahun, Prof. Yohanes Surya!
 
 Kiranya Prof. senantiasa diberikan kesehatan, umur panjang, sukacita, dan kekuatan dalam menjalankan setiap panggilan dan karya yang Tuhan percayakan.
@@ -130,10 +149,11 @@ Tuhan senantiasa menyertai setiap langkah Prof., serta memberikan hikmat dan kek
   },
   {
     id: 'papua',
-    name: 'Papua',
+    name: 'Divisi Operasional',
+    members: ['Valen', 'Nia', 'Vefy', 'Safira', 'Ridho'],
     ...pct(1430, 685),
     sprite: 8,
-    color: '#4fc0f0',
+    color: '#2cc4dc',
     letter: `Selamat Ulang Tahun ke-63, Prof. Yohanes Surya! 🎉🎂
 
 Dengan penuh rasa hormat dan syukur, kami Tim Operasional Gasing Academy mengucapkan selamat ulang tahun kepada Prof. Yohanes Surya.
@@ -153,7 +173,42 @@ Dengan hormat dan rasa terima kasih,
 
 Tim Operasional Gasing Academy`,
   },
+  {
+    id: 'material-kurikulum',
+    name: 'Divisi Material Kurikulum',
+    members: ['Asrida', 'John', 'Yoani', 'Joni'],
+    // pulau kecil di selatan (deretan Nusa Tenggara), jauh dari kado lain: >=190 px dari Sulawesi/Maluku/Bali di peta
+    ...pct(1030, 762),
+    sprite: 6,
+    color: '#6b6bf0',
+    letter: `Selamat Ulang Tahun, Prof. Yohanes Surya.
+
+Di hari istimewa ini, kami dari Divisi Material Kurikulum GASING ingin menyampaikan rasa syukur dan terima kasih karena telah menjadi bagian dari perjalanan yang Prof. bangun.
+
+Dari Prof., kami belajar bahwa pendidikan bukan sekadar tentang menyampaikan ilmu, tetapi tentang menemukan potensi, menumbuhkan keyakinan, dan membuka jalan bagi setiap anak untuk percaya bahwa dirinya mampu.
+
+Prof. mengajarkan kami untuk bermimpi lebih besar, melangkah lebih jauh, dan percaya bahwa ilmu akan menemukan makna sejatinya ketika menjadi manfaat bagi sesama.
+
+Menjadi bagian dari keluarga besar GASING adalah anugerah bagi kami. Di sini, kami tidak hanya belajar tentang matematika, tetapi juga tentang ketulusan, pengabdian, dan arti sebuah perjuangan. Kami percaya, setiap ilmu dan nilai yang Prof. tanamkan akan terus hidup, tumbuh, dan diteruskan melalui banyak tangan dan generasi.
+
+Terima kasih, Prof., telah menyalakan cahaya yang tak hanya menerangi jalan, tetapi juga mengajarkan kami untuk menjadi cahaya bagi orang lain.
+
+Di usia yang baru ini, semoga kesehatan, kebahagiaan, dan keberkahan senantiasa menyertai setiap langkah Prof. Semoga semangat dan mimpi besar yang Prof. perjuangkan terus menemukan jalannya, menjangkau lebih banyak anak, dan menumbuhkan harapan bagi masa depan Indonesia.
+
+Selamat ulang tahun, Prof.
+
+Teruslah menjadi inspirasi, sebab ilmu mungkin diwariskan melalui kata-kata, tetapi keteladanan akan hidup jauh melampaui usia.
+
+Dengan penuh hormat, kagum, dan cinta,
+Divisi Material Kurikulum GASING`,
+  },
 ]
+
+/**
+ * Posisi tombol "Mendarat" berbentuk ikon pada ronde ke-2: ujung barat Pulau Jawa (Jawa Barat), di area Divisi
+ * Outreach & Partnership. Persen terhadap gambar peta (Pulau.png 1672x941), sama seperti posisi kado.
+ */
+export const LAND_ICON_POS = pct(505, 712)
 
 /** Judul surat (tetap sama untuk semua kado) */
 export const LETTER_TITLE = 'Untuk Prof. Yohanes Surya'

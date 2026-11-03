@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AudioToggle } from './components/AudioToggle'
 import { CloudTransition } from './components/CloudTransition'
 import { LoadingScreen } from './components/LoadingScreen'
+import { RotateNotice } from './components/RotateNotice'
 import { Stage } from './components/Stage'
 import { PRELOAD_IMAGES } from './config'
 import { audio } from './audio/audio'
@@ -135,29 +136,33 @@ export default function App() {
   const cloudOverlay = <CloudTransition runId={cloud?.runId ?? 0} busy={!!cloud} onCovered={onCloudCovered} onDone={onCloudDone} />
 
   return (
-    <Stage overlay={cloudOverlay}>
-      <AnimatePresence custom={fade}>
-        {started && (
-          <motion.div
-            key={`${scene}-${runKey}`}
-            className="scene-layer"
-            custom={fade}
-            variants={sceneVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-          >
-            {content}
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <>
+      <Stage overlay={cloudOverlay}>
+        <AnimatePresence custom={fade}>
+          {started && (
+            <motion.div
+              key={`${scene}-${runKey}`}
+              className="scene-layer"
+              custom={fade}
+              variants={sceneVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              {content}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
 
-      <AudioToggle />
-      <LoadingScreen progress={progress} ready={done} visible={!started} onStart={() => {
-          audio.unlock() // interaksi pertama: buka audio (aturan autoplay browser)
-          setStarted(true)
-        }} />
-    </Stage>
+        <AudioToggle />
+        <LoadingScreen progress={progress} ready={done} visible={!started} onStart={() => {
+            audio.unlock() // interaksi pertama: buka audio (aturan autoplay browser)
+            setStarted(true)
+          }} />
+
+      </Stage>
+      <RotateNotice />
+    </>
   )
 }

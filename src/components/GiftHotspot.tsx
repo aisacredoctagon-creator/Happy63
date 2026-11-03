@@ -11,7 +11,7 @@ interface Props {
   opened: boolean
   index: number
   disabled?: boolean
-  onOpen: (gift: Gift) => void
+  onOpen: (gift: Gift, el: HTMLElement) => void
 }
 
 /**
@@ -37,7 +37,7 @@ export function GiftHotspot({ gift, opened, index, disabled, onOpen }: Props) {
         className={`gift-btn ${opened ? 'is-opened' : ''}`}
         aria-label={`Buka kado dari ${gift.name}${opened ? ' (sudah dibuka)' : ''}`}
         disabled={disabled}
-        onClick={() => onOpen(gift)}
+        onClick={(e) => onOpen(gift, e.currentTarget)}
         onHoverStart={() => setHover(true)}
         onHoverEnd={() => setHover(false)}
         onFocus={() => setHover(true)}

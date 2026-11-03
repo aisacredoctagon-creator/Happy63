@@ -4,11 +4,12 @@ import type { CSSProperties } from 'react'
 import { useLoop } from '../audio/audio'
 import { DriftClouds, Sparkles } from '../components/Atmosphere'
 import { GiftHotspot } from '../components/GiftHotspot'
+import { LandIconButton } from '../components/LandIconButton'
 import { EdgeExtend } from '../components/EdgeExtend'
 import { LetterModal } from '../components/LetterModal'
 import { PrimaryButton } from '../components/PrimaryButton'
 import { IMG, PLANE_MASCOT, SKY, STAGE_H, STAGE_W } from '../config'
-import { GIFTS } from '../data/gifts'
+import { GIFTS, LAND_ICON_POS } from '../data/gifts'
 import type { Gift } from '../data/gifts'
 import { useSequence } from '../hooks/useSequence'
 
@@ -36,6 +37,8 @@ interface Props {
 
 export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart }: Props) {
   const [active, setActive] = useState<Gift | null>(null)
+  /** titik pusat kado yang diklik, dalam koordinat kanvas 1920x1080 (asal animasi pop-up) */
+  const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null)
   const [landing, setLanding] = useState(false)
 
   // musik hanya ada di scene ini; saat mendarat di-fade out lalu berhenti
@@ -44,7 +47,17 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
   const allOpened = opened.size >= GIFTS.length
   const showActions = (allOpened || hasCompletedOnce) && !landing
   const open = useCallback(
-    (g: Gift) => {
+    (g: Gift, el: HTMLElement) => {
+      // titik kado pada layar -> koordinat kanvas (memperhitungkan scale/crop kanvas), bukan angka tetap
+      const stage = el.closest('.stage') as HTMLElement | null
+      const target = (el.querySelector('img') ?? el).getBoundingClientRect()
+      if (stage) {
+        const sr = stage.getBoundingClientRect()
+        const k = sr.width / STAGE_W
+        setOrigin({ x: (target.left + target.width / 2 - sr.left) / k, y: (target.top + target.height / 2 - sr.top) / k })
+      } else {
+        setOrigin(null)
+      }
       setActive(g)
       onOpenGift(g.id)
     },
@@ -85,6 +98,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
     <div className="scene scene3">
       <motion.div
         className="fill"
+        inert={active ? true : undefined}
         initial={{ scale: 1.06 }}
         animate={{ scale: 1 }}
         transition={{ duration: 2.6, ease: [0.22, 1, 0.36, 1] }}
@@ -124,10 +138,17 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
         {GIFTS.map((g, i) => (
           <GiftHotspot key={g.id} gift={g} index={i} opened={opened.has(g.id)} disabled={landing} onOpen={open} />
         ))}
+
+        {/* ronde ke-2 (sudah pernah mendarat): tombol Mendarat pindah ke peta, berupa ikon pesawat di Jawa Barat */}
+        <AnimatePresence>
+          {hasCompletedOnce && !landing && (
+            <LandIconButton key="land-icon" x={LAND_ICON_POS.x} y={LAND_ICON_POS.y} onClick={() => setLanding(true)} />
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* UI atas-tengah */}
-      <div className="top-actions">
+      <div className="top-actions" inert={active ? true : undefined}>
         <AnimatePresence>
           {!showActions && !landing && opened.size === 0 && (
             <motion.div
@@ -143,11 +164,14 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
           )}
           {showActions && (
             <motion.div key="actions" className="top-actions-row" exit={{ opacity: 0 }}>
-              <PrimaryButton tone="sun" pulse onClick={() => setLanding(true)}>
-                Mendarat
-              </PrimaryButton>
+              {/* ronde 1: tombol teks seperti semula; ronde 2: tombol Mendarat ada di peta (lihat LandIconButton) */}
+              {!hasCompletedOnce && (
+                <PrimaryButton tone="sun" pulse onClick={() => setLanding(true)}>
+                  Mendarat
+                </PrimaryButton>
+              )}
               {hasCompletedOnce && (
-                <PrimaryButton tone="sky" delay={0.12} onClick={onRestart}>
+                <PrimaryButton tone="sky" onClick={onRestart}>
                   Mulai Ulang
                 </PrimaryButton>
               )}
@@ -158,7 +182,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
 
       <AnimatePresence>
         {!landing && (
-          <motion.div className="progress-pill" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} transition={{ delay: 0.8 }}>
+          <motion.div className="progress-pill" inert={active ? true : undefined} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} transition={{ delay: 0.8 }}>
             <span className="progress-dots">
               {GIFTS.map((g) => (
                 <i key={g.id} className={opened.has(g.id) ? 'on' : ''} style={{ ['--c' as string]: g.color }} />
@@ -169,7 +193,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
         )}
       </AnimatePresence>
 
-      <LetterModal gift={active} onClose={close} />
+      <LetterModal gift={active} origin={origin} onClose={close} />
     </div>
   )
 }

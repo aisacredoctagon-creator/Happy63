@@ -16,7 +16,7 @@ Hanya saat `npm run dev`: tambahkan `?scene=scene3` (atau `scene2`, `scene4`, `s
 
 | Apa | Lokasi |
 | --- | --- |
-| Isi surat (9 kado), nama provinsi, warna, posisi kado (%) | `src/data/gifts.ts` |
+| Isi surat, nama divisi, daftar anggota, warna, posisi kado (%) | `src/data/gifts.ts` |
 | Judul surat ("Untuk Prof. Yohanes Surya") | `LETTER_TITLE` di `src/data/gifts.ts` |
 | Video ucapan | `public/assets/video/ucapan.mp4` (timpa file; jika belum ada tampil "Video segera hadir") |
 | Audio (SFX klik/kado, ambient, musik) | `public/assets/audio/` - daftar nama file di `AUDIO_CREDITS.md` |

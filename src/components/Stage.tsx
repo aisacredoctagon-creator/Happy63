@@ -21,15 +21,20 @@ const MAX_FILL = 1.2
  * Bagian kanvas yang terpotong diumumkan lewat CSS variable --crop-x / --crop-y (px kanvas per sisi) sehingga tombol dan
  * UI di tepi layar tetap berada di area yang terlihat.
  */
+/** skala kanvas untuk ukuran jendela tertentu (mode "filled" dengan batas MAX_FILL) */
+export function stageScale(vw: number, vh: number) {
+  const contain = Math.min(vw / STAGE_W, vh / STAGE_H)
+  const cover = Math.max(vw / STAGE_W, vh / STAGE_H)
+  return Math.min(cover, contain * MAX_FILL)
+}
+
 export function Stage({ children, overlay }: Props) {
   const [view, setView] = useState({ scale: 1, cropX: 0, cropY: 0 })
   useLayoutEffect(() => {
     const update = () => {
       const vw = window.innerWidth
       const vh = window.innerHeight
-      const contain = Math.min(vw / STAGE_W, vh / STAGE_H)
-      const cover = Math.max(vw / STAGE_W, vh / STAGE_H)
-      const scale = Math.min(cover, contain * MAX_FILL)
+      const scale = stageScale(vw, vh)
       setView({
         scale,
         cropX: Math.max(0, (STAGE_W - vw / scale) / 2),
@@ -38,7 +43,11 @@ export function Stage({ children, overlay }: Props) {
     }
     update()
     window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
+    window.addEventListener('orientationchange', update)
+    return () => {
+      window.removeEventListener('resize', update)
+      window.removeEventListener('orientationchange', update)
+    }
   }, [])
   const style = {
     transform: `translate(-50%, -50%) scale(${view.scale})`,
