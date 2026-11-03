@@ -20,12 +20,12 @@ File yang tidak ada di manifest tidak pernah diminta, jadi tidak ada error 404 d
 
 | Nama manifest | File | Dipakai di | Bawaan |
 | --- | --- | --- | --- |
-| `music` | `music-gasing-loop.mp3` | Scene Kado di Peta (fade out saat Mendarat) | **File ada** |
-| `cabin` | `amb-cabin.mp3` | Scene Kabin | prosedural (dengung mesin) |
-| `wind` | `amb-wind.mp3` | Scene Luar Pesawat | prosedural (angin) |
-| `airport` | `amb-airport.mp3` | Scene Bandara + TV | prosedural (dengung percakapan jauh); **paling disarankan diganti file asli** |
-| `belt` | `amb-belt.mp3` | Scene Bandara (ban berjalan) | prosedural |
-| `wheels` | `amb-wheels.mp3` | Scene Bandara (koper ditarik berjalan) | prosedural |
+| `music` | `music-gasing-loop.mp3` | Scene 04 - Peta Kado (fade out saat Mendarat) | **File ada** |
+| `cabin` | `amb-cabin.mp3` | Scene 02 - Kabin Pesawat | prosedural (dengung mesin) |
+| `wind` | `amb-wind.mp3` | Scene 03 - Pesawat di Langit | prosedural (angin) |
+| `airport` | `amb-airport.mp3` | Scene 05 - Bandara Bagasi dan Scene 06-08 (TV) | prosedural (dengung percakapan jauh); **paling disarankan diganti file asli** |
+| `belt` | `amb-belt.mp3` | Scene 05 (ban berjalan) | prosedural |
+| `wheels` | `amb-wheels.mp3` | Scene 05 (05c, koper ditarik berjalan) | prosedural |
 
 Spesifikasi: `.mp3`, 10-60 detik. Sambungan loop dibuat mulus otomatis (crossfade 1-2 detik) sehingga tidak perlu loop sempurna.
 
@@ -41,9 +41,9 @@ File override: `sfx-<nama>.mp3`. Kolom "Dipicu" menunjuk tempat pemicunya di kod
 | `pop` | pop | tombol muncul (`PrimaryButton`), pill progres/petunjuk, bingkai TV |
 | `start` | sparkle | tombol "Mulai Perjalanan" |
 | `toggleOn` | klik | suara dinyalakan kembali |
-| `zoomOut` / `zoomIn` | whoosh | zoom kamera Scene 1 / zoom ke TV Scene 5 |
-| `whooshSoft` | whoosh | crossfade Scene 1 ke 2, Mulai Ulang, Putar ulang video |
-| `planeFlyby` | whoosh | pesawat masuk di Scene 2 |
+| `zoomOut` / `zoomIn` | whoosh | zoom kamera 02b / zoom ke TV 06d |
+| `whooshSoft` | whoosh | crossfade 02c (Scene 02 ke 03), Mulai Ulang, Putar ulang video |
+| `planeFlyby` | whoosh | pesawat masuk di 03a |
 | `cloudWhoosh` / `cloudSoft` / `chimeAir` | whoosh, impact, sparkle | transisi awan (masuk, menutup, memudar) |
 | `giftHover` | sparkle | hover kado |
 | `gift` | sparkle | klik kado |
@@ -54,7 +54,7 @@ File override: `sfx-<nama>.mp3`. Kolom "Dipicu" menunjuk tempat pemicunya di kod
 | `step` | pop | langkah Gasing (tiap siklus jalan, 0,46 s) |
 | `squish` / `boing` | pop | Gasing siap / melonjak (`GasingSprite`) |
 | `hopUp` / `thud` / `clip` | whoosh, impact, klik | koper melompat, mendarat, tali terpasang |
-| `surprise` | impact | Gasing kaget di Scene 5 |
+| `surprise` | impact | Gasing kaget di 06b |
 | `tvFlicker` / `tvOn` | sparkle | layar TV berkedip lalu menyala |
 | `play` / `pause` | klik | putar / jeda video |
 | `oops` | gagal | video ucapan belum ada |
