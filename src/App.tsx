@@ -3,18 +3,20 @@ import type { Variants } from 'framer-motion'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AudioToggle } from './components/AudioToggle'
 import { CloudTransition } from './components/CloudTransition'
-import { LoadingScreen } from './components/LoadingScreen'
 import { Stage } from './components/Stage'
 import { PRELOAD_IMAGES } from './config'
 import { audio } from './audio/audio'
 import type { SfxName } from './audio/audio'
 import { GIFTS } from './data/gifts'
+import { DevSceneBadge } from './dev/DevSceneBadge'
+import { readDevJump } from './dev/devJump'
 import { usePreload } from './hooks/usePreload'
-import { Scene1 } from './scenes/Scene1'
-import { Scene2 } from './scenes/Scene2'
-import { Scene3 } from './scenes/Scene3'
-import { Scene4 } from './scenes/Scene4'
-import { Scene5 } from './scenes/Scene5'
+import { Scene01LayarPembuka } from './scenes/Scene01LayarPembuka'
+import { Scene02KabinPesawat } from './scenes/Scene02KabinPesawat'
+import { Scene03PesawatDiLangit } from './scenes/Scene03PesawatDiLangit'
+import { Scene04PetaKado } from './scenes/Scene04PetaKado'
+import { Scene05BandaraBagasi } from './scenes/Scene05BandaraBagasi'
+import { Scene06GasingMelihatTv } from './scenes/Scene06GasingMelihatTv'
 import type { SceneId } from './types'
 
 const PRELOAD = PRELOAD_IMAGES
@@ -32,25 +34,26 @@ interface CloudState {
   runId: number
 }
 
-// Hanya mode dev: ?scene=scene3 (&all=1 untuk kado terbuka semua) melompat langsung ke scene untuk pengecekan
-const DEV_PARAMS = import.meta.env.DEV ? new URLSearchParams(window.location.search) : null
-const DEV_SCENE = (DEV_PARAMS?.get('scene') as SceneId | null) ?? 'scene1'
+// Hanya mode dev: lompat langsung ke scene untuk pengecekan, mis. ?scene=05 / ?scene=04c / &all=1 (src/dev/devJump.ts, SCENES.md)
+const DEV = import.meta.env.DEV ? readDevJump(window.location.search) : null
+const DEV_SCENE: SceneId = DEV?.scene?.id ?? 'scene02'
 
 export default function App() {
   const { progress, done } = usePreload(PRELOAD)
   const [started, setStarted] = useState(false)
   const [scene, setScene] = useState<SceneId>(DEV_SCENE)
+  const [devStart, setDevStart] = useState(DEV?.scene?.start) // hanya dev: Scene 07 / 08 langsung
   const [runKey, setRunKey] = useState(0)
   const [fade, setFade] = useState(1)
   const [cloud, setCloud] = useState<CloudState | null>(null)
-  const [openedGifts, setOpenedGifts] = useState<Set<string>>(() => new Set(DEV_PARAMS?.get('all') ? GIFTS.map((g) => g.id) : []))
-  const [hasCompletedOnce, setHasCompletedOnce] = useState(!!DEV_PARAMS?.get('all'))
+  const [openedGifts, setOpenedGifts] = useState<Set<string>>(() => new Set(DEV?.allGifts ? GIFTS.map((g) => g.id) : []))
+  const [hasCompletedOnce, setHasCompletedOnce] = useState(!!DEV?.completed)
   const [videoPlaying, setVideoPlaying] = useState(false)
   const cloudId = useRef(0)
   const cloudNext = useRef<SceneId | null>(null)
 
   useEffect(() => {
-    if (scene !== 'scene5') setVideoPlaying(false)
+    if (scene !== 'scene06') setVideoPlaying(false)
   }, [scene])
 
   // video ucapan sedang diputar -> pelankan ambient
@@ -85,6 +88,7 @@ export default function App() {
   /** ganti scene; SFX bercakupan scene lama dipotong halus */
   const changeScene = useCallback((next: SceneId) => {
     audio.stopScene()
+    setDevStart(undefined)
     setScene(next)
   }, [])
 
@@ -114,7 +118,7 @@ export default function App() {
 
   const land = useCallback(() => {
     setHasCompletedOnce(true)
-    goWithCloud('scene4')
+    goWithCloud('scene05')
   }, [goWithCloud])
 
   const startOver = useCallback(() => {
@@ -122,27 +126,27 @@ export default function App() {
     setHasCompletedOnce(false)
     setRunKey((k) => k + 1)
     audio.playSfx('whooshSoft')
-    goFade('scene1', 0.9)
+    goFade('scene02', 0.9)
   }, [goFade])
 
   let content
   switch (scene) {
-    case 'scene1':
+    case 'scene02':
       content = (
-        <Scene1
+        <Scene02KabinPesawat
           onDone={() => {
             audio.playSfx('whooshSoft')
-            goFade('scene2', 1.4)
+            goFade('scene03', 1.4)
           }}
         />
       )
       break
-    case 'scene2':
-      content = <Scene2 onDone={() => goWithCloud('scene3')} />
+    case 'scene03':
+      content = <Scene03PesawatDiLangit onDone={() => goWithCloud('scene04')} />
       break
-    case 'scene3':
+    case 'scene04':
       content = (
-        <Scene3
+        <Scene04PetaKado
           opened={openedGifts}
           hasCompletedOnce={hasCompletedOnce}
           onOpenGift={openGift}
@@ -151,17 +155,18 @@ export default function App() {
         />
       )
       break
-    case 'scene4':
-      content = <Scene4 onDone={() => goFade('scene5', 1.0)} />
+    case 'scene05':
+      content = <Scene05BandaraBagasi onDone={() => goFade('scene06', 1.0)} />
       break
-    case 'scene5':
-      content = <Scene5 onBack={() => goWithCloud('scene3')} onVideoPlaying={setVideoPlaying} />
+    case 'scene06':
+      content = <Scene06GasingMelihatTv onBack={() => goWithCloud('scene04')} onVideoPlaying={setVideoPlaying} devStart={devStart} />
       break
   }
 
   const cloudOverlay = <CloudTransition runId={cloud?.runId ?? 0} busy={!!cloud} onCovered={onCloudCovered} onDone={onCloudDone} />
 
   return (
+    <>
     <Stage overlay={cloudOverlay}>
       <AnimatePresence custom={fade}>
         {started && (
@@ -181,10 +186,13 @@ export default function App() {
 
 
       <AudioToggle />
-      <LoadingScreen progress={progress} ready={done} visible={!started} onStart={() => {
+      <Scene01LayarPembuka progress={progress} ready={done} visible={!started} onStart={() => {
           audio.unlock() // interaksi pertama: buka audio (aturan autoplay browser)
           setStarted(true)
         }} />
     </Stage>
+    {/* hanya dev: label nama scene aktif + menu lompat scene (di luar Stage agar tidak ikut di-scale) */}
+    {import.meta.env.DEV && <DevSceneBadge />}
+    </>
   )
 }

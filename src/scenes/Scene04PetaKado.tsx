@@ -1,3 +1,6 @@
+// Scene 04 - Peta Kado
+// 04a Peta Terbuka (masuk + petunjuk) -> 04b Surat Kado (tiap kado diklik, LetterModal) -> 04c Semua Kado Terbuka
+// (tombol Mendarat / Mulai Ulang) -> 04d Pesawat Lepas Landas (3,4 s) -> 04e Awan Menutup ke Bandara (CloudTransition)
 import { AnimatePresence, motion, useMotionValue, useTransform } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
@@ -10,6 +13,7 @@ import { PrimaryButton } from '../components/PrimaryButton'
 import { IMG, PLANE_MASCOT, SKY, STAGE_H, STAGE_W } from '../config'
 import { GIFTS } from '../data/gifts'
 import type { Gift } from '../data/gifts'
+import { useSceneTag } from '../dev/sceneTag'
 import { useSequence } from '../hooks/useSequence'
 
 const kx = STAGE_W / SKY.srcW
@@ -37,7 +41,9 @@ interface Props {
   onRestart: () => void
 }
 
-export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart }: Props) {
+/** Scene 04 - Peta Kado: peta Indonesia dengan 8 kado berisi surat; setelah semua terbuka, pesawat mendarat. */
+export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart }: Props) {
+  useSceneTag('04')
   const [active, setActive] = useState<Gift | null>(null)
   const [landing, setLanding] = useState(false)
 
@@ -73,11 +79,11 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
   useSequence(
     async (seq) => {
       if (!landing) return
-      seq.sfx('takeoff') // pesawat lepas landas
+      seq.sfx('takeoff') // 04d Pesawat Lepas Landas
       const fly = seq.to(t, 1, { duration: 3.4, ease: [0.4, 0, 0.55, 1] })
       await seq.wait(1.9)
       if (seq.dead) return
-      onLand()
+      onLand() // 04e Awan Menutup ke Bandara
       await fly
     },
     [landing],
@@ -95,15 +101,16 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
   )
 
   return (
-    <div className="scene scene3">
+    <div className="scene scene04">
+      {/* 04a Peta Terbuka */}
       <motion.div
         className="fill"
         initial={{ scale: 1.06 }}
         animate={{ scale: 1 }}
         transition={{ duration: 2.6, ease: [0.22, 1, 0.36, 1] }}
       >
-        <img className="fill-img" src={IMG.scene3Bg} alt="Peta Indonesia dari udara" draggable={false} />
-        <EdgeExtend src={IMG.scene3Bg} w={STAGE_W} h={STAGE_H} />
+        <img className="fill-img" src={IMG.petaBg} alt="Peta Indonesia dari udara" draggable={false} />
+        <EdgeExtend src={IMG.petaBg} w={STAGE_W} h={STAGE_H} />
 
         {/* latar yang hidup */}
         <div className="sun-glow" aria-hidden />
@@ -133,13 +140,13 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
           </div>
         </motion.div>
 
-        {/* kado */}
+        {/* 04b Surat Kado: klik kado membuka LetterModal (di bawah) */}
         {GIFTS.map((g, i) => (
           <GiftHotspot key={g.id} gift={g} index={i} opened={opened.has(g.id)} disabled={landing} onOpen={open} />
         ))}
       </motion.div>
 
-      {/* UI atas-tengah */}
+      {/* UI atas-tengah: petunjuk (04a) lalu tombol Mendarat / Mulai Ulang (04c Semua Kado Terbuka) */}
       <div className="top-actions">
         <AnimatePresence>
           {!showActions && !landing && opened.size === 0 && (
@@ -182,6 +189,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
         )}
       </AnimatePresence>
 
+      {/* 04b Surat Kado */}
       <LetterModal gift={active} onClose={close} />
     </div>
   )
