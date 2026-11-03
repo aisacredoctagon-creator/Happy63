@@ -1,6 +1,8 @@
 import { animate, useReducedMotion } from 'framer-motion'
 import type { AnimationPlaybackControls, MotionValue, ValueAnimationTransition } from 'framer-motion'
 import { useEffect, useRef } from 'react'
+import { audio } from '../audio/audio'
+import type { PlayOpts, SfxName } from '../audio/audio'
 
 export interface Seq {
   /** true jika komponen sudah unmount / efek dibersihkan; hentikan alur bila true */
@@ -10,6 +12,11 @@ export interface Seq {
   wait(seconds: number): Promise<void>
   /** animasikan MotionValue; durasi dipersingkat bila reduced-motion */
   to(mv: MotionValue<number>, target: number, opts?: ValueAnimationTransition<number>): Promise<void>
+  /**
+   * Mainkan SFX (bercakupan scene) tepat pada titik ini di alur, atau `delay` detik setelahnya.
+   * Dibatalkan otomatis bila alur dihentikan (unmount / skip / pindah scene).
+   */
+  sfx(name: SfxName, opts?: Omit<PlayOpts, 'scope' | 'delay'> & { delay?: number }): void
 }
 
 /**
@@ -42,6 +49,11 @@ export function useSequence(run: (seq: Seq) => Promise<void>, deps: unknown[] = 
           cancels.push(() => controls.stop())
           void controls.finished.then(() => resolve())
         }),
+      sfx: (name, { delay = 0, ...o } = {}) => {
+        // sedikit tunda agar eksekusi pertama React StrictMode (yang langsung dibatalkan) tidak sempat berbunyi
+        const t = setTimeout(() => audio.playSfx(name, { ...o, scope: 'scene' }), delay * 1000 + 30)
+        cancels.push(() => clearTimeout(t))
+      },
     }
     runRef.current(seq).catch(() => {})
     return () => {

@@ -205,7 +205,13 @@ class AudioManager {
   playSfx(name: SfxName, opts: PlayOpts = {}) {
     const ctx = this.ctx
     const def = SFX[name]
-    if (!ctx || ctx.state !== 'running' || !def || !this.noise) return
+    if (!ctx || !def || !this.noise) return
+    if (ctx.state === 'suspended' && !document.hidden) {
+      // klik pertama bisa tiba sebelum resume() selesai: ulangi begitu audio berjalan
+      void ctx.resume().then(() => ctx.state === 'running' && this.playSfx(name, opts))
+      return
+    }
+    if (ctx.state !== 'running') return
     const scope = opts.scope ?? 'global'
     const bus = scope === 'scene' ? this.sceneBus : this.globalBus
     if (!bus) return

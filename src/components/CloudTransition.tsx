@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useRef } from 'react'
 import { animate, motion, useMotionValue, useReducedMotion } from 'framer-motion'
+import { audio } from '../audio/audio'
 import { CLOUDS, STAGE_H, STAGE_W } from '../config'
 
 /**
@@ -126,6 +127,14 @@ export function CloudTransition({ runId, busy, onCovered, onDone }: Props) {
   useEffect(() => {
     if (runId === 0) return
     const stops: Array<() => void> = []
+    // suara awan dijadwalkan pada jam audio, sinkron dengan timeline: masuk (0-1,1 s), tertutup (1,2 s), memudar (1,35 s+)
+    if (reduced) {
+      audio.playSfx('cloudSoft', { delay: 0.3 })
+    } else {
+      audio.playSfx('cloudWhoosh')
+      audio.playSfx('cloudSoft', { delay: COVER_AT })
+      audio.playSfx('chimeAir', { delay: HOLD_END + 0.05 })
+    }
     if (reduced) {
       const c = animate(veil, [0, 1, 1, 0], { duration: 1.2, times: [0, 0.3, 0.55, 1], ease: 'easeInOut' })
       const t = setTimeout(() => covered.current?.(), 400)

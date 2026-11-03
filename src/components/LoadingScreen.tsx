@@ -36,7 +36,7 @@ export function LoadingScreen({ progress, ready, visible, onStart }: Props) {
           <div className="loading-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
             <motion.i animate={{ scaleX: progress }} initial={{ scaleX: 0 }} transition={{ ease: 'easeOut', duration: 0.3 }} />
           </div>
-          <div className="loading-cta">{ready ? <PrimaryButton pulse onClick={onStart}>Mulai Perjalanan</PrimaryButton> : <span className="loading-pct">{Math.round(progress * 100)}%</span>}</div>
+          <div className="loading-cta">{ready ? <PrimaryButton pulse sfx="start" appear="none" onClick={onStart}>Mulai Perjalanan</PrimaryButton> : <span className="loading-pct">{Math.round(progress * 100)}%</span>}</div>
         </motion.div>
       )}
     </AnimatePresence>

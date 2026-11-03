@@ -7,6 +7,7 @@ import { LoadingScreen } from './components/LoadingScreen'
 import { Stage } from './components/Stage'
 import { PRELOAD_IMAGES } from './config'
 import { audio } from './audio/audio'
+import type { SfxName } from './audio/audio'
 import { GIFTS } from './data/gifts'
 import { usePreload } from './hooks/usePreload'
 import { Scene1 } from './scenes/Scene1'
@@ -57,16 +58,34 @@ export default function App() {
     audio.setDuck(videoPlaying ? 0 : 1)
   }, [videoPlaying])
 
-  // SFX klik terpusat untuk semua tombol (kecuali yang menandai data-sfx="none"; kado memakai data-sfx="gift")
+  // SFX terpusat untuk semua tombol. Klik: data-sfx="<nama SFX>" mengganti bunyi bawaan ("click"), "none" = diam
+  // (kado memakai "gift"). Hover (mouse saja): data-sfx-hover dengan aturan sama, bawaan "hover".
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       const btn = (e.target as Element | null)?.closest?.('button')
       if (!btn || (btn as HTMLButtonElement).disabled) return
       const kind = btn.closest('[data-sfx]')?.getAttribute('data-sfx') ?? 'click'
-      if (kind === 'click' || kind === 'gift') void audio.playSfx(kind)
+      if (kind !== 'none') audio.playSfx(kind as SfxName)
+    }
+    const onOver = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse') return
+      const btn = (e.target as Element | null)?.closest?.('button')
+      if (!btn || (btn as HTMLButtonElement).disabled || btn.contains(e.relatedTarget as Node | null)) return
+      const kind = btn.closest('[data-sfx-hover]')?.getAttribute('data-sfx-hover') ?? 'hover'
+      if (kind !== 'none') audio.playSfx(kind as SfxName)
     }
     document.addEventListener('click', onClick, true)
-    return () => document.removeEventListener('click', onClick, true)
+    document.addEventListener('pointerover', onOver, true)
+    return () => {
+      document.removeEventListener('click', onClick, true)
+      document.removeEventListener('pointerover', onOver, true)
+    }
+  }, [])
+
+  /** ganti scene; SFX bercakupan scene lama dipotong halus */
+  const changeScene = useCallback((next: SceneId) => {
+    audio.stopScene()
+    setScene(next)
   }, [])
 
   /** pindah scene lewat CloudTransition: awan menutup -> ganti scene -> awan membuka */
@@ -79,8 +98,8 @@ export default function App() {
   const onCloudCovered = useCallback(() => {
     if (!cloudNext.current) return
     setFade(0.4)
-    setScene(cloudNext.current)
-  }, [])
+    changeScene(cloudNext.current)
+  }, [changeScene])
   const onCloudDone = useCallback(() => {
     cloudNext.current = null
     setCloud(null)
@@ -88,8 +107,8 @@ export default function App() {
 
   const goFade = useCallback((next: SceneId, duration: number) => {
     setFade(duration)
-    setScene(next)
-  }, [])
+    changeScene(next)
+  }, [changeScene])
 
   const openGift = useCallback((id: string) => setOpenedGifts((prev) => (prev.has(id) ? prev : new Set(prev).add(id))), [])
 
@@ -102,13 +121,21 @@ export default function App() {
     setOpenedGifts(new Set())
     setHasCompletedOnce(false)
     setRunKey((k) => k + 1)
+    audio.playSfx('whooshSoft')
     goFade('scene1', 0.9)
   }, [goFade])
 
   let content
   switch (scene) {
     case 'scene1':
-      content = <Scene1 onDone={() => goFade('scene2', 1.4)} />
+      content = (
+        <Scene1
+          onDone={() => {
+            audio.playSfx('whooshSoft')
+            goFade('scene2', 1.4)
+          }}
+        />
+      )
       break
     case 'scene2':
       content = <Scene2 onDone={() => goWithCloud('scene3')} />

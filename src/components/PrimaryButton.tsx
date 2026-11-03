@@ -1,5 +1,8 @@
 import { motion } from 'framer-motion'
+import { useEffect } from 'react'
 import type { ReactNode } from 'react'
+import { audio } from '../audio/audio'
+import type { SfxName } from '../audio/audio'
 
 interface Props {
   children: ReactNode
@@ -12,10 +15,20 @@ interface Props {
   delay?: number
   disabled?: boolean
   className?: string
+  /** bunyi saat diklik (bawaan: klik umum) */
+  sfx?: SfxName | 'none'
+  /** bunyi saat tombol muncul (bawaan: pop kecil) */
+  appear?: SfxName | 'none'
 }
 
 /** Tombol pill bulat dengan outline putih tebal dan bayangan lembut (gaya sama untuk semua tombol utama). */
-export function PrimaryButton({ children, onClick, tone = 'sun', pulse = false, delay = 0, disabled, className = '' }: Props) {
+export function PrimaryButton({ children, onClick, tone = 'sun', pulse = false, delay = 0, disabled, className = '', sfx, appear = 'pop' }: Props) {
+  useEffect(() => {
+    if (appear === 'none') return
+    const t = setTimeout(() => audio.playSfx(appear), delay * 1000 + 80)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   return (
     <motion.div
       initial={{ scale: 0, opacity: 0, y: -24 }}
@@ -27,6 +40,7 @@ export function PrimaryButton({ children, onClick, tone = 'sun', pulse = false, 
     >
       <motion.button
         type="button"
+        data-sfx={sfx}
         className={`pill-btn pill-${tone} ${className}`}
         onClick={onClick}
         disabled={disabled}
