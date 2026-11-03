@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useMotionValue, useTransform } from 'framer-motion'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { useLoop } from '../audio/audio'
+import { audio, useLoop } from '../audio/audio'
 import { DriftClouds, Sparkles } from '../components/Atmosphere'
 import { GiftHotspot } from '../components/GiftHotspot'
 import { EdgeExtend } from '../components/EdgeExtend'
@@ -25,6 +25,9 @@ const WAVES: Array<[number, number]> = [
   [900, 820], [1300, 820], [480, 790], [760, 640], [1000, 790],
 ]
 
+/** semiton di atas nada dasar untuk "ding" kado ke-1 sampai ke-8 (tangga pentatonik naik) */
+const CHECK_STEPS = [0, 2, 4, 7, 9, 12, 14, 16]
+
 interface Props {
   opened: Set<string>
   hasCompletedOnce: boolean
@@ -45,11 +48,20 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
   const showActions = (allOpened || hasCompletedOnce) && !landing
   const open = useCallback(
     (g: Gift) => {
+      // kado baru dibuka: "ding" yang naik satu nada pentatonik untuk setiap kado (centang hijau muncul ~0,35 s kemudian)
+      if (!opened.has(g.id)) audio.playSfx('check', { rate: 2 ** (CHECK_STEPS[Math.min(opened.size, CHECK_STEPS.length - 1)] / 12), delay: 0.35 })
       setActive(g)
       onOpenGift(g.id)
     },
-    [onOpenGift],
+    [onOpenGift, opened],
   )
+
+  // pill progres (0,8 s) dan petunjuk (1,2 s, hanya bila belum ada kado terbuka) muncul dengan "pop" pelan
+  useEffect(() => {
+    const ts = [0.8, ...(opened.size === 0 ? [1.2] : [])].map((d) => setTimeout(() => audio.playSfx('pop', { volume: 0.5, scope: 'scene' }), d * 1000 + 80))
+    return () => ts.forEach(clearTimeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const close = useCallback(() => setActive(null), [])
 
   // penerbangan parabola: kiri atas -> kanan bawah (keluar layar)
@@ -61,6 +73,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
   useSequence(
     async (seq) => {
       if (!landing) return
+      seq.sfx('takeoff') // pesawat lepas landas
       const fly = seq.to(t, 1, { duration: 3.4, ease: [0.4, 0, 0.55, 1] })
       await seq.wait(1.9)
       if (seq.dead) return
@@ -143,11 +156,11 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
           )}
           {showActions && (
             <motion.div key="actions" className="top-actions-row" exit={{ opacity: 0 }}>
-              <PrimaryButton tone="sun" pulse onClick={() => setLanding(true)}>
+              <PrimaryButton tone="sun" pulse appear="reward" onClick={() => setLanding(true)}>
                 Mendarat
               </PrimaryButton>
               {hasCompletedOnce && (
-                <PrimaryButton tone="sky" delay={0.12} onClick={onRestart}>
+                <PrimaryButton tone="sky" delay={0.12} appear="none" onClick={onRestart}>
                   Mulai Ulang
                 </PrimaryButton>
               )}

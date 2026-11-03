@@ -293,6 +293,7 @@ export function Scene1({ onDone }: Props) {
     await seq.wait(2.4) // fade-in dari hitam + jeda ~2 detik
     if (seq.dead) return
     const ease = [0.22, 1, 0.36, 1] as const // ease-out
+    seq.sfx('zoomOut') // kamera menarik mundur dari Gasing
     await Promise.all([
       seq.to(zoom, 1, { duration: 3.6, ease }),
       seq.to(tx, 0, { duration: 3.6, ease }),

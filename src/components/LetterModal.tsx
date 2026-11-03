@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import { audio } from '../audio/audio'
 import { LETTER_TITLE } from '../data/gifts'
 import type { Gift } from '../data/gifts'
 
@@ -22,6 +23,14 @@ interface Props {
 
 /** Surat/kartu di tengah atas layar. Tutup: tombol X, klik di luar kartu, atau tombol Esc. */
 export function LetterModal({ gift, onClose }: Props) {
+  // suara surat jatuh dan menutup, apa pun cara menutupnya (X, klik latar, Esc)
+  const prev = useRef<Gift | null>(null)
+  useEffect(() => {
+    if (gift && !prev.current) audio.playSfx('paperDrop', { delay: 0.05 })
+    else if (!gift && prev.current) audio.playSfx('paperClose')
+    prev.current = gift
+  }, [gift])
+
   useEffect(() => {
     if (!gift) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -56,7 +65,7 @@ export function LetterModal({ gift, onClose }: Props) {
             <div className="letter-envelope">
               <Envelope color={gift.color} />
             </div>
-            <button type="button" className="letter-close" onClick={onClose} aria-label="Tutup surat">
+            <button type="button" data-sfx="none" className="letter-close" onClick={onClose} aria-label="Tutup surat">
               <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden>
                 <path d="M6 6 L20 20 M20 6 L6 20" stroke="#fff" strokeWidth="4.2" strokeLinecap="round" />
               </svg>

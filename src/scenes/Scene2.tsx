@@ -25,6 +25,7 @@ export function Scene2({ onDone }: Props) {
   const [leaving, setLeaving] = useState(false)
   useLoop('wind', { enabled: !leaving, fadeIn: 1.8, fadeOut: 2 })
   useSequence(async (seq) => {
+    seq.sfx('planeFlyby', { delay: 0.3 }) // pesawat meluncur masuk (animasi mulai di 0,3 s)
     await seq.wait(5.6)
     if (seq.dead) return
     setLeaving(true)

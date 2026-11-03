@@ -34,6 +34,7 @@ export function GiftHotspot({ gift, opened, index, disabled, onOpen }: Props) {
       <motion.button
         type="button"
         data-sfx="gift"
+        data-sfx-hover="giftHover"
         className={`gift-btn ${opened ? 'is-opened' : ''}`}
         aria-label={`Buka kado dari ${gift.name}${opened ? ' (sudah dibuka)' : ''}`}
         disabled={disabled}

@@ -9,7 +9,7 @@ import { Baggage, bagHeight } from '../components/Baggage'
 import { TvPlayer } from '../components/TvPlayer'
 import type { TvStatus } from '../components/TvPlayer'
 import { GASING_ASPECT, IMG, WIDE } from '../config'
-import { useLoop } from '../audio/audio'
+import { audio, useLoop } from '../audio/audio'
 import { useSequence } from '../hooks/useSequence'
 
 const F = WIDE.f
@@ -96,11 +96,13 @@ export function Scene5({ onBack, onVideoPlaying }: Props) {
     if (seq.dead) return
     setGState('idle')
     setTvOn(true) // layar menyala: kedip lalu terang
+    seq.sfx('tvFlicker') // 4 tik elektrik mengikuti keyframe tvOn, lalu dengung menyala
     await seq.wait(1.4)
     if (seq.dead) return
 
     // zoom ke TV hingga bingkai memenuhi layar
     const ease = [0.5, 0, 0.25, 1] as const
+    seq.sfx('zoomIn')
     await Promise.all([
       seq.to(sc, TV_ZOOM, { duration: 2.2, ease }),
       seq.to(tx, TV_FRAME_CENTER.x - TV_CENTER.x * TV_ZOOM, { duration: 2.2, ease }),
@@ -108,9 +110,12 @@ export function Scene5({ onBack, onVideoPlaying }: Props) {
     ])
     if (seq.dead) return
     setPhase('tv')
+    seq.sfx('pop') // bingkai TV layar penuh muncul
   }, [])
 
   const handleStatus = (s: TvStatus) => {
+    if (s === 'ended' && status !== 'ended') audio.playSfx('fanfare', { delay: 0.25, scope: 'scene' }) // kartu penutup + konfeti
+    if (s === 'missing' && status !== 'missing') audio.playSfx('oops', { scope: 'scene' })
     setStatus(s)
     onVideoPlaying(s === 'playing')
   }
@@ -131,7 +136,7 @@ export function Scene5({ onBack, onVideoPlaying }: Props) {
           <line ref={line} stroke="#1c1a33" strokeWidth="5" strokeLinecap="round" />
         </svg>
 
-        <GasingSprite src={IMG.gasing} width={GW} height={GH} x={gx} y={gy} state={gState} />
+        <GasingSprite src={IMG.gasing} width={GW} height={GH} x={gx} y={gy} state={gState} popSfx="surprise" />
 
         {/* tanda seru "kaget" */}
         <motion.div className="abs-zero" style={{ x: gx, y: gy }} aria-hidden>
@@ -186,6 +191,7 @@ export function Scene5({ onBack, onVideoPlaying }: Props) {
                       type="button"
                       className="end-replay"
                       onClick={() => {
+                        audio.playSfx('whooshSoft')
                         setStatus('idle')
                         setReplayKey((k) => k + 1)
                       }}

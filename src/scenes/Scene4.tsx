@@ -37,6 +37,7 @@ interface Props {
 /** Scene 4: bandara, Gasing mengambil koper dari ban berjalan lalu berjalan ke kanan (kamera ikut bergeser). */
 export function Scene4({ onDone }: Props) {
   useLoop('airport', { fadeIn: 2, fadeOut: 1.5 })
+  useLoop('belt', { fadeIn: 1, fadeOut: 1.2 }) // ban berjalan (CSS) berputar selama scene ini
   const cam = useMotionValue(0)
   const worldX = useTransform(cam, (v) => -v)
 
@@ -50,6 +51,8 @@ export function Scene4({ onDone }: Props) {
   const srot = useMotionValue(0)
   const follow = useRef(false)
   const [carried, setCarried] = useState(false)
+  // roda koper hanya terdengar saat koper ditarik berjalan
+  useLoop('wheels', { enabled: carried && gState === 'walk', fadeIn: 0.5, fadeOut: 0.6 })
 
   useAnimationFrame((_, delta) => {
     if (!follow.current) return
@@ -102,9 +105,12 @@ export function Scene4({ onDone }: Props) {
       sy.set(BELT_Y + (FLOOR_Y - 6 - BELT_Y) * v - 470 * Math.sin(Math.PI * v))
       srot.set(-360 * v)
     })
+    seq.sfx('hopUp')
     await seq.to(hop, 1, { duration: 1.0, ease: [0.3, 0, 0.6, 1] })
     unsub()
     if (seq.dead) return
+    seq.sfx('thud') // koper mendarat di lantai
+    seq.sfx('clip', { delay: 0.15 }) // tali terpasang ke Gasing
     srot.set(0)
     follow.current = true
     setCarried(true)

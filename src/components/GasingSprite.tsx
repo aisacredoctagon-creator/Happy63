@@ -1,5 +1,8 @@
 import { motion } from 'framer-motion'
 import type { MotionValue } from 'framer-motion'
+import { useEffect } from 'react'
+import { audio } from '../audio/audio'
+import type { SfxName } from '../audio/audio'
 
 export type GasingState = 'idle' | 'walk' | 'ready' | 'pop'
 
@@ -12,13 +15,30 @@ interface Props {
   x: MotionValue<number>
   y: MotionValue<number>
   state: GasingState
+  /** bunyi saat state 'pop' (bawaan: boing) */
+  popSfx?: SfxName
 }
+
+/** satu hentakan langkah per siklus gWalk (0,46 s di index.css) */
+const STEP_MS = 460
 
 /**
  * Gasing sebagai sprite terpisah: bobbing/jalan, bayangan di lantai, dan pantulan.
+ * Suara mengikuti state: langkah tiap siklus jalan, squish saat 'ready', boing saat 'pop'.
  * TODO: ganti `src` dengan sprite Gasing final (PNG transparan) bila sudah tersedia.
  */
-export function GasingSprite({ src, width, height, x, y, state }: Props) {
+export function GasingSprite({ src, width, height, x, y, state, popSfx = 'boing' }: Props) {
+  useEffect(() => {
+    if (state === 'walk') {
+      const id = setInterval(() => audio.playSfx('step', { scope: 'scene' }), STEP_MS)
+      return () => clearInterval(id)
+    }
+    const once: SfxName | null = state === 'pop' ? popSfx : state === 'ready' ? 'squish' : null
+    if (!once) return
+    const id = setTimeout(() => audio.playSfx(once, { scope: 'scene' }), 40)
+    return () => clearTimeout(id)
+  }, [state, popSfx])
+
   return (
     <motion.div className="gasing" style={{ x, y }}>
       <div className="g-shadow" style={{ width: width * 0.78, left: -width * 0.39 }}>
