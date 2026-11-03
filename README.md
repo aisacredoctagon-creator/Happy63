@@ -19,7 +19,7 @@ Hanya saat `npm run dev`: tambahkan `?scene=scene3` (atau `scene2`, `scene4`, `s
 | Isi surat (9 kado), nama provinsi, warna, posisi kado (%) | `src/data/gifts.ts` |
 | Judul surat ("Untuk Prof. Yohanes Surya") | `LETTER_TITLE` di `src/data/gifts.ts` |
 | Video ucapan | `public/assets/video/ucapan.mp4` (timpa file; jika belum ada tampil "Video segera hadir") |
-| Audio (SFX klik/kado, ambient, musik) | `public/assets/audio/` - daftar nama file di `AUDIO_CREDITS.md` |
+| Audio (SFX, ambient, musik) | Sudah berbunyi lewat sintesis bawaan (`src/audio/synth.ts`). File asli opsional di `public/assets/audio/` + `manifest.json` - lihat `AUDIO_CREDITS.md` |
 | Teks penutup di Scene 5 | `src/scenes/Scene5.tsx` (blok `end-card`) |
 
 ## Struktur
@@ -55,7 +55,8 @@ Semua penanda `TODO: ganti dengan sprite terpisah` ada di kode. Ganti dengan men
 - Animasi hanya memakai `transform`/`opacity`; semua gambar di-preload di layar loading bertema gasing (mainan gasing).
 - `prefers-reduced-motion`: loop dimatikan, zoom besar dan transisi awan diganti fade singkat.
 - Scene 1 memakai gambar kabin yang diperpanjang ke 16:9 (pita atas/bawah dibuat otomatis); Scene 4/5 adalah panorama yang digeser kameranya.
-- Audio lewat satu pengelola (`src/audio/audio.ts`): terbuka setelah klik "Mulai Perjalanan" (aturan autoplay), tombol mute di pojok kanan bawah, ambient diredam saat video ucapan diputar. Musik hanya di scene kado dan fade out saat Mendarat.
+- Audio lewat satu pengelola (`src/audio/audio.ts`): terbuka setelah klik "Mulai Perjalanan" (aturan autoplay), tombol mute dan panel volume (Efek/Suasana/Musik) di pojok kanan bawah, ambient diredam saat video ucapan diputar. Musik hanya di scene kado dan fade out saat Mendarat.
+- SFX dibuat prosedural (`src/audio/synth.ts`) dan dipicu tepat pada keyframe lewat `seq.sfx()` di alur animasi, atau `data-sfx` pada tombol. Cara menambah SFX baru dan menimpa dengan file asli: `AUDIO_CREDITS.md`.
 - Sprite kabin/kado/koper/maskot diproses dari `aset proyek/` oleh `npm run assets:v2` (`tools/process-assets-v2.mjs`).
 
 ## Cara membuka

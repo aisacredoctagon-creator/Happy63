@@ -72,7 +72,8 @@ export function TvPlayer({ active, status, onStatus, replayKey }: Props) {
         onClick={toggle}
         onPlay={() => {
           if (missing.current) return
-          audio.playSfx('play', { scope: 'scene' })
+          // sedikit tunda: bila file video ternyata tidak ada, onError menyusul dan "play" tidak perlu berbunyi
+          setTimeout(() => !missing.current && audio.playSfx('play', { scope: 'scene' }), 150)
           onStatus('playing')
         }}
         onPause={() => {
