@@ -1,9 +1,54 @@
 {
-  "_catatan": "Daftar audio yang diproses scripts/normalize-audio.mjs. name = kunci di manifest.json (nama SFX/loop di kode); src = file sumber relatif ke 'aset proyek/' (dicadangkan otomatis ke 'aset proyek/original/'); out = nama file hasil di public/assets/audio/; category = ambience | sfx | music (kunci targetLufs di src/audio/levels.json; tingkat volume saat diputar diatur di src/audio/mix.ts); trim = potong senyap di awal/akhir; trimDb = ambang senyap (dB). SFX baru: taruh file di 'aset proyek/', tambahkan satu entri di sini, jalankan npm run audio.",
+  "_catatan": "Daftar audio yang diproses scripts/normalize-audio.mjs. name = kunci di manifest.json (nama SFX/loop di kode); src = file sumber relatif ke 'aset proyek/' (dicadangkan otomatis ke 'aset proyek/original/'); out = nama file hasil di public/assets/audio/; category = ambience | sfx | music (kunci targetLufs di src/audio/levels.json; tingkat volume saat diputar diatur di src/audio/mix.ts); targetLufs (opsional) = menimpa target kategori untuk item itu; trim = potong senyap di awal/akhir; trimDb = ambang senyap (dB). SFX baru: taruh file di 'aset proyek/', tambahkan satu entri di sini, jalankan npm run audio.",
   "items": [
-    { "name": "cabin", "src": "inside airplane ambience 2.mp3", "out": "amb-cabin.m4a", "category": "ambience", "trim": "both", "trimDb": -45 },
-    { "name": "airport", "src": "Airport Ambience.wav", "out": "amb-airport.m4a", "category": "ambience", "trim": "both", "trimDb": -60 },
-    { "name": "paperDrop", "src": "Flip page.mp3", "out": "sfx-paperDrop.m4a", "category": "sfx", "trim": "both", "trimDb": -50 },
-    { "name": "airplaneChimes", "src": "airplane chimes.mp3", "out": "sfx-airplaneChimes.m4a", "category": "sfx", "trim": "both", "trimDb": -50 }
+    {
+      "name": "cabin",
+      "src": "inside airplane ambience 2.mp3",
+      "out": "amb-cabin.m4a",
+      "category": "ambience",
+      "trim": "both",
+      "trimDb": -45
+    },
+    {
+      "name": "airport",
+      "src": "Airport Ambience.wav",
+      "out": "amb-airport.m4a",
+      "category": "ambience",
+      "trim": "both",
+      "trimDb": -60
+    },
+    {
+      "name": "paperDrop",
+      "src": "Flip page.mp3",
+      "out": "sfx-paperDrop.m4a",
+      "category": "sfx",
+      "trim": "both",
+      "trimDb": -50
+    },
+    {
+      "name": "airplaneChimes",
+      "src": "airplane chimes.mp3",
+      "out": "sfx-airplaneChimes.m4a",
+      "category": "sfx",
+      "trim": "both",
+      "trimDb": -50
+    },
+    {
+      "name": "whooshSoft",
+      "src": "whoosh.mp3",
+      "out": "sfx-whooshSoft.m4a",
+      "category": "sfx",
+      "trim": "both",
+      "trimDb": -50
+    },
+    {
+      "name": "wheels",
+      "src": "suitcase rolling.mp3",
+      "out": "amb-wheels.m4a",
+      "category": "ambience",
+      "targetLufs": -26,
+      "trim": "both",
+      "trimDb": -45
+    }
   ]
 }

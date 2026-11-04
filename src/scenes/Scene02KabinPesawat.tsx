@@ -299,7 +299,7 @@ export function Scene02KabinPesawat({ onDone }: Props) {
     await seq.wait(2.4) // 02a Fade dari Hitam: fade-in dari hitam + jeda ~2 detik
     if (seq.dead) return
     const ease = [0.22, 1, 0.36, 1] as const // ease-out
-    seq.sfx('zoomOut') // 02b Zoom Keluar: kamera menarik mundur dari Gasing
+    // 02b Zoom Keluar: kamera menarik mundur dari Gasing (tanpa SFX)
     await Promise.all([
       seq.to(zoom, 1, { duration: 3.6, ease }),
       seq.to(tx, 0, { duration: 3.6, ease }),

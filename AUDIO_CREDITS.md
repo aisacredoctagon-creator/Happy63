@@ -4,8 +4,8 @@ Semua audio dikelola satu modul: `src/audio/audio.ts` (manager, volume, mute, po
 
 Ada dua jenis sumber suara:
 
-- **File** (`public/assets/audio/`, didaftarkan di `manifest.json`): musik, ambience kabin dan bandara, `paperDrop`, dan `airplaneChimes`.
-- **Sintesis** (dibuat dari osilator/noise lewat Web Audio API): semua SFX lain, ambience `wind` dan `wheels`, serta cadangan bila sebuah file hilang atau rusak. Tanpa file, tanpa lisensi, tanpa biaya loading.
+- **File** (`public/assets/audio/`, didaftarkan di `manifest.json`): musik, ambience kabin dan bandara, loop roda koper (`wheels`), `paperDrop`, `whooshSoft`, dan `airplaneChimes`.
+- **Sintesis** (dibuat dari osilator/noise lewat Web Audio API): semua SFX lain, ambience `wind`, serta cadangan bila sebuah file hilang atau rusak. Tanpa file, tanpa lisensi, tanpa biaya loading.
 
 ## Hierarki volume
 
@@ -21,6 +21,7 @@ Diatur di **satu tempat**: `VOLUME` di `src/audio/mix.ts` (dalam dB; 0 = level h
 
 - **Tiap SFX wajib punya `tier`** di registrasinya (`synth.ts`; TypeScript menolak SFX tanpa tier), jadi SFX baru otomatis mengikuti gain tingkatnya.
 - **Batas SFX kecil:** paling banyak 4 SFX `minor` berbunyi bersamaan (`MAX_CONCURRENT` di `mix.ts`); yang berprioritas 2 (mis. awan, `takeoff`) tetap lolos. Total maksimum 14 suara.
+- **Penyesuaian per SFX:** `trimDb` di registrasi SFX (`synth.ts`) menambah/mengurangi gain satu SFX di atas tingkatnya, tanpa menyentuh file. Dipakai oleh `paperDrop` (-7,5 dB: sebelumnya 0 dB, efektif -16 LUFS; sekarang efektif sekitar -23,5 LUFS). `paperDrop` hanya dipakai di satu tempat (surat di Scene 04, semua 8 kado), jadi perubahan berlaku di seluruh pemakaiannya.
 - **Variasi:** SFX yang sering berulang (`click`, `hover`, `tick`, `pop`, `giftHover`, `step`, `boing`) bervariasi acak ±5% pada pitch dan volume (`MAX_VARY`), tetap di dalam batas tingkatnya.
 - **Pengaman puncak:** soft-clipper di keluaran meloloskan sinyal di bawah -3 dBFS apa adanya dan melunakkan puncak di atasnya (misalnya saat `key` +3 dB bertumpuk dengan suara lain). `DynamicsCompressor` bawaan browser sengaja tidak dipakai karena menekan SFX pendek ±10 dB.
 - Suara yang puncaknya tinggi (`tvFlicker`, `tvOn`, `surprise`, `fanfare`) tidak bisa dinaikkan sampai level acuan tanpa clipping, jadi sedikit lebih pelan dari tingkatnya.
@@ -40,7 +41,9 @@ Diatur di **satu tempat**: `VOLUME` di `src/audio/mix.ts` (dalam dB; 0 = level h
 | `music` | `music-gasing-loop.mp3` | Scene 04 - Peta Kado (fade out saat Mendarat) | `2b. Coba Soal Gasing Loop.mp3` | Tidak di-encode ulang. |
 | `cabin` | `amb-cabin.m4a` | Scene 02 - Kabin Pesawat (loop) | `inside airplane ambience 2.mp3` | -22 LUFS; senyap awal/akhir dipotong; loop diberi crossfade 1,5 s. |
 | `airport` | `amb-airport.m4a` | Scene 05 - Bandara Bagasi dan Scene 06-08 (loop) | `Airport Ambience.wav` | -22 LUFS; WAV 11,4 MB menjadi AAC 1,0 MB; crossfade 2 s. |
-| `paperDrop` | `sfx-paperDrop.m4a` | Scene 04, surat jatuh (04b) | `Flip page.mp3` | -16 LUFS; dipotong 113 ms awal dan 223 ms akhir; puncak suara ~0,25 s. |
+| `paperDrop` | `sfx-paperDrop.m4a` | Scene 04, surat jatuh (04b) | `Flip page.mp3` | -16 LUFS; dipotong 113 ms awal dan 223 ms akhir; puncak suara ~0,25 s. Diputar **-7,5 dB** lewat `trimDb` (lihat di bawah). |
+| `whooshSoft` | `sfx-whooshSoft.m4a` | 02c (Scene 02 ke 03), Mulai Ulang (Scene 04), Putar ulang video (Scene 08) | `whoosh.mp3` | -16 LUFS; dipotong 68 ms awal dan 210 ms akhir (0,57 s menjadi 0,30 s). Tingkat `minor`. |
+| `wheels` | `amb-wheels.m4a` | Scene 05 (05c), loop roda koper hanya saat koper ditarik berjalan | `suitcase rolling.mp3` | Dinormalisasi ke **-26 LUFS** (setara tingkat `minor`, lebih ringan dari ambience); dipotong 49 ms awal dan 27 ms akhir; loop diberi crossfade 1 s. |
 | `airplaneChimes` | `sfx-airplaneChimes.m4a` | Scene 02 (02b), denting pramugari | `airplane chimes.mp3` | -16 LUFS (tingkat `main`); dua denting (~2,2 s), sekali per kunjungan pada detik ke-3,4. |
 
 Format `.m4a` (AAC) dipilih karena ringan dan didukung semua browser; titik awalnya akurat (latensi awal < 5 ms, sudah diuji).
@@ -50,9 +53,8 @@ Format `.m4a` (AAC) dipilih karena ringan dan didukung semua browser; titik awal
 | Nama | Dipakai di | Keterangan |
 | --- | --- | --- |
 | `wind` | Scene 03 - Pesawat di Langit | angin |
-| `wheels` | Scene 05 (05c) | roda koper, hanya saat koper ditarik berjalan |
 
-`cabin` dan `airport` juga punya cadangan sintesis (dipakai hanya bila file-nya hilang).
+`cabin`, `airport`, dan `wheels` juga punya cadangan sintesis (dipakai hanya bila file-nya hilang).
 
 ## Menambah atau mengganti suara dengan file
 
@@ -73,7 +75,7 @@ Script butuh **ffmpeg** (di PATH, atau set variabel `FFMPEG` ke lokasi `ffmpeg.e
 
 | Tingkat | SFX |
 | --- | --- |
-| **minor** | `click`, `hover`, `tick`, `pop`, `toggleOn`, `giftHover`, `play`, `pause`, `zoomOut`, `zoomIn`, `whooshSoft`, `planeFlyby`, `cloudWhoosh`, `cloudSoft`, `paperClose`, `takeoff`, `step` |
+| **minor** | `click`, `hover`, `tick`, `pop`, `toggleOn`, `giftHover`, `play`, `pause`, `zoomIn`, `whooshSoft`, `planeFlyby`, `cloudWhoosh`, `cloudSoft`, `paperClose`, `takeoff`, `step` |
 | **main** | `paperDrop` (file), `airplaneChimes` (file), `hopUp`, `thud`, `boing`, `surprise`, `tvFlicker`, `tvOn`, `oops` |
 | **key** | `start`, `reward`, `fanfare` |
 
@@ -86,12 +88,12 @@ Script butuh **ffmpeg** (di PATH, atau set variabel `FFMPEG` ke lokasi `ffmpeg.e
 | `toggleOn` | suara dinyalakan kembali |
 | `giftHover` | hover kado |
 | `play` / `pause` | putar / jeda video |
-| `zoomOut` / `zoomIn` | zoom kamera 02b / zoom ke TV 06d |
-| `whooshSoft` | crossfade 02c (Scene 02 ke 03), Mulai Ulang, Putar ulang video |
+| `zoomIn` | zoom ke TV 06d (zoom kamera 02b tanpa SFX) |
+| `whooshSoft` | crossfade 02c (Scene 02 ke 03), Mulai Ulang, Putar ulang video (file) |
 | `planeFlyby` | pesawat masuk di 03a |
 | `cloudWhoosh` / `cloudSoft` | transisi awan (masuk, menutup) |
 | `takeoff` | pesawat lepas landas (04d) |
-| `paperDrop` | surat jatuh (file) |
+| `paperDrop` | surat jatuh (file, -7,5 dB) |
 | `paperClose` | surat ditutup (X, Esc, klik latar) |
 | `step` | langkah Gasing (tiap siklus jalan, 0,46 s) |
 | `hopUp` / `thud` | koper melompat, mendarat |

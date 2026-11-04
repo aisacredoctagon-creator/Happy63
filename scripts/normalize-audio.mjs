@@ -38,13 +38,19 @@ function ffmpeg(args, { binary = false } = {}) {
   return { stderr: String(r.stderr), stdout: r.stdout, status: r.status }
 }
 
-/** ukur loudness terintegrasi (LUFS), true peak (dBTP), dan LRA dari file setelah rantai filter `chain` */
-function measure(file, chain = '') {
-  const af = [chain, 'ebur128=peak=true:framelog=quiet'].filter(Boolean).join(',')
+/**
+ * ukur loudness terintegrasi (LUFS), true peak (dBTP), dan LRA dari file setelah rantai filter `chain`.
+ * ebur128 butuh minimal 400 ms: klip yang lebih pendek (`clipSec`) di-pad ke 400 ms lalu dikoreksi ke rata-rata energi selama
+ * durasi klipnya sendiri (sama dengan cara kalibrasi SFX sintesis).
+ */
+function measure(file, chain = '', clipSec = 0) {
+  const short = clipSec > 0 && clipSec < 0.4
+  const af = [chain, short ? 'apad=whole_dur=0.4' : '', 'ebur128=peak=true:framelog=quiet'].filter(Boolean).join(',')
   const { stderr } = ffmpeg(['-i', file, '-af', af, '-f', 'null', '-'])
   const sum = stderr.slice(stderr.lastIndexOf('Summary:'))
   const num = (re) => Number(re.exec(sum)?.[1])
-  return { I: num(/I:\s+(-?[\d.]+) LUFS/), LRA: num(/LRA:\s+([\d.]+) LU/), TP: num(/Peak:\s+(-?[\d.]+) dBFS/) }
+  const I = num(/I:\s+(-?[\d.]+) LUFS/) + (short ? 10 * Math.log10(0.4 / clipSec) : 0)
+  return { I, LRA: num(/LRA:\s+([\d.]+) LU/), TP: num(/Peak:\s+(-?[\d.]+) dBFS/) }
 }
 
 /** durasi persis (detik) setelah rantai filter, dengan menghitung sampel */
@@ -76,7 +82,7 @@ function backup(item) {
 }
 
 function process_(item) {
-  const target = levels.targetLufs[item.category]
+  const target = item.targetLufs ?? levels.targetLufs[item.category]
   if (target === undefined) throw new Error(`Kategori tidak dikenal: ${item.category}`)
   const src = backup(item)
   // sumber mono diputar browser ke L = R (amplitudo penuh di kedua speaker, +3 LU): ukur dan encode sebagai stereo identik
@@ -87,7 +93,8 @@ function process_(item) {
   const durRaw = duration(src)
   const durHead = duration(src, item.trim === 'tail' ? '' : headChain(item.trimDb ?? -50))
   const durTrim = duration(src, chain)
-  const post = measure(src, chain)
+  const post = measure(src, chain, durTrim)
+  if (!(post.I > -60)) throw new Error(`Loudness ${item.name} tidak terukur (${post.I} LUFS): file terlalu pendek atau senyap?`)
   const headMs = (durRaw - durHead) * 1000
   const tailMs = (durHead - durTrim) * 1000
 
@@ -100,7 +107,7 @@ function process_(item) {
     const af = [chain, `volume=${gain.toFixed(2)}dB`, `alimiter=limit=${dbToLin(ceil).toFixed(4)}:attack=3:release=40:level=false`].filter(Boolean).join(',')
     const r = ffmpeg(['-i', src, '-af', af, '-c:a', 'aac', '-b:a', mono ? '96k' : '128k', '-ar', '44100', '-map_metadata', '-1', '-movflags', '+faststart', tmp])
     if (r.status !== 0) throw new Error(`ffmpeg gagal untuk ${item.name}:\n${r.stderr.slice(-600)}`)
-    fin = measure(tmp)
+    fin = measure(tmp, '', durTrim)
     const dI = target - fin.I
     const dTP = fin.TP - TP_MAX
     if (Math.abs(dI) <= 0.3 && dTP <= 0.05) break

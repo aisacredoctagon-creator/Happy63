@@ -68,20 +68,20 @@ Elemen yang tampil di semua scene dan tidak diberi nomor: tombol suara dan panel
 
 Waktu dihitung dari saat scene tampil dan bersifat kira-kira. Detail tiap SFX: `AUDIO_CREDITS.md`.
 
-Tingkat volume (diatur di `src/audio/mix.ts`): **minor** (pelan, ±10 dB di bawah utama) = `click`, `hover`, `tick`, `pop`, `toggleOn`, `giftHover`, `play`, `pause`, `zoomOut`, `zoomIn`, `whooshSoft`, `planeFlyby`, `cloudWhoosh`, `cloudSoft`, `paperClose`, `takeoff`, `step`; **main** (sedang) = `paperDrop`, `airplaneChimes`, `hopUp`, `thud`, `boing`, `surprise`, `tvFlicker`, `tvOn`, `oops`; **key** (paling menonjol) = `start`, `reward`, `fanfare`; loop (`cabin`, `airport`, `wind`, `wheels`) = ambience, latar yang datar.
+Tingkat volume (diatur di `src/audio/mix.ts`): **minor** (pelan, ±10 dB di bawah utama) = `click`, `hover`, `tick`, `pop`, `toggleOn`, `giftHover`, `play`, `pause`, `zoomIn`, `whooshSoft`, `planeFlyby`, `cloudWhoosh`, `cloudSoft`, `paperClose`, `takeoff`, `step`; **main** (sedang) = `paperDrop`, `airplaneChimes`, `hopUp`, `thud`, `boing`, `surprise`, `tvFlicker`, `tvOn`, `oops`; **key** (paling menonjol) = `start`, `reward`, `fanfare`; loop (`cabin`, `airport`, `wind`, `wheels`) = ambience, latar yang datar.
 
 | Scene | SFX (urutan) |
 | --- | --- |
 | 01 Layar Pembuka | `hover`, `start` (klik Mulai Perjalanan) |
-| 02 Kabin Pesawat | loop `cabin` (file); 02b: `zoomOut` (2,4 s); `airplaneChimes` (3,4 s, sekali per kunjungan, dua denting ~2,2 s); 02c: `whooshSoft` |
+| 02 Kabin Pesawat | loop `cabin` (file); `airplaneChimes` (3,4 s, sekali per kunjungan, dua denting ~2,2 s); 02c: `whooshSoft` (file); zoom keluar 02b tanpa SFX |
 | 03 Pesawat di Langit | loop `wind`; 03a: `planeFlyby` (0,3 s); 03c: `cloudWhoosh`, lalu `cloudSoft` (+1,1 s) |
-| 04 Peta Kado | loop `music`; 04a: `pop` (0,9 s dan 1,3 s); 04b: `giftHover`, `paperDrop` (file, saat kado diklik), `paperClose`; 04c: `reward` (Mendarat muncul), `whooshSoft` (Mulai Ulang); 04d: `takeoff`; 04e: `cloudWhoosh`, `cloudSoft` |
-| 05 Bandara Bagasi | loop `airport` (file); 05a: `step` tiap 0,46 s; 05b: `hopUp`, `thud`, `boing`; 05c: `step`, loop `wheels` |
+| 04 Peta Kado | loop `music`; 04a: `pop` (0,9 s dan 1,3 s); 04b: `giftHover`, `paperDrop` (file, -7,5 dB, saat kado diklik), `paperClose`; 04c: `reward` (Mendarat muncul), `whooshSoft` (Mulai Ulang); 04d: `takeoff`; 04e: `cloudWhoosh`, `cloudSoft` |
+| 05 Bandara Bagasi | loop `airport` (file); 05a: `step` tiap 0,46 s; 05b: `hopUp`, `thud`, `boing`; 05c: `step`, loop `wheels` (file `suitcase rolling`, mulai/berhenti bersama Gasing berjalan menarik koper) |
 | 06 Gasing Melihat TV | loop `airport`; `pop` (tombol Kembali); 06a: `step`; 06b: `surprise`; 06c: `tvFlicker` (lalu `tvOn`); 06d: `zoomIn`; `pop` (bingkai TV) |
 | 07 Video Ucapan | 07a: `play` / `pause`, `tick` (slider volume); 07b: `oops`; 07c: `click`, `cloudWhoosh`, `cloudSoft` |
 | 08 Kartu Penutup | 08a: `fanfare`; 08b: `whooshSoft` (Putar ulang) |
 
-Tombol suara (`hover`, `click`, `tick`, `toggleOn`) berlaku di semua scene. SFX `chimeAir`, `gift`, `check`, `squish`, `clip`, dan loop `belt` sudah dihapus (atas feedback); gerak koper dan Gasing tetap punya suara lewat `hopUp`, `thud`, `boing`, dan `step`.
+Tombol suara (`hover`, `click`, `tick`, `toggleOn`) berlaku di semua scene. SFX `chimeAir`, `gift`, `check`, `squish`, `clip`, `zoomOut`, dan loop `belt` sudah dihapus (atas feedback); gerak koper dan Gasing tetap punya suara lewat `hopUp`, `thud`, `boing`, dan `step`.
 
 ## Alat bantu debug (hanya `npm run dev`, tidak ikut build final)
 

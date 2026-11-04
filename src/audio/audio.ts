@@ -243,7 +243,7 @@ class AudioManager {
     const file = this.sfxFiles.get(name)
     const voice = ctx.createGain()
     // file sudah dinormalisasi ke target kategorinya (gain 1); resep sintesis memakai def.vol hasil kalibrasi
-    voice.gain.value = (file ? 1 : def.vol) * tierGain(def.tier) * level * (opts.volume ?? 1)
+    voice.gain.value = (file ? 1 : def.vol) * tierGain(def.tier) * lin(def.trimDb ?? 0) * level * (opts.volume ?? 1)
     voice.connect(bus)
 
     if (file) {

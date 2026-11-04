@@ -9,7 +9,7 @@ import type { Tier } from './mix'
 
 export type SfxName =
   | 'click' | 'hover' | 'tick' | 'pop' | 'start' | 'toggleOn'
-  | 'zoomOut' | 'zoomIn' | 'whooshSoft' | 'planeFlyby'
+  | 'zoomIn' | 'whooshSoft' | 'planeFlyby'
   | 'cloudWhoosh' | 'cloudSoft'
   | 'giftHover' | 'paperDrop' | 'paperClose' | 'reward' | 'takeoff'
   | 'step' | 'hopUp' | 'thud' | 'boing' | 'surprise'
@@ -31,6 +31,8 @@ export interface SynthCtx {
 export interface SfxDef {
   /** tingkat prioritas volume (minor/main/key): gain-nya diatur di mix.ts */
   tier: Tier
+  /** penyesuaian gain per SFX (dB) di atas tingkatnya, berlaku untuk file maupun sintesis; negatif = lebih pelan */
+  trimDb?: number
   play: (c: SynthCtx) => void
   /** perkiraan lama bunyi (detik), untuk menghitung polifoni */
   dur: number
@@ -152,7 +154,6 @@ export const SFX: Record<SfxName, SfxDef> = {
   },
 
   // --- whoosh / transisi ---
-  zoomOut: { tier: 'minor', dur: 1.9, vol: 6.107, max: 1, play: (c) => air(c, { f: 2200, f2: 500, q: 0.8, dur: 1.8, gain: 0.22, attack: 0.5 }) },
   zoomIn: { tier: 'minor', dur: 2.1, vol: 7.399, max: 1, play: (c) => air(c, { f: 350, f2: 2600, q: 0.8, dur: 2.0, gain: 0.22, attack: 1.2 }) },
   whooshSoft: { tier: 'minor', dur: 0.9, vol: 13.301, max: 2, play: (c) => air(c, { f: 500, f2: 1600, q: 0.7, dur: 0.8, gain: 0.16, attack: 0.3 }) },
   planeFlyby: {
@@ -179,7 +180,7 @@ export const SFX: Record<SfxName, SfxDef> = {
     },
   },
   paperDrop: {
-    tier: 'main', dur: 0.5, vol: 2.771, max: 1,
+    tier: 'main', trimDb: -7.5, dur: 0.5, vol: 2.771, max: 1,
     play: (c) => {
       air(c, { type: 'highpass', f: 1000, dur: 0.28, gain: 0.18, attack: 0.12 })
       osc(c, { f: 150, f2: 70, dur: 0.2, gain: 0.3, at: 0.22 })
@@ -350,7 +351,7 @@ function fillLoop(name: SynthLoopName, d: Float32Array, sr: number, seed: number
 }
 
 /** puncak sampel tiap loop sintesis; hasil kalibrasi ke target ambience di levels.json (scripts/measure-synth-levels.js) */
-const LOOP_PEAK: Record<SynthLoopName, number> = { cabin: 0.3203, wind: 0.3698, airport: 0.2433, wheels: 0.356 }
+const LOOP_PEAK: Record<SynthLoopName, number> = { cabin: 0.3203, wind: 0.3698, airport: 0.2433, wheels: 0.2247 }
 
 /** buffer ambient stereo 8 detik (belum diberi crossfade sambungan) */
 export function synthLoop(ctx: AudioContext, name: SynthLoopName): AudioBuffer {
