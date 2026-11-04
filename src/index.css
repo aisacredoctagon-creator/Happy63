@@ -1969,7 +1969,7 @@ button {
   bottom: calc(28px + var(--crop-y, 0px));
 }
 .audio-toggle {
-  right: calc(30px + var(--crop-x, 0px));
+  right: calc(120px + var(--crop-x, 0px));
   bottom: calc(26px + var(--crop-y, 0px));
 }
 /* matahari pada peta Pulau.png ada di sekitar (1590,150) px gambar -> (1826,172) px kanvas */
@@ -2137,10 +2137,10 @@ button {
   transform-origin: 50% 90%;
   filter: var(--soft-shadow-drop);
 }
-/* ============ tombol layar penuh (di kiri tombol suara) ============ */
+/* ============ tombol layar penuh (pojok kanan bawah, di kanan tombol suara) ============ */
 .fs-toggle {
   position: absolute;
-  right: calc(120px + var(--crop-x, 0px));
+  right: calc(30px + var(--crop-x, 0px));
   bottom: calc(26px + var(--crop-y, 0px));
   z-index: 210; /* di atas layar loading (200) supaya layar penuh bisa dinyalakan sejak awal; di bawah awan transisi (300) */
   width: 74px;
@@ -2312,8 +2312,8 @@ button {
   scale: var(--ui);
   transform-origin: right bottom;
 }
-.stage[data-compact] .fs-toggle {
-  right: calc(160px + var(--crop-x, 0px)); /* 30 + lebar tombol suara terbesar (74 x ui) + jarak */
+.stage[data-compact] .audio-toggle {
+  right: calc(160px + var(--crop-x, 0px)); /* 30 + lebar tombol layar penuh terbesar (74 x ui) + jarak */
 }
 .stage[data-compact] .top-actions-row,
 .stage[data-compact] .hint-pill {

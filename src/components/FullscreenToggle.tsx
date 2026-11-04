@@ -38,7 +38,7 @@ function Icon({ active }: { active: boolean }) {
 }
 
 /**
- * Tombol layar penuh (pojok kanan bawah, di kiri tombol suara). Memakai Fullscreen API (termasuk awalan webkit untuk
+ * Tombol layar penuh (pojok kanan bawah, di kanan tombol suara). Memakai Fullscreen API (termasuk awalan webkit untuk
  * Safari) dan mengikuti event fullscreenchange, jadi tetap sinkron saat pengguna keluar lewat Esc. Setelah masuk layar
  * penuh orientasi dikunci ke landscape bila didukung (Android). Di browser tanpa Fullscreen API (iPhone Safari)
  * tombol disembunyikan.
