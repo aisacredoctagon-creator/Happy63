@@ -591,7 +591,6 @@ button {
   position: absolute;
   left: 0;
   top: -104px;
-  translate: -50% 0;
   white-space: nowrap;
   font-family: var(--font-display);
   font-weight: 600;
@@ -602,7 +601,7 @@ button {
   border-radius: 99px;
   box-shadow: 0 8px 18px rgba(10, 60, 140, 0.35);
   opacity: 0;
-  transform: translateY(10px) scale(0.9);
+  transform: translate(-50%, 10px) scale(0.9);
   transition: opacity 0.18s, transform 0.25s cubic-bezier(0.2, 1.4, 0.4, 1);
   pointer-events: none;
   z-index: 2; /* label selalu di depan kado (kado terbuka lebih tinggi dan sebelumnya menutupi label) */
@@ -619,7 +618,7 @@ button {
 }
 .gift-tip.on {
   opacity: 1;
-  transform: translateY(0) scale(1);
+  transform: translate(-50%, 0) scale(1);
 }
 .gift-btn {
   position: absolute;
