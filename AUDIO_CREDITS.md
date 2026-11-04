@@ -57,8 +57,8 @@ Tombol not musik di pojok kanan atas Scene 04 membuka panel pilihan lagu. Daftar
 Total 74,0 MB menjadi 7,6 MB.
 
 - **Satu BGM pada satu waktu:** pilihan baru dimuat dulu, lalu crossfade 0,8 s; lagu lama berhenti setelahnya. Berganti cepat berkali-kali aman (hanya pilihan terakhir yang dipakai).
-- **Lazy-load:** hanya lagu terpilih yang diunduh dan di-decode (lagu lain baru saat dipilih); buffer lagu yang tidak dipakai dibuang dari memori.
-- **Loop mulus:** fade-out/peluruhan akhir dipotong lalu ujung lagu di-crossfade ke awalnya (2 s; 1,5 s untuk Coba Soal Gasing), dengan koreksi korelasi agar level tidak turun di sambungan. Lagu "Coba Soal Gasing" aslinya punya senyap di awal dan akhir file (jeda tiap putaran); sekarang tanpa jeda.
+- **Streaming + lazy-load:** BGM **di-stream lewat `<audio>`** (`src/audio/bgmPlayer.ts`), tidak di-decode utuh ke memori (decode lagu 3 menit ±70-80 MB PCM membuat tab iPhone dimatikan Safari). Hanya lagu terpilih yang diunduh; lagu lain baru saat dipilih. Tetap tersambung ke jalur gain manager, jadi mute, volume "Musik", dan duck berlaku.
+- **Loop mulus:** fade-out/peluruhan akhir dipotong saat konversi. Saat sisa waktu lagu tinggal 2 detik (1,5 detik untuk Coba Soal Gasing), elemen `<audio>` kedua mulai dari awal dan keduanya di-crossfade equal-power, lalu yang lama dilepas (dua elemen bergantian). Lagu "Coba Soal Gasing" aslinya punya senyap di awal dan akhir file (jeda tiap putaran); sekarang tanpa jeda.
 - **Pilihan tersimpan** di `localStorage` (`gasing-bgm`) dan berlaku di seluruh project (juga setelah pindah scene dan reload). Mute dan slider "Musik" di panel volume berlaku untuk BGM.
 - **Menambah lagu:** taruh sumbernya di `aset proyek/`, tambahkan item `{ "category": "music", "register": false, "bitrate": "192k", "trimHeadDb": -60, "trimTailDb": -32 }` di `scripts/audio-sources.json`, jalankan `npm run audio`, lalu tambahkan satu entri di `BGM_TRACKS`.
 - Cadangan WAV besar (`3a...` dan `Gasing Medley...`, total 71 MB) disimpan lokal di `aset proyek/original/` tetapi tidak di-commit (di `.gitignore`).
@@ -99,7 +99,7 @@ Script butuh **ffmpeg** (di PATH, atau set variabel `FFMPEG` ke lokasi `ffmpeg.e
 | Nama | Dipicu |
 | --- | --- |
 | `click` | semua tombol (`App.tsx`, bawaan `data-sfx`) |
-| `hover` | hover tombol "Mendarat" saja (mouse; tombol lain tidak bersuara saat di-hover) |
+| `hover` | hover tombol "Mendarat" saja, baik tombol teks (ronde 1) maupun ikon di peta (`LandIconButton`, ronde 2); mouse saja, tombol lain tidak bersuara saat di-hover |
 | `tick` | geser slider volume (panel dan TV) |
 | `pop` | tombol muncul (`PrimaryButton`), pill progres/petunjuk, bingkai TV |
 | `toggleOn` | suara dinyalakan kembali |
@@ -117,7 +117,7 @@ Script butuh **ffmpeg** (di PATH, atau set variabel `FFMPEG` ke lokasi `ffmpeg.e
 | `tvFlicker` / `tvOn` | layar TV berkedip lalu menyala |
 | `oops` | video ucapan belum ada |
 | `start` | tombol "Mulai Perjalanan" |
-| `reward` | tombol "Mendarat" muncul (8 kado terbuka) |
+| `reward` | tombol "Mendarat" muncul (semua kado terbuka; tombol teks ronde 1 atau ikon di peta ronde 2) |
 | `fanfare` | video selesai (kartu penutup, konfeti, kilau) |
 | `airplaneChimes` | denting pramugari di Scene 02 (file) |
 

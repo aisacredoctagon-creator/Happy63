@@ -3,6 +3,7 @@ import type { MotionValue } from 'framer-motion'
 import { useEffect } from 'react'
 import { audio } from '../audio/audio'
 import type { SfxName } from '../audio/audio'
+import { PartyHat } from './PartyHat'
 
 export type GasingState = 'idle' | 'walk' | 'ready' | 'pop'
 
@@ -49,6 +50,7 @@ export function GasingSprite({ src, width, height, x, y, state, popSfx = 'boing'
       </div>
       <div className={`g-body g-${state}`} style={{ width, height, left: -width / 2, top: -height }}>
         <img src={src} alt="Gasing" draggable={false} style={{ width, height }} />
+        <PartyHat />
       </div>
     </motion.div>
   )

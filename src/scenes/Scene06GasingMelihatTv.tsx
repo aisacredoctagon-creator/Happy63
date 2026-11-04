@@ -5,7 +5,7 @@
 //   Scene 08 Kartu Penutup     : 08a Konfeti dan Kartu -> 08b Putar Ulang                                   (status 'ended')
 // Tombol "Kembali ke Peta" (07c Awan Menutup ke Peta, CloudTransition) tersedia di ketiganya.
 import { AnimatePresence, motion, useAnimationFrame, useMotionValue } from 'framer-motion'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Confetti } from '../components/Confetti'
 import { GasingSprite } from '../components/GasingSprite'
 import { EdgeExtend } from '../components/EdgeExtend'
@@ -67,20 +67,12 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Pro
   const sx = useMotionValue(ENTER_X - 330)
   const sy = useMotionValue(FLOOR_Y - 6)
   const srot = useMotionValue(0)
-  const line = useRef<SVGLineElement>(null)
   useAnimationFrame((_, delta) => {
     const k = 1 - Math.exp(-delta / 1000 / 0.16)
     const target = gx.get() - 330
     const cur = sx.get()
     sx.set(cur + (target - cur) * k)
     srot.set(Math.max(-9, Math.min(9, (target - cur) / 22)))
-    const l = line.current
-    if (l) {
-      l.setAttribute('x1', String(sx.get()))
-      l.setAttribute('y1', String(sy.get() - BAG_H + 6))
-      l.setAttribute('x2', String(gx.get() - GW * 0.3))
-      l.setAttribute('y2', String(gy.get() - GH * 0.16))
-    }
   })
 
   useSequence(async (seq) => {
@@ -155,9 +147,6 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Pro
               <Baggage index={1} width={BAG_W} />
             </div>
         </motion.div>
-        <svg className="tether" width={WIDE.worldW} height={1080} aria-hidden>
-          <line ref={line} stroke="#1c1a33" strokeWidth="5" strokeLinecap="round" />
-        </svg>
 
         <GasingSprite src={IMG.gasing} width={GW} height={GH} x={gx} y={gy} state={gState} popSfx="surprise" />
 

@@ -21,6 +21,8 @@ export const IMG = {
   pesawatLangit: asset('images/scene2-plane.png'), // Scene 03
   petaBg: asset('images/scene3-bg.webp'), // Scene 04
   planeMascot: asset('images/plane-mascot.png'), // Scene 04
+  partyHat: asset('images/party-hat.svg'), // topi pesta Gasing (dari teman)
+  btnMendarat: asset('images/btn-mendarat.png'), // ikon Mendarat di peta (Scene 04, dari teman)
   bandara: asset('images/bandara.webp'), // Scene 05
   ruangTvBg: asset('images/scene5-bg.webp'), // Scene 06
   gasing: asset('images/gasing.png'),

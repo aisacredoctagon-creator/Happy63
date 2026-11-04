@@ -3,6 +3,8 @@ import type { Variants } from 'framer-motion'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AudioToggle } from './components/AudioToggle'
 import { CloudTransition } from './components/CloudTransition'
+import { FullscreenToggle } from './components/FullscreenToggle'
+import { RotateNotice } from './components/RotateNotice'
 import { Stage } from './components/Stage'
 import { PRELOAD_IMAGES } from './config'
 import { audio } from './audio/audio'
@@ -160,32 +162,34 @@ export default function App() {
 
   return (
     <>
-    <Stage overlay={cloudOverlay}>
-      <AnimatePresence custom={fade}>
-        {started && (
-          <motion.div
-            key={`${scene}-${runKey}`}
-            className="scene-layer"
-            custom={fade}
-            variants={sceneVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-          >
-            {content}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* peta (Scene 04) bisa digeser dan diisi sampai bawah di layar kotak/mobile (dari teman) */}
+      <Stage overlay={cloudOverlay} pannable={scene === 'scene04'} fillBottom={scene === 'scene04'}>
+        <AnimatePresence custom={fade}>
+          {started && (
+            <motion.div
+              key={`${scene}-${runKey}`}
+              className="scene-layer"
+              custom={fade}
+              variants={sceneVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              {content}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-
-      <AudioToggle />
-      <Scene01LayarPembuka progress={progress} ready={done} visible={!started} onStart={() => {
-          audio.unlock() // interaksi pertama: buka audio (aturan autoplay browser)
-          setStarted(true)
-        }} />
-    </Stage>
-    {/* hanya dev: label nama scene aktif + menu lompat scene (di luar Stage agar tidak ikut di-scale) */}
-    {import.meta.env.DEV && <DevSceneBadge />}
+        <AudioToggle />
+        <FullscreenToggle />
+        <Scene01LayarPembuka progress={progress} ready={done} visible={!started} onStart={() => {
+            audio.unlock() // interaksi pertama: buka audio (aturan autoplay browser)
+            setStarted(true)
+          }} />
+      </Stage>
+      <RotateNotice />
+      {/* hanya dev: label nama scene aktif + menu lompat scene (di luar Stage agar tidak ikut di-scale) */}
+      {import.meta.env.DEV && <DevSceneBadge />}
     </>
   )
 }

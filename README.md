@@ -16,11 +16,18 @@ Hanya saat `npm run dev`: label nama scene aktif di pojok kiri bawah, dan lompat
 
 | Apa | Lokasi |
 | --- | --- |
-| Isi surat (9 kado), nama provinsi, warna, posisi kado (%) | `src/data/gifts.ts` |
-| Judul surat ("Untuk Prof. Yohanes Surya") | `LETTER_TITLE` di `src/data/gifts.ts` |
+| Isi surat, nama divisi, daftar anggota, warna, posisi kado (%) | `src/data/gifts.ts` |
+| Judul pop-up surat (berbeda tiap divisi) | field `title` tiap kado di `src/data/gifts.ts` |
+| Font pop-up (satu keluarga font) | token `--font-popup` di `src/index.css` + `<link>` Google Fonts di `index.html` |
+| Topi ulang tahun Gasing | `public/assets/images/party-hat.svg`; posisi per aset di `src/components/PartyHat.tsx` |
 | Video ucapan | `public/assets/video/ucapan.mp4` (timpa file; jika belum ada tampil "Video segera hadir") |
 | Audio (SFX, ambient, musik) | Campuran file (3 lagu BGM pilihan di Scene 04 lewat `src/audio/bgm.ts`, ambience kabin/bandara, roda koper, `paperDrop`, `airplaneChimes`) dan sintesis (`src/audio/synth.ts`). Tambah/normalisasi file: `npm run audio`; hierarki volume: `src/audio/mix.ts`. Lihat `AUDIO_CREDITS.md` |
 | Teks penutup (Scene 08 - Kartu Penutup) | `src/scenes/Scene06GasingMelihatTv.tsx` (blok `end-card`) |
+
+## Catatan pop-up, layar penuh
+
+- Pop-up selalu di tengah layar; buka/tutup memakai efek Genie dari/ke kado yang diklik (`src/components/genie.ts`; fade biasa bila `prefers-reduced-motion`).
+- Tombol layar penuh (kiri tombol suara) memakai Fullscreen API (+ awalan webkit). iPhone Safari tidak mendukungnya: tombol menampilkan petunjuk "Tambah ke Layar Utama" (manifest `display: fullscreen` + meta apple-mobile-web-app-capable).
 
 ## Struktur
 

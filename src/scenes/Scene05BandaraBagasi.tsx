@@ -53,6 +53,7 @@ export function Scene05BandaraBagasi({ onDone }: Props) {
   const sy = useMotionValue(BELT_Y)
   const srot = useMotionValue(0)
   const follow = useRef(false)
+  // koper sudah menempel pada Gasing (tali penariknya sudah dibuang oleh teman, state ini tetap dipakai untuk suara roda)
   const [carried, setCarried] = useState(false)
   // roda koper hanya terdengar saat koper ditarik berjalan
   useLoop('wheels', { enabled: carried && gState === 'walk', fadeIn: 0.5, fadeOut: 0.6 })
@@ -68,17 +69,6 @@ export function Scene05BandaraBagasi({ onDone }: Props) {
   })
 
   const hop = useMotionValue(0)
-  const handle = useRef<SVGLineElement>(null)
-  // garis tarik koper -> badan Gasing
-  useAnimationFrame(() => {
-    const l = handle.current
-    if (!l || !follow.current) return
-    l.setAttribute('x1', String(sx.get()))
-    l.setAttribute('y1', String(sy.get() - BAG_H + 6))
-    l.setAttribute('x2', String(gx.get() - GW * 0.3))
-    l.setAttribute('y2', String(gy.get() - GH * 0.16))
-  })
-
   useSequence(async (seq) => {
     cam.set(0)
     gx.set(START_X)
@@ -155,9 +145,6 @@ export function Scene05BandaraBagasi({ onDone }: Props) {
               <Baggage index={1} width={BAG_W} />
             </div>
         </motion.div>
-        <svg className="tether" width={WIDE.worldW} height={1080} aria-hidden>
-          <line ref={handle} stroke="#1c1a33" strokeWidth="5" strokeLinecap="round" style={{ opacity: carried ? 1 : 0 }} />
-        </svg>
 
         <GasingSprite src={IMG.gasing} width={GW} height={GH} x={gx} y={gy} state={gState} />
       </motion.div>

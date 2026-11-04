@@ -1,15 +1,17 @@
-import { memo, useEffect, useMemo, useRef } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { animate, motion, useMotionValue, useReducedMotion } from 'framer-motion'
 import { audio } from '../audio/audio'
 import { CLOUDS, STAGE_H, STAGE_W } from '../config'
+import { stageScale } from './Stage'
 
 /**
  * Transisi awan reusable (awan.png dan awan2.png), satu siklus utuh dalam satu timeline:
  *   awan berlapis masuk dari kanan (parallax: lapisan belakang lambat dan lebih dulu, lapisan depan cepat dan menyusul)
  *   -> layar tertutup penuh -> `onCovered` (di sinilah scene diganti) -> awan memudar perlahan (fade-out sambil
  *   hanyut pelan ke kiri) menampakkan scene baru -> `onDone`.
- * Lapisan awan melebar melewati tepi kanvas, jadi tetap menutup penuh walau jendela tidak 16:9 (ada pita letterbox).
- * Komponen selalu terpasang (gambar awan sudah di-decode sebelum dipakai); animasi dimulai saat `runId` berubah.
+ * Ukuran lapisan awan dihitung dari ukuran jendela (melewati tepi kanvas bila perlu), jadi layar tetap tertutup penuh di
+ * rasio apa pun: desktop, pita letterbox, mobile landscape, jendela sangat tinggi.
+ * Strip awan hanya dipasang saat `busy` (hemat memori); animasi dimulai saat `runId` berubah.
  * Hanya memakai transform/opacity. prefers-reduced-motion: diganti fade singkat.
  */
 interface Props {
@@ -26,14 +28,51 @@ export const CLOUD_TOTAL = 2.6
 const COVER_AT = 1.1
 const HOLD_END = 1.3
 
-const STRIP_W = 4200
 const RAMP = 700 // sisi kiri/kanan strip: tepi awan yang tidak padat
-/** bagian kanvas yang bisa tampak di luar 16:9 (pita letterbox): sampai 500 satuan kiri/kanan, 350 atas/bawah */
-const PAD_X = 450
-const PAD_Y = 300
-const STRIP_H = STAGE_H + PAD_Y * 2
-const COVER_X = -(RAMP + PAD_X) // posisi strip saat layar tertutup penuh
-const OFFSCREEN_X = STAGE_W + PAD_X + 400 // seluruh strip di luar layar sebelum mulai
+const EDGE = 200 // sisa aman di dalam zona padat, di kiri/kanan area yang terlihat
+
+/**
+ * Geometri strip dihitung dari ukuran jendela sebenarnya: bagian kanvas yang terlihat (dalam satuan kanvas) bisa
+ * lebih lebar/tinggi dari 1920x1080 (pita letterbox, jendela sangat lebar atau tinggi, mobile landscape). Strip dibuat
+ * cukup besar untuk menutup semuanya + sisa aman, sehingga tidak pernah ada area kosong di puncak transisi.
+ */
+interface Geometry {
+  W: number
+  H: number
+  top: number
+  coverX: number
+  offscreenX: number
+}
+const ceilTo = (v: number, step: number) => Math.ceil(v / step) * step
+function computeGeometry(): Geometry {
+  const s = stageScale(window.innerWidth, window.innerHeight)
+  const padX = ceilTo(Math.max(0, (window.innerWidth / s - STAGE_W) / 2), 100) + 100
+  const padY = ceilTo(Math.max(0, (window.innerHeight / s - STAGE_H) / 2), 100) + 100
+  return {
+    W: 2 * RAMP + STAGE_W + 2 * padX + 2 * EDGE,
+    H: STAGE_H + 2 * padY + 2 * EDGE,
+    top: -(padY + EDGE),
+    coverX: -(RAMP + padX + EDGE), // posisi strip saat layar tertutup penuh
+    offscreenX: STAGE_W + padX + 400, // seluruh strip di luar layar sebelum mulai
+  }
+}
+function useGeometry() {
+  const [g, setG] = useState(computeGeometry)
+  useEffect(() => {
+    const on = () =>
+      setG((prev) => {
+        const n = computeGeometry()
+        return n.W === prev.W && n.H === prev.H ? prev : n
+      })
+    window.addEventListener('resize', on)
+    window.addEventListener('orientationchange', on)
+    return () => {
+      window.removeEventListener('resize', on)
+      window.removeEventListener('orientationchange', on)
+    }
+  }, [])
+  return g
+}
 
 interface Layer {
   seed: number
@@ -45,10 +84,11 @@ interface Layer {
   fadeOut: number
   drift: number
 }
-// hanya 2 lapisan dengan sprite besar dan jarang (total ~35 gambar) agar ringan; tanpa filter CSS
+// 3 lapisan (belakang lambat, tengah, depan cepat) dengan sprite besar; tanpa filter CSS
 const LAYERS: Layer[] = [
   { seed: 7, scale: 1.35, tint: 'none', delayIn: 0, fadeOut: 1.3, drift: -160 }, // belakang: lambat
-  { seed: 21, scale: 1.1, tint: 'none', delayIn: 0.3, fadeOut: 1.0, drift: -400 }, // depan: cepat
+  { seed: 13, scale: 1.2, tint: 'none', delayIn: 0.15, fadeOut: 1.15, drift: -280 }, // tengah
+  { seed: 21, scale: 1.05, tint: 'none', delayIn: 0.3, fadeOut: 1.0, drift: -400 }, // depan: cepat
 ]
 
 const EASE_IN_PHASE = [0.2, 0.6, 0.3, 1] as const // melambat saat menutup
@@ -68,14 +108,15 @@ const smooth = (t: number) => {
   return c * c * (3 - 2 * c)
 }
 
-function makeSprites(layer: Layer) {
+function makeSprites(layer: Layer, W: number, H: number) {
   const rnd = mulberry32(layer.seed)
   const out: { src: string; x: number; y: number; w: number; flip: boolean }[] = []
   const colStep = 760 * layer.scale
   const rowStep = 420 * layer.scale
-  for (let x = -300; x < STRIP_W; x += colStep) {
-    const cover = Math.min(smooth((x + 300) / (RAMP + 100)), smooth((STRIP_W - x) / (RAMP + 100)))
-    for (let y = -260; y < STRIP_H + 160; y += rowStep) {
+  for (let x = -300; x < W + 100; x += colStep) {
+    const cover = Math.min(smooth((x + 300) / (RAMP + 100)), smooth((W - x) / (RAMP + 100)))
+    // baris menembus tepi atas/bawah strip supaya tidak ada celah di ujung vertikal
+    for (let y = -rowStep; y < H + rowStep; y += rowStep) {
       if (cover < 0.999 && rnd() > Math.max(0.15, cover * cover * 1.2)) continue
       out.push({
         src: CLOUDS[Math.floor(rnd() * CLOUDS.length)],
@@ -89,12 +130,13 @@ function makeSprites(layer: Layer) {
   return out
 }
 
-const CloudStrip = memo(function CloudStrip({ layer }: { layer: Layer }) {
-  const sprites = useMemo(() => makeSprites(layer), [layer])
+const CloudStrip = memo(function CloudStrip({ layer, W, H }: { layer: Layer; W: number; H: number }) {
+  const sprites = useMemo(() => makeSprites(layer, W, H), [layer, W, H])
   return (
-    <div className="cloud-strip-inner" style={{ width: STRIP_W, height: STRIP_H, filter: layer.tint === 'none' ? undefined : layer.tint }}>
-      {/* isian di balik awan supaya tidak ada celah tembus saat layar tertutup penuh */}
-      <div className="cloud-fill" style={{ left: RAMP + 260, width: STRIP_W - 2 * RAMP - 520 }} />
+    <div className="cloud-strip-inner" style={{ width: W, height: H }}>
+      {/* isian di balik awan, DIINSET jauh dari tepi strip (tepinya tersembunyi di balik badan awan) sehingga tidak
+          pernah tampak sebagai panel persegi */}
+      <div className="cloud-fill" style={{ left: RAMP + 400, width: W - 2 * RAMP - 800, top: 260, height: H - 520 }} />
       {sprites.map((s, i) => (
         <img
           key={i}
@@ -116,12 +158,17 @@ export function CloudTransition({ runId, busy, onCovered, onDone }: Props) {
   covered.current = onCovered
   done.current = onDone
 
-  const x0 = useMotionValue(OFFSCREEN_X)
-  const x1 = useMotionValue(OFFSCREEN_X)
-  const xs = [x0, x1]
+  const geo = useGeometry()
+  const geoRef = useRef(geo)
+  geoRef.current = geo
+  const x0 = useMotionValue(geo.offscreenX)
+  const x1 = useMotionValue(geo.offscreenX)
+  const x2 = useMotionValue(geo.offscreenX)
+  const xs = [x0, x1, x2]
   const o0 = useMotionValue(0)
   const o1 = useMotionValue(0)
-  const os = [o0, o1]
+  const o2 = useMotionValue(0)
+  const os = [o0, o1, o2]
   const veil = useMotionValue(0)
 
   useEffect(() => {
@@ -144,12 +191,13 @@ export function CloudTransition({ runId, busy, onCovered, onDone }: Props) {
       }
     }
     const T = CLOUD_TOTAL
+    const { offscreenX, coverX } = geoRef.current
     let finishAt = 0
     LAYERS.forEach((layer, i) => {
       // posisi: masuk dari kanan (melambat), tahan saat tertutup, lalu hanyut pelan ke kiri sambil memudar
       const fadeEnd = Math.min(T, HOLD_END + layer.fadeOut)
       finishAt = Math.max(finishAt, fadeEnd)
-      const ctl = animate(xs[i], [OFFSCREEN_X, OFFSCREEN_X, COVER_X, COVER_X, COVER_X + layer.drift], {
+      const ctl = animate(xs[i], [offscreenX, offscreenX, coverX, coverX, coverX + layer.drift], {
         duration: T,
         times: [0, layer.delayIn / T, COVER_AT / T, HOLD_END / T, fadeEnd / T],
         ease: ['linear', EASE_IN_PHASE, 'linear', EASE_FADE],
@@ -172,11 +220,13 @@ export function CloudTransition({ runId, busy, onCovered, onDone }: Props) {
   return (
     <>
       <div className={`cloud-layer ${busy ? '' : 'is-idle'}`} aria-hidden>
-        {LAYERS.map((layer, i) => (
-          <motion.div key={layer.seed} className="cloud-strip" style={{ x: xs[i], opacity: os[i], top: -PAD_Y }}>
-            <CloudStrip layer={layer} />
-          </motion.div>
-        ))}
+        {/* strip raksasa (~4000x1700 px x 3) hanya dipasang selama transisi; saat diam dibuang agar memori GPU iPhone lega */}
+        {(busy || reduced) &&
+          LAYERS.map((layer, i) => (
+            <motion.div key={layer.seed} className="cloud-strip" style={{ x: xs[i], opacity: os[i], top: geo.top }}>
+              <CloudStrip layer={layer} W={geo.W} H={geo.H} />
+            </motion.div>
+          ))}
         {reduced && <motion.div className="cloud-fade" style={{ opacity: veil }} />}
       </div>
     </>

@@ -62,22 +62,46 @@ await webp(sharp(`${SRC}/Dalam Pesawat.png`), 'cabin-shell.webp', 92)
   meta.planeMascot = { width: m.width, height: m.height }
 }
 
-// ---- Kado: sheet tertutup (Giftbox1) dan terbuka (Giftbox2), urutan baris kiri->kanan
-const closedBoxes = [ // [x0,y0,x1,y1] dari analisis komponen
-  [35, 131, 330, 438], [353, 131, 654, 441], [675, 130, 982, 444], [1005, 134, 1310, 444], [1334, 134, 1635, 444],
-  [166, 513, 480, 835], [507, 515, 820, 833], [845, 513, 1164, 838], [1195, 516, 1524, 837],
-]
-const openBoxes = [
-  [30, 100, 337, 488], [360, 107, 663, 487], [682, 107, 989, 489], [1008, 108, 1317, 494], [1342, 112, 1650, 488],
-  [164, 496, 494, 895], [522, 496, 835, 895], [862, 490, 1182, 896], [1206, 496, 1541, 898],
-]
+// ---- Kado: sheet tertutup (Giftbox1.png) dan terbuka (Giftbox2.png): 10 kado per sheet (5 kolom x 2 baris).
+// Dipakai 9 pertama berurutan baris-demi-baris (kiri->kanan); kado ke-10 (pojok kanan-bawah) sengaja tidak dipakai.
+async function giftBoxes(file) {
+  const { data, info } = await sharp(`${SRC}/${file}`).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  const W = info.width, H = info.height
+  const lab = new Int32Array(W * H)
+  const boxes = []
+  for (let s0 = 0; s0 < W * H; s0++) {
+    if (lab[s0] || data[s0 * 4 + 3] <= 20) continue
+    const id = boxes.length + 1
+    let n = 0, x0 = W, y0 = H, x1 = 0, y1 = 0
+    const st = [s0]; lab[s0] = id
+    while (st.length) {
+      const i = st.pop(); n++
+      const x = i % W, y = (i / W) | 0
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y
+      for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i - W, i + W]) {
+        if (j < 0 || j >= W * H) continue
+        if (!lab[j] && data[j * 4 + 3] > 20) { lab[j] = id; st.push(j) }
+      }
+    }
+    boxes.push({ n, x0, y0, x1, y1 })
+  }
+  const big = boxes.filter((b) => b.n > 3000)
+  if (big.length !== 10) throw new Error(`${file}: diharapkan 10 kado, ditemukan ${big.length}`)
+  const midY = H / 2
+  const row = (b) => ((b.y0 + b.y1) / 2 < midY ? 0 : 1)
+  big.sort((p, q) => row(p) - row(q) || p.x0 - q.x0)
+  return big.slice(0, 9)
+}
+const closedBoxes = await giftBoxes('Giftbox1.png')
+const openBoxes = await giftBoxes('Giftbox2.png')
 meta.gifts = []
 for (let i = 0; i < 9; i++) {
-  for (const [boxes, file, kind] of [[closedBoxes, 'Giftbox1.png', 'closed'], [openBoxes, 'Giftbox2.png', 'open']] ) {
-    const [x0, y0, x1, y1] = boxes[i]
-    await png(sharp(`${SRC}/${file}`).extract({ left: x0, top: y0, width: x1 - x0 + 1, height: y1 - y0 + 1 }), `gift-${kind}-${i}.png`)
+  for (const [boxes, file, kind] of [[closedBoxes, 'Giftbox1.png', 'closed'], [openBoxes, 'Giftbox2.png', 'open']]) {
+    const bx = boxes[i]
+    await png(sharp(`${SRC}/${file}`).extract({ left: bx.x0, top: bx.y0, width: bx.x1 - bx.x0 + 1, height: bx.y1 - bx.y0 + 1 }), `gift-${kind}-${i}.png`)
   }
-  meta.gifts.push({ closed: [closedBoxes[i][2] - closedBoxes[i][0] + 1, closedBoxes[i][3] - closedBoxes[i][1] + 1], open: [openBoxes[i][2] - openBoxes[i][0] + 1, openBoxes[i][3] - openBoxes[i][1] + 1] })
+  const c = closedBoxes[i], o = openBoxes[i]
+  meta.gifts.push({ closed: [c.x1 - c.x0 + 1, c.y1 - c.y0 + 1], open: [o.x1 - o.x0 + 1, o.y1 - o.y0 + 1] })
 }
 
 // ---- Koper (Baggage.png, 4 koper)

@@ -1,18 +1,22 @@
 // Scene 04 - Peta Kado
 // 04a Peta Terbuka (masuk + petunjuk) -> 04b Surat Kado (tiap kado diklik, LetterModal) -> 04c Semua Kado Terbuka
 // (tombol Mendarat / Mulai Ulang) -> 04d Pesawat Lepas Landas (3,4 s) -> 04e Awan Menutup ke Bandara (CloudTransition)
-import { AnimatePresence, motion, useMotionValue, useTransform } from 'framer-motion'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { CSSProperties } from 'react'
+// 04f Pilih BGM (tombol not musik di pojok kanan atas, BgmPicker)
+import { AnimatePresence, animate, motion, useMotionValue, useTransform } from 'framer-motion'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react'
 import { audio, useLoop } from '../audio/audio'
+import { useStageView } from '../components/Stage'
 import { DriftClouds, Sparkles } from '../components/Atmosphere'
-import { GiftHotspot } from '../components/GiftHotspot'
 import { BgmPicker } from '../components/BgmPicker'
+import { GiftHotspot } from '../components/GiftHotspot'
+import { LandIconButton } from '../components/LandIconButton'
+import { PartyHat } from '../components/PartyHat'
 import { EdgeExtend } from '../components/EdgeExtend'
 import { LetterModal } from '../components/LetterModal'
 import { PrimaryButton } from '../components/PrimaryButton'
 import { IMG, PLANE_MASCOT, SKY, STAGE_H, STAGE_W } from '../config'
-import { GIFTS } from '../data/gifts'
+import { GIFTS, LAND_ICON_POS } from '../data/gifts'
 import type { Gift } from '../data/gifts'
 import { useSceneTag } from '../dev/sceneTag'
 import { useSequence } from '../hooks/useSequence'
@@ -39,10 +43,12 @@ interface Props {
   onRestart: () => void
 }
 
-/** Scene 04 - Peta Kado: peta Indonesia dengan 8 kado berisi surat; setelah semua terbuka, pesawat mendarat. */
+/** Scene 04 - Peta Kado: peta Indonesia dengan kado berisi surat; setelah semua terbuka, pesawat mendarat. */
 export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart }: Props) {
   useSceneTag('04')
   const [active, setActive] = useState<Gift | null>(null)
+  /** titik kado yang diklik (asal/tujuan animasi Genie pop-up); posisinya dibaca LetterModal tiap frame */
+  const [originEl, setOriginEl] = useState<HTMLElement | null>(null)
   const [landing, setLanding] = useState(false)
 
   // musik hanya ada di scene ini; saat mendarat di-fade out lalu berhenti
@@ -51,7 +57,8 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
   const allOpened = opened.size >= GIFTS.length
   const showActions = (allOpened || hasCompletedOnce) && !landing
   const open = useCallback(
-    (g: Gift) => {
+    (g: Gift, el: HTMLElement) => {
+      setOriginEl(el.closest<HTMLElement>('.gift-spot') ?? el)
       setActive(g)
       onOpenGift(g.id)
     },
@@ -65,6 +72,70 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const close = useCallback(() => setActive(null), [])
+
+  // ===== geser peta kiri-kanan (hanya di layar agak kotak, mis. Fold): lapisan peta bergeser, UI tetap di tepi layar =====
+  const { scale, cropX, cropY, panMode, anchorBottom } = useStageView()
+  // ponsel: peta memenuhi layar dan menempel di bawah. Stage berpusat, jadi seluruh lapisan peta (latar + kado + pesawat + awan,
+  // semuanya satu koordinat) digeser naik sebesar cropY: tepi bawah peta = tepi bawah layar, kelebihan terpotong di atas.
+  const shiftY = anchorBottom ? -cropY : 0
+  /** batas atas area peta yang terlihat (koordinat lapisan peta, px kanvas) */
+  const visibleTop = anchorBottom ? 2 * cropY : 0
+  // pesawat dan awan adalah dekorasi di langit atas: ikut turun supaya tetap terlihat saat bagian atas peta terpotong
+  const planeLift = Math.max(0, visibleTop + 24 - planeBox.top)
+  /** geseran lapisan peta (px kanvas); +cropX = tepi kiri peta terlihat, -cropX = tepi kanan peta terlihat */
+  const panX = useMotionValue(0)
+  const limit = panMode ? cropX : 0
+  const limitRef = useRef(limit)
+  limitRef.current = limit
+  const panInit = useRef(false)
+  useEffect(() => {
+    if (!panMode) {
+      panX.set(0)
+      panInit.current = false
+      return
+    }
+    // awal: tepi kiri peta (Sumatra + pesawat) terlihat; saat ukuran layar berubah, geseran dijaga di dalam batas
+    panX.set(panInit.current ? Math.max(-limit, Math.min(limit, panX.get())) : limit)
+    panInit.current = true
+  }, [panMode, limit, panX])
+
+  const drag = useRef<{ id: number; startX: number; startPan: number; moved: boolean } | null>(null)
+  const suppressClick = useRef(false)
+  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!panMode || active || landing || (e.pointerType === 'mouse' && e.button !== 0)) return
+    drag.current = { id: e.pointerId, startX: e.clientX, startPan: panX.get(), moved: false }
+  }
+  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current
+    if (!d || d.id !== e.pointerId) return
+    const dxScreen = e.clientX - d.startX
+    if (!d.moved) {
+      if (Math.abs(dxScreen) < 8) return // di bawah ambang = klik biasa pada kado
+      d.moved = true
+      e.currentTarget.setPointerCapture(e.pointerId)
+    }
+    panX.set(Math.max(-limitRef.current, Math.min(limitRef.current, d.startPan + dxScreen / scale)))
+  }
+  const endDrag = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current
+    if (!d || d.id !== e.pointerId) return
+    drag.current = null
+    if (d.moved) {
+      suppressClick.current = true // klik yang menyusul setelah menggeser tidak boleh membuka kado
+      window.setTimeout(() => (suppressClick.current = false), 0)
+    }
+  }
+  const onClickCapture = (e: React.MouseEvent) => {
+    if (suppressClick.current) {
+      suppressClick.current = false
+      e.stopPropagation()
+      e.preventDefault()
+    }
+  }
+  // mendarat: pesawat terbang dari kiri atas peta, jadi peta dikembalikan ke tepi kiri dulu
+  useEffect(() => {
+    if (landing && panMode) animate(panX, limitRef.current, { duration: 0.6, ease: 'easeOut' })
+  }, [landing, panMode, panX])
 
   // penerbangan parabola: kiri atas -> kanan bawah (keluar layar)
   const t = useMotionValue(0)
@@ -97,10 +168,19 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
   )
 
   return (
-    <div className="scene scene04">
+    <div
+      className={`scene scene04 ${panMode ? 'is-pannable' : ''}`}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+      onClickCapture={onClickCapture}
+    >
       {/* 04a Peta Terbuka */}
+      <motion.div className="fill" style={{ x: panX, y: shiftY }}>
       <motion.div
         className="fill"
+        inert={active ? true : undefined}
         initial={{ scale: 1.06 }}
         animate={{ scale: 1 }}
         transition={{ duration: 2.6, ease: [0.22, 1, 0.36, 1] }}
@@ -111,7 +191,7 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
         {/* latar yang hidup */}
         <div className="sun-glow" aria-hidden />
         <div className="sun-rays" aria-hidden />
-        <DriftClouds yMin={40} yMax={290} count={5} opacity={0.9} speed={150} size={[260, 460]} />
+        <DriftClouds yMin={40 + visibleTop} yMax={290 + visibleTop} count={5} opacity={0.9} speed={150} size={[260, 460]} />
         <Sparkles count={22} region={[2, 3, 98, 96]} seed={11} />
         <div className="waves" aria-hidden>
           {waves.map((w, i) => (
@@ -122,7 +202,7 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
         </div>
 
         {/* pesawat berisi Gasing (kiri atas). TODO: ganti dengan sprite pesawat+Gasing terpisah */}
-        <motion.div className="plane3" style={{ ...planeBox, x: px, y: py, rotate: rot }}>
+        <motion.div className="plane3" style={{ ...planeBox, top: planeBox.top + planeLift, x: px, y: py, rotate: rot }}>
           <div className="contrail" aria-hidden>
             <i className="ct ct1" />
             <i className="ct ct2" />
@@ -133,6 +213,7 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
           </div>
           <div className="plane3-idle">
             <img src={IMG.planeMascot} alt="Pesawat berisi Gasing" draggable={false} className="fill-img" />
+            <PartyHat variant="plane" />
           </div>
         </motion.div>
 
@@ -140,10 +221,18 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
         {GIFTS.map((g, i) => (
           <GiftHotspot key={g.id} gift={g} index={i} opened={opened.has(g.id)} disabled={landing} onOpen={open} />
         ))}
+
+        {/* ronde ke-2 (sudah pernah mendarat): tombol Mendarat pindah ke peta, berupa ikon pesawat di Jawa Barat */}
+        <AnimatePresence>
+          {hasCompletedOnce && !landing && (
+            <LandIconButton key="land-icon" x={LAND_ICON_POS.x} y={LAND_ICON_POS.y} onClick={() => setLanding(true)} />
+          )}
+        </AnimatePresence>
+      </motion.div>
       </motion.div>
 
       {/* UI atas-tengah: petunjuk (04a) lalu tombol Mendarat / Mulai Ulang (04c Semua Kado Terbuka) */}
-      <div className="top-actions">
+      <div className="top-actions" inert={active ? true : undefined}>
         <AnimatePresence>
           {!showActions && !landing && opened.size === 0 && (
             <motion.div
@@ -154,16 +243,19 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
               exit={{ opacity: 0, y: -20 }}
               transition={{ delay: 1.2, duration: 0.5 }}
             >
-              Klik kado di peta untuk membuka suratnya
+              {panMode ? 'Geser peta ke kiri-kanan, lalu klik kado untuk membuka suratnya' : 'Klik kado di peta untuk membuka suratnya'}
             </motion.div>
           )}
           {showActions && (
             <motion.div key="actions" className="top-actions-row" exit={{ opacity: 0 }}>
-              <PrimaryButton tone="sun" pulse appear="reward" hoverSfx="hover" onClick={() => setLanding(true)}>
-                Mendarat
-              </PrimaryButton>
+              {/* ronde 1: tombol teks seperti semula; ronde 2: tombol Mendarat ada di peta (lihat LandIconButton) */}
+              {!hasCompletedOnce && (
+                <PrimaryButton tone="sun" pulse appear="reward" hoverSfx="hover" onClick={() => setLanding(true)}>
+                  Mendarat
+                </PrimaryButton>
+              )}
               {hasCompletedOnce && (
-                <PrimaryButton tone="sky" delay={0.12} appear="none" onClick={onRestart}>
+                <PrimaryButton tone="sky" appear="none" onClick={onRestart}>
                   Mulai Ulang
                 </PrimaryButton>
               )}
@@ -174,7 +266,7 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
 
       <AnimatePresence>
         {!landing && (
-          <motion.div className="progress-pill" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} transition={{ delay: 0.8 }}>
+          <motion.div className="progress-pill" inert={active ? true : undefined} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} transition={{ delay: 0.8 }}>
             <span className="progress-dots">
               {GIFTS.map((g) => (
                 <i key={g.id} className={opened.has(g.id) ? 'on' : ''} style={{ ['--c' as string]: g.color }} />
@@ -186,10 +278,10 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
       </AnimatePresence>
 
       {/* 04b Surat Kado */}
-      {/* pilih BGM (pojok kanan atas, di atas area kado) */}
-      {!landing && <BgmPicker />}
+      <LetterModal gift={active} originEl={originEl} onClose={close} />
 
-      <LetterModal gift={active} onClose={close} />
+      {/* 04f Pilih BGM (pojok kanan atas, di atas area kado) */}
+      {!landing && <BgmPicker />}
     </div>
   )
 }

@@ -24,7 +24,7 @@ Sumber kebenaran di kode: `src/data/scenes.ts` (`SCENE_LIST`). **Setiap ada scen
 | 01 | Layar Pembuka | Layar loading dengan Gasing berpatroli dan tombol "Mulai Perjalanan". | `src/scenes/Scene01LayarPembuka.tsx` |
 | 02 | Kabin Pesawat | Gasing duduk di kabin pesawat, kamera zoom keluar, lalu crossfade ke langit. | `src/scenes/Scene02KabinPesawat.tsx` |
 | 03 | Pesawat di Langit | Pesawat meluncur masuk dan melayang di antara awan, lalu awan menutup layar. | `src/scenes/Scene03PesawatDiLangit.tsx` |
-| 04 | Peta Kado | Peta Indonesia dengan 8 kado berisi surat; setelah semua terbuka, pesawat mendarat. | `src/scenes/Scene04PetaKado.tsx`, `components/LetterModal.tsx`, `components/GiftHotspot.tsx`, `data/gifts.ts` |
+| 04 | Peta Kado | Peta Indonesia dengan 9 kado berisi surat (pop-up Genie); setelah semua terbuka, pesawat mendarat. Di layar kotak/ponsel peta bisa digeser. | `src/scenes/Scene04PetaKado.tsx`, `components/LetterModal.tsx`, `components/GiftHotspot.tsx`, `data/gifts.ts` |
 | 05 | Bandara Bagasi | Gasing mengambil koper dari ban berjalan lalu berjalan ke kanan. | `src/scenes/Scene05BandaraBagasi.tsx`, `components/GasingSprite.tsx`, `components/Baggage.tsx` |
 | 06 | Gasing Melihat TV | Gasing tiba di depan TV besar, kaget, TV menyala, lalu kamera zoom ke layar. | `src/scenes/Scene06GasingMelihatTv.tsx` (fase `room`) |
 | 07 | Video Ucapan | Layar TV penuh dengan pemutar video ucapan (atau placeholder bila video belum ada). | `src/scenes/Scene06GasingMelihatTv.tsx` (fase `tv`), `components/TvPlayer.tsx` |
@@ -46,7 +46,7 @@ Sumber kebenaran di kode: `src/data/scenes.ts` (`SCENE_LIST`). **Setiap ada scen
 | 03c | Awan Menutup (ke Peta) | `CloudTransition` ke Scene 04 | 2,6 s |
 | 04a | Peta Terbuka | Peta masuk, petunjuk "Klik kado..." | ~2,6 s |
 | 04b | Surat Kado | Tiap kado diklik membuka surat (`LetterModal`) | per kado |
-| 04c | Semua Kado Terbuka | 8 kado terbuka, tombol "Mendarat" (dan "Mulai Ulang") muncul | - |
+| 04c | Semua Kado Terbuka | Semua kado terbuka: ronde 1 tombol teks "Mendarat"; ronde 2 (setelah pernah mendarat) tombol "Mendarat" berupa ikon pesawat di peta (`LandIconButton`) dan "Mulai Ulang" | - |
 | 04d | Pesawat Lepas Landas | Pesawat terbang melengkung keluar layar | 3,4 s |
 | 04e | Awan Menutup (ke Bandara) | `CloudTransition` ke Scene 05 | 2,6 s |
 | 04f | Pilih BGM | Tombol not musik di pojok kanan atas membuka panel 3 lagu (`components/BgmPicker.tsx`, daftar di `audio/bgm.ts`); bisa dipakai kapan saja selama di peta | kapan saja |

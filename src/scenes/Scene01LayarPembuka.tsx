@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { PrimaryButton } from '../components/PrimaryButton'
 import { IMG } from '../config'
+import { PartyHat } from '../components/PartyHat'
 import { useSceneTag } from '../dev/sceneTag'
 
 /** 01a: Gasing berjalan-jalan (patrol kiri-kanan, berbalik arah di ujung) selagi loading. */
@@ -14,6 +15,7 @@ function PatrollingGasing() {
           <div className="patrol-shadow" />
           <div className="patrol-hop">
             <img src={IMG.gasing} alt="" draggable={false} />
+            <PartyHat />
           </div>
         </div>
       </div>
