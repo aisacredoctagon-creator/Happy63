@@ -4,18 +4,21 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AudioToggle } from './components/AudioToggle'
 import { CloudTransition } from './components/CloudTransition'
 import { FullscreenToggle } from './components/FullscreenToggle'
-import { LoadingScreen } from './components/LoadingScreen'
 import { RotateNotice } from './components/RotateNotice'
 import { Stage } from './components/Stage'
 import { PRELOAD_IMAGES } from './config'
 import { audio } from './audio/audio'
+import type { SfxName } from './audio/audio'
 import { GIFTS } from './data/gifts'
+import { DevSceneBadge } from './dev/DevSceneBadge'
+import { readDevJump } from './dev/devJump'
 import { usePreload } from './hooks/usePreload'
-import { Scene1 } from './scenes/Scene1'
-import { Scene2 } from './scenes/Scene2'
-import { Scene3 } from './scenes/Scene3'
-import { Scene4 } from './scenes/Scene4'
-import { Scene5 } from './scenes/Scene5'
+import { Scene01LayarPembuka } from './scenes/Scene01LayarPembuka'
+import { Scene02KabinPesawat } from './scenes/Scene02KabinPesawat'
+import { Scene03PesawatDiLangit } from './scenes/Scene03PesawatDiLangit'
+import { Scene04PetaKado } from './scenes/Scene04PetaKado'
+import { Scene05BandaraBagasi } from './scenes/Scene05BandaraBagasi'
+import { Scene06GasingMelihatTv } from './scenes/Scene06GasingMelihatTv'
 import type { SceneId } from './types'
 
 const PRELOAD = PRELOAD_IMAGES
@@ -33,25 +36,26 @@ interface CloudState {
   runId: number
 }
 
-// Hanya mode dev: ?scene=scene3 (&all=1 untuk kado terbuka semua) melompat langsung ke scene untuk pengecekan
-const DEV_PARAMS = import.meta.env.DEV ? new URLSearchParams(window.location.search) : null
-const DEV_SCENE = (DEV_PARAMS?.get('scene') as SceneId | null) ?? 'scene1'
+// Hanya mode dev: lompat langsung ke scene untuk pengecekan, mis. ?scene=05 / ?scene=04c / &all=1 (src/dev/devJump.ts, SCENES.md)
+const DEV = import.meta.env.DEV ? readDevJump(window.location.search) : null
+const DEV_SCENE: SceneId = DEV?.scene?.id ?? 'scene02'
 
 export default function App() {
   const { progress, done } = usePreload(PRELOAD)
   const [started, setStarted] = useState(false)
   const [scene, setScene] = useState<SceneId>(DEV_SCENE)
+  const [devStart, setDevStart] = useState(DEV?.scene?.start) // hanya dev: Scene 07 / 08 langsung
   const [runKey, setRunKey] = useState(0)
   const [fade, setFade] = useState(1)
   const [cloud, setCloud] = useState<CloudState | null>(null)
-  const [openedGifts, setOpenedGifts] = useState<Set<string>>(() => new Set(DEV_PARAMS?.get('all') ? GIFTS.map((g) => g.id) : []))
-  const [hasCompletedOnce, setHasCompletedOnce] = useState(!!DEV_PARAMS?.get('all'))
+  const [openedGifts, setOpenedGifts] = useState<Set<string>>(() => new Set(DEV?.allGifts ? GIFTS.map((g) => g.id) : []))
+  const [hasCompletedOnce, setHasCompletedOnce] = useState(!!DEV?.completed)
   const [videoPlaying, setVideoPlaying] = useState(false)
   const cloudId = useRef(0)
   const cloudNext = useRef<SceneId | null>(null)
 
   useEffect(() => {
-    if (scene !== 'scene5') setVideoPlaying(false)
+    if (scene !== 'scene06') setVideoPlaying(false)
   }, [scene])
 
   // video ucapan sedang diputar -> pelankan ambient
@@ -59,16 +63,36 @@ export default function App() {
     audio.setDuck(videoPlaying ? 0 : 1)
   }, [videoPlaying])
 
-  // SFX klik terpusat untuk semua tombol (kecuali yang menandai data-sfx="none"; kado memakai data-sfx="gift")
+  // SFX terpusat untuk semua tombol. Klik: data-sfx="<nama SFX>" mengganti bunyi bawaan ("click"), "none" = diam
+  // (kado diam saat diklik: bunyinya dari surat). Hover (mouse saja) HANYA untuk tombol ber-atribut data-sfx-hover:
+  // kado (giftHover) dan "Mendarat" (hover); tombol lain tidak bersuara saat di-hover.
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       const btn = (e.target as Element | null)?.closest?.('button')
       if (!btn || (btn as HTMLButtonElement).disabled) return
       const kind = btn.closest('[data-sfx]')?.getAttribute('data-sfx') ?? 'click'
-      if (kind === 'click' || kind === 'gift') void audio.playSfx(kind)
+      if (kind !== 'none') audio.playSfx(kind as SfxName)
+    }
+    const onOver = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse') return
+      const btn = (e.target as Element | null)?.closest?.('button')
+      if (!btn || (btn as HTMLButtonElement).disabled || btn.contains(e.relatedTarget as Node | null)) return
+      const kind = btn.closest('[data-sfx-hover]')?.getAttribute('data-sfx-hover')
+      if (kind && kind !== 'none') audio.playSfx(kind as SfxName)
     }
     document.addEventListener('click', onClick, true)
-    return () => document.removeEventListener('click', onClick, true)
+    document.addEventListener('pointerover', onOver, true)
+    return () => {
+      document.removeEventListener('click', onClick, true)
+      document.removeEventListener('pointerover', onOver, true)
+    }
+  }, [])
+
+  /** ganti scene; SFX bercakupan scene lama dipotong halus */
+  const changeScene = useCallback((next: SceneId) => {
+    audio.stopScene()
+    setDevStart(undefined)
+    setScene(next)
   }, [])
 
   /** pindah scene lewat CloudTransition: awan menutup -> ganti scene -> awan membuka */
@@ -81,8 +105,8 @@ export default function App() {
   const onCloudCovered = useCallback(() => {
     if (!cloudNext.current) return
     setFade(0.4)
-    setScene(cloudNext.current)
-  }, [])
+    changeScene(cloudNext.current)
+  }, [changeScene])
   const onCloudDone = useCallback(() => {
     cloudNext.current = null
     setCloud(null)
@@ -90,34 +114,34 @@ export default function App() {
 
   const goFade = useCallback((next: SceneId, duration: number) => {
     setFade(duration)
-    setScene(next)
-  }, [])
+    changeScene(next)
+  }, [changeScene])
 
   const openGift = useCallback((id: string) => setOpenedGifts((prev) => (prev.has(id) ? prev : new Set(prev).add(id))), [])
 
   const land = useCallback(() => {
     setHasCompletedOnce(true)
-    goWithCloud('scene4')
+    goWithCloud('scene05')
   }, [goWithCloud])
 
   const startOver = useCallback(() => {
     setOpenedGifts(new Set())
     setHasCompletedOnce(false)
     setRunKey((k) => k + 1)
-    goFade('scene1', 0.9)
+    goFade('scene02', 0.9)
   }, [goFade])
 
   let content
   switch (scene) {
-    case 'scene1':
-      content = <Scene1 onDone={() => goFade('scene2', 1.4)} />
+    case 'scene02':
+      content = <Scene02KabinPesawat onDone={() => goFade('scene03', 1.4)} />
       break
-    case 'scene2':
-      content = <Scene2 onDone={() => goWithCloud('scene3')} />
+    case 'scene03':
+      content = <Scene03PesawatDiLangit onDone={() => goWithCloud('scene04')} />
       break
-    case 'scene3':
+    case 'scene04':
       content = (
-        <Scene3
+        <Scene04PetaKado
           opened={openedGifts}
           hasCompletedOnce={hasCompletedOnce}
           onOpenGift={openGift}
@@ -126,11 +150,11 @@ export default function App() {
         />
       )
       break
-    case 'scene4':
-      content = <Scene4 onDone={() => goFade('scene5', 1.0)} />
+    case 'scene05':
+      content = <Scene05BandaraBagasi onDone={() => goFade('scene06', 1.0)} />
       break
-    case 'scene5':
-      content = <Scene5 onBack={() => goWithCloud('scene3')} onVideoPlaying={setVideoPlaying} />
+    case 'scene06':
+      content = <Scene06GasingMelihatTv onBack={() => goWithCloud('scene04')} onVideoPlaying={setVideoPlaying} devStart={devStart} />
       break
   }
 
@@ -138,7 +162,8 @@ export default function App() {
 
   return (
     <>
-      <Stage overlay={cloudOverlay} pannable={scene === 'scene3'} fillBottom={scene === 'scene3'}>
+      {/* peta (Scene 04) bisa digeser dan diisi sampai bawah di layar kotak/mobile (dari teman) */}
+      <Stage overlay={cloudOverlay} pannable={scene === 'scene04'} fillBottom={scene === 'scene04'}>
         <AnimatePresence custom={fade}>
           {started && (
             <motion.div
@@ -155,16 +180,16 @@ export default function App() {
           )}
         </AnimatePresence>
 
-
         <AudioToggle />
         <FullscreenToggle />
-        <LoadingScreen progress={progress} ready={done} visible={!started} onStart={() => {
+        <Scene01LayarPembuka progress={progress} ready={done} visible={!started} onStart={() => {
             audio.unlock() // interaksi pertama: buka audio (aturan autoplay browser)
             setStarted(true)
           }} />
-
       </Stage>
       <RotateNotice />
+      {/* hanya dev: label nama scene aktif + menu lompat scene (di luar Stage agar tidak ikut di-scale) */}
+      {import.meta.env.DEV && <DevSceneBadge />}
     </>
   )
 }

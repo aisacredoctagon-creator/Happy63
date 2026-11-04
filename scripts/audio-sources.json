@@ -1,0 +1,79 @@
+{
+  "_catatan": "Daftar audio yang diproses scripts/normalize-audio.mjs. name = kunci di manifest.json (nama SFX/loop di kode); src = file sumber relatif ke 'aset proyek/' (dicadangkan otomatis ke 'aset proyek/original/'); out = nama file hasil di public/assets/audio/; category = ambience | sfx | music (kunci targetLufs di src/audio/levels.json; tingkat volume saat diputar diatur di src/audio/mix.ts); targetLufs (opsional) = menimpa target kategori untuk item itu; bitrate (opsional, mis. 192k); register: false (tidak masuk manifest.json, untuk lagu BGM yang didaftarkan di src/audio/bgm.ts); trim = potong senyap di awal/akhir (none | head | tail | both); trimDb = ambang senyap (dB); trimHeadDb / trimTailDb (opsional) menimpa ambang awal / akhir, mis. -32 di akhir untuk memotong fade-out lagu agar loop tidak melekuk. SFX baru: taruh file di 'aset proyek/', tambahkan satu entri di sini, jalankan npm run audio.",
+  "items": [
+    {
+      "name": "cabin",
+      "src": "inside airplane ambience 2.mp3",
+      "out": "amb-cabin.m4a",
+      "category": "ambience",
+      "trim": "both",
+      "trimDb": -45
+    },
+    {
+      "name": "airport",
+      "src": "Airport Ambience.wav",
+      "out": "amb-airport.m4a",
+      "category": "ambience",
+      "trim": "both",
+      "trimDb": -60
+    },
+    {
+      "name": "paperDrop",
+      "src": "Flip page.mp3",
+      "out": "sfx-paperDrop.m4a",
+      "category": "sfx",
+      "trim": "both",
+      "trimDb": -50
+    },
+    {
+      "name": "airplaneChimes",
+      "src": "airplane chimes.mp3",
+      "out": "sfx-airplaneChimes.m4a",
+      "category": "sfx",
+      "trim": "both",
+      "trimDb": -50
+    },
+    {
+      "name": "wheels",
+      "src": "suitcase rolling.mp3",
+      "out": "amb-wheels.m4a",
+      "category": "ambience",
+      "targetLufs": -26,
+      "trim": "both",
+      "trimDb": -45
+    },
+    {
+      "name": "bgm-orang-jenius",
+      "src": "3a. Orang Jenius Suka Berhitung 2024.wav",
+      "out": "bgm-orang-jenius.m4a",
+      "category": "music",
+      "register": false,
+      "bitrate": "192k",
+      "trim": "both",
+      "trimHeadDb": -60,
+      "trimTailDb": -32
+    },
+    {
+      "name": "bgm-coba-soal-gasing",
+      "src": "2b. Coba Soal Gasing Loop.mp3",
+      "out": "bgm-coba-soal-gasing.m4a",
+      "category": "music",
+      "register": false,
+      "bitrate": "192k",
+      "trim": "both",
+      "trimHeadDb": -60,
+      "trimTailDb": -32
+    },
+    {
+      "name": "bgm-gasing-medley",
+      "src": "Gasing Medley v4 Mastered (1).wav",
+      "out": "bgm-gasing-medley.m4a",
+      "category": "music",
+      "register": false,
+      "bitrate": "192k",
+      "trim": "both",
+      "trimHeadDb": -60,
+      "trimTailDb": -32
+    }
+  ]
+}

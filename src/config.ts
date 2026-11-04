@@ -16,16 +16,17 @@ export const IMG = {
   langit1: asset('images/langit1.webp'),
   awan1: asset('images/awan1.webp'),
   awan2: asset('images/awan2.webp'),
-  scene2Bg: asset('images/scene2-bg.webp'),
-  scene2Plane: asset('images/scene2-plane.png'),
-  scene3Bg: asset('images/scene3-bg.webp'),
-  planeMascot: asset('images/plane-mascot.png'),
-  partyHat: asset('images/party-hat.svg'),
-  btnMendarat: asset('images/btn-mendarat.png'),
-  bandara: asset('images/bandara.webp'),
-  scene5Bg: asset('images/scene5-bg.webp'),
+  // nama file gambar di bawah mengikuti naskah desain lama (scene2-bg dst.), bukan nomor scene baru (lihat SCENES.md)
+  langitBg: asset('images/scene2-bg.webp'), // Scene 03
+  pesawatLangit: asset('images/scene2-plane.png'), // Scene 03
+  petaBg: asset('images/scene3-bg.webp'), // Scene 04
+  planeMascot: asset('images/plane-mascot.png'), // Scene 04
+  partyHat: asset('images/party-hat.svg'), // topi pesta Gasing (dari teman)
+  btnMendarat: asset('images/btn-mendarat.png'), // ikon Mendarat di peta (Scene 04, dari teman)
+  bandara: asset('images/bandara.webp'), // Scene 05
+  ruangTvBg: asset('images/scene5-bg.webp'), // Scene 06
   gasing: asset('images/gasing.png'),
-  tv: asset('images/scene6-tv.webp'),
+  tv: asset('images/scene6-tv.webp'), // Scene 07-08
   charMan: asset('images/char-man.png'),
   charBoy: asset('images/char-boy.png'),
   charGirl: asset('images/char-girl.png'),

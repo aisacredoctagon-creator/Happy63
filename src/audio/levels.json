@@ -1,0 +1,9 @@
+{
+  "_catatan": "Target KALIBRASI (bukan volume akhir). targetLufs = loudness (EBU R128) yang dituju saat memproses file (npm run audio) dan saat mengkalibrasi SFX sintesis (scripts/measure-synth-levels.js): semua SFX dinormalisasi ke level yang sama (sfx), ambience lebih pelan, musik di antaranya. Hierarki volume saat diputar (minor/main/key, dst.) diatur di src/audio/mix.ts, bukan di sini.",
+  "targetLufs": {
+    "ambience": -22,
+    "sfx": -16,
+    "music": -20
+  },
+  "truePeakDb": -1.5
+}

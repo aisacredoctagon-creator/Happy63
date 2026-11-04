@@ -1,13 +1,16 @@
+// Scene 02 - Kabin Pesawat
+// 02a Fade dari Hitam (0-2,4 s) -> 02b Zoom Keluar (2,4-6,0 s) -> 02c Crossfade ke Langit (1,4 s, diatur App ke Scene 03)
 import { motion, useMotionValue } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { useLoop } from '../audio/audio'
 import { DriftClouds } from '../components/Atmosphere'
 import { PartyHat } from '../components/PartyHat'
 import { CABIN, CABIN_COLORS, GASING_ASPECT, IMG, STAGE_H, STAGE_W } from '../config'
+import { useSceneTag } from '../dev/sceneTag'
 import { useSequence } from '../hooks/useSequence'
 
 /**
- * Scene 1: Gasing di kabin pesawat. Dibangun dari layer terpisah:
+ * Scene 02 - Kabin Pesawat: Gasing di kabin pesawat. Dibangun dari layer terpisah:
  *   langit (langit1.png, scroll horizontal) + awan (awan.png / awan2.png) di belakang,
  *   interior kabin (Dalam Pesawat.png, jendela transparan), lalu karakter (Airplane Seat Cartoon Character Cutouts.png,
  *   Floating Family Cartoon Stickers.png dan Character GASING.png) dengan animasi idle halus.
@@ -268,7 +271,8 @@ interface Props {
   onDone: () => void
 }
 
-export function Scene1({ onDone }: Props) {
+export function Scene02KabinPesawat({ onDone }: Props) {
+  useSceneTag('02')
   useLoop('cabin', { fadeIn: 2.5, fadeOut: 1.5 })
 
   // fokus awal pada Gasing
@@ -289,22 +293,25 @@ export function Scene1({ onDone }: Props) {
       return
     }
     zoom.set(seq.reduced ? 1 : 1.5)
+    // denting pramugari di atas dengung kabin: sekali per kunjungan, setelah ambience terbentuk dan zoom berjalan (file ~2,3 s: dua denting)
+    seq.sfx('airplaneChimes', { delay: seq.reduced ? 0.4 : 3.4 })
     tx.set(seq.reduced ? 0 : STAGE_W / 2 - ox)
     ty.set(seq.reduced ? 0 : 560 - oy)
-    await seq.wait(2.4) // fade-in dari hitam + jeda ~2 detik
+    await seq.wait(2.4) // 02a Fade dari Hitam: fade-in dari hitam + jeda ~2 detik
     if (seq.dead) return
     const ease = [0.22, 1, 0.36, 1] as const // ease-out
+    // 02b Zoom Keluar: kamera menarik mundur dari Gasing (tanpa SFX)
     await Promise.all([
       seq.to(zoom, 1, { duration: 3.6, ease }),
       seq.to(tx, 0, { duration: 3.6, ease }),
       seq.to(ty, 0, { duration: 3.6, ease }),
     ])
     await seq.wait(0.5)
-    if (!seq.dead) onDone()
+    if (!seq.dead) onDone() // 02c Crossfade ke Langit (App memulai cross-fade ke Scene 03)
   }, [])
 
   return (
-    <div className="scene scene1">
+    <div className="scene scene02">
       <motion.div className="cam" style={{ x: tx, y: ty, scale: zoom, transformOrigin: `${ox}px ${oy}px` }}>
         {/* cadangan untuk jendela yang sangat tinggi/lebar (di atas rasio kabin 2,5:1): warna langit-langit dan karpet */}
         <div className="cabin-backdrop" aria-hidden style={{ background: `linear-gradient(to bottom, ${CABIN_COLORS.ceil} 0, ${CABIN_COLORS.ceil} 800px, ${CABIN_COLORS.floor} 1880px, ${CABIN_COLORS.floor} 100%)` }} />

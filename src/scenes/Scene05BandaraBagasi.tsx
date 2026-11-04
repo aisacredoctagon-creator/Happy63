@@ -1,3 +1,5 @@
+// Scene 05 - Bandara Bagasi
+// 05a Ban Berjalan (Gasing datang, koper di ban) -> 05b Koper Melompat (~1 s) -> 05c Berjalan ke Kanan (~4,4 s, lalu cross-fade ke Scene 06)
 import { motion, useAnimationFrame, useMotionValue, useTransform } from 'framer-motion'
 import { useRef, useState } from 'react'
 import { GasingSprite } from '../components/GasingSprite'
@@ -6,6 +8,7 @@ import type { GasingState } from '../components/GasingSprite'
 import { Baggage, bagHeight } from '../components/Baggage'
 import { GASING_ASPECT, IMG, WIDE } from '../config'
 import { useLoop } from '../audio/audio'
+import { useSceneTag } from '../dev/sceneTag'
 import { useSequence } from '../hooks/useSequence'
 
 const F = WIDE.f
@@ -34,8 +37,9 @@ interface Props {
   onDone: () => void
 }
 
-/** Scene 4: bandara, Gasing mengambil koper dari ban berjalan lalu berjalan ke kanan (kamera ikut bergeser). */
-export function Scene4({ onDone }: Props) {
+/** Scene 05 - Bandara Bagasi: Gasing mengambil koper dari ban berjalan lalu berjalan ke kanan (kamera ikut bergeser). */
+export function Scene05BandaraBagasi({ onDone }: Props) {
+  useSceneTag('05')
   useLoop('airport', { fadeIn: 2, fadeOut: 1.5 })
   const cam = useMotionValue(0)
   const worldX = useTransform(cam, (v) => -v)
@@ -49,6 +53,10 @@ export function Scene4({ onDone }: Props) {
   const sy = useMotionValue(BELT_Y)
   const srot = useMotionValue(0)
   const follow = useRef(false)
+  // koper sudah menempel pada Gasing (tali penariknya sudah dibuang oleh teman, state ini tetap dipakai untuk suara roda)
+  const [carried, setCarried] = useState(false)
+  // roda koper hanya terdengar saat koper ditarik berjalan
+  useLoop('wheels', { enabled: carried && gState === 'walk', fadeIn: 0.5, fadeOut: 0.6 })
 
   useAnimationFrame((_, delta) => {
     if (!follow.current) return
@@ -68,8 +76,10 @@ export function Scene4({ onDone }: Props) {
     sy.set(BELT_Y)
     srot.set(0)
     follow.current = false
+    setCarried(false)
     setGState('idle')
 
+    // 05a Ban Berjalan: koper bergerak di ban, Gasing berjalan menjemput
     const belt = seq.to(sx, BELT_LEFT_END, { duration: 5.2, ease: 'linear' })
     await seq.wait(1.0)
     if (seq.dead) return
@@ -81,7 +91,7 @@ export function Scene4({ onDone }: Props) {
     if (seq.dead) return
     await seq.wait(0.25)
 
-    // koper melompat dari ban, melewati kepala Gasing, mendarat di belakangnya
+    // 05b Koper Melompat: dari ban, melewati kepala Gasing, mendarat di belakangnya
     const startX = sx.get()
     const landX = gx.get() - 330
     const unsub = hop.on('change', (v) => {
@@ -89,16 +99,19 @@ export function Scene4({ onDone }: Props) {
       sy.set(BELT_Y + (FLOOR_Y - 6 - BELT_Y) * v - 470 * Math.sin(Math.PI * v))
       srot.set(-360 * v)
     })
+    seq.sfx('hopUp')
     await seq.to(hop, 1, { duration: 1.0, ease: [0.3, 0, 0.6, 1] })
     unsub()
     if (seq.dead) return
+    seq.sfx('thud') // koper mendarat di lantai
     srot.set(0)
     follow.current = true
+    setCarried(true)
     setGState('pop')
     await seq.wait(1.1)
     if (seq.dead) return
 
-    // berjalan ke kanan, kamera ikut menggeser
+    // 05c Berjalan ke Kanan: kamera ikut menggeser
     setGState('walk')
     const walk = seq.to(gx, 1800, { duration: 4.4, ease: [0.45, 0, 0.45, 1] })
     await seq.wait(0.25)
@@ -110,7 +123,7 @@ export function Scene4({ onDone }: Props) {
   }, [])
 
   return (
-    <div className="scene scene4">
+    <div className="scene scene05">
       <motion.div className="world" style={{ width: WIDE.worldW, x: worldX }}>
         <EdgeExtend src={IMG.bandara} w={WIDE.worldW} h={1080} />
         <img className="world-img" src={IMG.bandara} alt="Area pengambilan bagasi di bandara" draggable={false} width={WIDE.worldW} height={1080} />

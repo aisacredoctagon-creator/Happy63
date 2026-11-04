@@ -9,14 +9,14 @@ interface Props {
   overlay?: ReactNode
   /**
    * Scene ini boleh digeser kiri-kanan di layar yang agak kotak (mis. Fold, tablet 4:3): kanvas diskalakan agar TINGGI layar
-   * terisi penuh, dan bagian lebar yang tidak muat digeser lewat StageView (lihat Scene3). Scene lain tidak terpengaruh
+   * terisi penuh, dan bagian lebar yang tidak muat digeser lewat StageView (lihat Scene04PetaKado). Scene lain tidak terpengaruh
    * (tetap di tengah dengan skala biasa).
    */
   pannable?: boolean
   /**
    * Di layar ponsel (landscape), kanvas scene ini diperbesar sampai MENUTUP layar penuh (tanpa batas MAX_FILL, jadi tidak ada
    * perluasan tepi) dan tepi BAWAH gambar menempel ke tepi bawah layar; bagian yang berlebih terpotong di atas. Scene yang
-   * memakainya wajib menggeser lapisan petanya ke atas sebesar `cropY` (lihat Scene3), karena Stage sendiri tetap berpusat.
+   * memakainya wajib menggeser lapisan petanya ke atas sebesar `cropY` (lihat Scene04PetaKado), karena Stage sendiri tetap berpusat.
    */
   fillBottom?: boolean
 }

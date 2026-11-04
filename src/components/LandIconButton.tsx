@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { audio } from '../audio/audio'
 import { IMG } from '../config'
 
 interface Props {
@@ -15,6 +16,11 @@ interface Props {
  */
 export function LandIconButton({ x, y, onClick }: Props) {
   const [show, setShow] = useState(false)
+  // sama seperti tombol teks "Mendarat": muncul dengan SFX reward, dan bersuara saat di-hover (data-sfx-hover)
+  useEffect(() => {
+    const t = setTimeout(() => audio.playSfx('reward'), 80)
+    return () => clearTimeout(t)
+  }, [])
   return (
     <div className="land-spot" style={{ left: `${x}%`, top: `${y}%` }}>
       <div id="land-tip" role="tooltip" className={`gift-tip ${show ? 'on' : ''}`}>
@@ -22,6 +28,7 @@ export function LandIconButton({ x, y, onClick }: Props) {
       </div>
       <motion.button
         type="button"
+        data-sfx-hover="hover"
         className="land-btn"
         aria-label="Mendarat"
         aria-describedby="land-tip"

@@ -2,6 +2,7 @@ import { useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { CSSProperties } from 'react'
+import { audio } from '../audio/audio'
 import type { Gift } from '../data/gifts'
 import { ENVELOPE_HEART, ENVELOPE_PASTEL, pastel } from '../data/pastel'
 import { Genie } from './genie'
@@ -64,6 +65,13 @@ const titleSize = (t: string) => (t.length <= 28 ? 'l' : t.length <= 60 ? 'm' : 
  */
 export function LetterModal({ gift, originEl, onClose }: Props) {
   const reduced = useReducedMotion()
+  // suara surat jatuh dan menutup, apa pun cara menutupnya (X, klik latar, Esc); dipicu bersamaan dengan animasi Genie
+  const prevGift = useRef<Gift | null>(null)
+  useEffect(() => {
+    if (gift && !prevGift.current) audio.playSfx('paperDrop')
+    else if (!gift && prevGift.current) audio.playSfx('paperClose')
+    prevGift.current = gift
+  }, [gift])
   const card = useRef<HTMLElement>(null)
   const genie = useRef<Genie | null>(null)
   const lastOrigin = useRef<Point | null>(null)
@@ -204,7 +212,7 @@ export function LetterModal({ gift, originEl, onClose }: Props) {
         <div className="letter-envelope" style={envelopeVars(shown)}>
           <Envelope />
         </div>
-        <button type="button" className="letter-close" onClick={close} aria-label="Tutup surat">
+        <button type="button" data-sfx="none" className="letter-close" onClick={close} aria-label="Tutup surat">
           <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden>
             <path d="M6 6 L20 20 M20 6 L6 20" stroke="#fff" strokeWidth="4.2" strokeLinecap="round" />
           </svg>

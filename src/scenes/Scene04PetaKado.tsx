@@ -1,9 +1,14 @@
+// Scene 04 - Peta Kado
+// 04a Peta Terbuka (masuk + petunjuk) -> 04b Surat Kado (tiap kado diklik, LetterModal) -> 04c Semua Kado Terbuka
+// (tombol Mendarat / Mulai Ulang) -> 04d Pesawat Lepas Landas (3,4 s) -> 04e Awan Menutup ke Bandara (CloudTransition)
+// 04f Pilih BGM (tombol not musik di pojok kanan atas, BgmPicker)
 import { AnimatePresence, animate, motion, useMotionValue, useTransform } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react'
+import { audio, useLoop } from '../audio/audio'
 import { useStageView } from '../components/Stage'
-import { useLoop } from '../audio/audio'
 import { DriftClouds, Sparkles } from '../components/Atmosphere'
+import { BgmPicker } from '../components/BgmPicker'
 import { GiftHotspot } from '../components/GiftHotspot'
 import { LandIconButton } from '../components/LandIconButton'
 import { PartyHat } from '../components/PartyHat'
@@ -13,6 +18,7 @@ import { PrimaryButton } from '../components/PrimaryButton'
 import { IMG, PLANE_MASCOT, SKY, STAGE_H, STAGE_W } from '../config'
 import { GIFTS, LAND_ICON_POS } from '../data/gifts'
 import type { Gift } from '../data/gifts'
+import { useSceneTag } from '../dev/sceneTag'
 import { useSequence } from '../hooks/useSequence'
 
 const kx = STAGE_W / SKY.srcW
@@ -37,7 +43,9 @@ interface Props {
   onRestart: () => void
 }
 
-export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart }: Props) {
+/** Scene 04 - Peta Kado: peta Indonesia dengan kado berisi surat; setelah semua terbuka, pesawat mendarat. */
+export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart }: Props) {
+  useSceneTag('04')
   const [active, setActive] = useState<Gift | null>(null)
   /** titik kado yang diklik (asal/tujuan animasi Genie pop-up); posisinya dibaca LetterModal tiap frame */
   const [originEl, setOriginEl] = useState<HTMLElement | null>(null)
@@ -56,6 +64,13 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
     },
     [onOpenGift],
   )
+
+  // pill progres (0,8 s) dan petunjuk (1,2 s, hanya bila belum ada kado terbuka) muncul dengan "pop" pelan
+  useEffect(() => {
+    const ts = [0.8, ...(opened.size === 0 ? [1.2] : [])].map((d) => setTimeout(() => audio.playSfx('pop', { volume: 0.5, scope: 'scene' }), d * 1000 + 80))
+    return () => ts.forEach(clearTimeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const close = useCallback(() => setActive(null), [])
 
   // ===== geser peta kiri-kanan (hanya di layar agak kotak, mis. Fold): lapisan peta bergeser, UI tetap di tepi layar =====
@@ -131,10 +146,11 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
   useSequence(
     async (seq) => {
       if (!landing) return
+      seq.sfx('takeoff') // 04d Pesawat Lepas Landas
       const fly = seq.to(t, 1, { duration: 3.4, ease: [0.4, 0, 0.55, 1] })
       await seq.wait(1.9)
       if (seq.dead) return
-      onLand()
+      onLand() // 04e Awan Menutup ke Bandara
       await fly
     },
     [landing],
@@ -153,13 +169,14 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
 
   return (
     <div
-      className={`scene scene3 ${panMode ? 'is-pannable' : ''}`}
+      className={`scene scene04 ${panMode ? 'is-pannable' : ''}`}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
       onClickCapture={onClickCapture}
     >
+      {/* 04a Peta Terbuka */}
       <motion.div className="fill" style={{ x: panX, y: shiftY }}>
       <motion.div
         className="fill"
@@ -168,8 +185,8 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
         animate={{ scale: 1 }}
         transition={{ duration: 2.6, ease: [0.22, 1, 0.36, 1] }}
       >
-        <img className="fill-img" src={IMG.scene3Bg} alt="Peta Indonesia dari udara" draggable={false} />
-        <EdgeExtend src={IMG.scene3Bg} w={STAGE_W} h={STAGE_H} />
+        <img className="fill-img" src={IMG.petaBg} alt="Peta Indonesia dari udara" draggable={false} />
+        <EdgeExtend src={IMG.petaBg} w={STAGE_W} h={STAGE_H} />
 
         {/* latar yang hidup */}
         <div className="sun-glow" aria-hidden />
@@ -200,7 +217,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
           </div>
         </motion.div>
 
-        {/* kado */}
+        {/* 04b Surat Kado: klik kado membuka LetterModal (di bawah) */}
         {GIFTS.map((g, i) => (
           <GiftHotspot key={g.id} gift={g} index={i} opened={opened.has(g.id)} disabled={landing} onOpen={open} />
         ))}
@@ -214,7 +231,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
       </motion.div>
       </motion.div>
 
-      {/* UI atas-tengah */}
+      {/* UI atas-tengah: petunjuk (04a) lalu tombol Mendarat / Mulai Ulang (04c Semua Kado Terbuka) */}
       <div className="top-actions" inert={active ? true : undefined}>
         <AnimatePresence>
           {!showActions && !landing && opened.size === 0 && (
@@ -233,12 +250,12 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
             <motion.div key="actions" className="top-actions-row" exit={{ opacity: 0 }}>
               {/* ronde 1: tombol teks seperti semula; ronde 2: tombol Mendarat ada di peta (lihat LandIconButton) */}
               {!hasCompletedOnce && (
-                <PrimaryButton tone="sun" pulse onClick={() => setLanding(true)}>
+                <PrimaryButton tone="sun" pulse appear="reward" hoverSfx="hover" onClick={() => setLanding(true)}>
                   Mendarat
                 </PrimaryButton>
               )}
               {hasCompletedOnce && (
-                <PrimaryButton tone="sky" onClick={onRestart}>
+                <PrimaryButton tone="sky" appear="none" onClick={onRestart}>
                   Mulai Ulang
                 </PrimaryButton>
               )}
@@ -260,7 +277,11 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
         )}
       </AnimatePresence>
 
+      {/* 04b Surat Kado */}
       <LetterModal gift={active} originEl={originEl} onClose={close} />
+
+      {/* 04f Pilih BGM (pojok kanan atas, di atas area kado) */}
+      {!landing && <BgmPicker />}
     </div>
   )
 }

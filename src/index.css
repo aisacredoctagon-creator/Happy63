@@ -1238,6 +1238,138 @@ button {
 .audio-toggle:hover {
   transform: scale(1.08);
 }
+.audio-dock {
+  display: contents;
+}
+.audio-more {
+  position: absolute;
+  right: 41px;
+  bottom: 112px;
+  z-index: 150;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 5px solid #fff;
+  background: linear-gradient(#b9c5d8, #8996ab);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 14px rgba(10, 40, 100, 0.3);
+  transition: transform 0.15s;
+}
+.audio-more.is-open,
+.audio-more:hover {
+  transform: scale(1.08);
+}
+.audio-panel {
+  position: absolute;
+  right: 30px;
+  bottom: 176px;
+  z-index: 150;
+  width: 380px;
+  padding: 22px 26px;
+  display: grid;
+  gap: 16px;
+  border-radius: 26px;
+  border: 5px solid #fff;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 12px 28px rgba(10, 40, 100, 0.35);
+  font-weight: 800;
+  color: #2c3e66;
+}
+.audio-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: center;
+  gap: 14px;
+  font-size: 26px;
+}
+.audio-row input[type='range'] {
+  width: 100%;
+  height: 32px;
+  accent-color: #3b8be0;
+  cursor: pointer;
+}
+
+/* ============ pilih BGM (Scene 04, pojok kanan atas; kado ada di y >= 650 sehingga tidak tertutup) ============ */
+.bgm-dock {
+  display: contents;
+}
+.bgm-btn {
+  position: absolute;
+  right: 30px;
+  top: 28px;
+  z-index: 90;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  border: 6px solid #fff;
+  background: linear-gradient(var(--sky-2), var(--sky-1));
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 18px rgba(10, 40, 100, 0.35);
+  transition: transform 0.15s;
+}
+.bgm-btn:hover,
+.bgm-btn.is-open {
+  transform: scale(1.08);
+}
+.bgm-panel {
+  position: absolute;
+  right: 30px;
+  top: 110px;
+  z-index: 90;
+  width: 480px;
+  padding: 18px 20px 20px;
+  display: grid;
+  gap: 10px;
+  border-radius: 26px;
+  border: 5px solid #fff;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 12px 28px rgba(10, 40, 100, 0.35);
+  color: #2c3e66;
+}
+.bgm-title {
+  margin: 0 0 2px 6px;
+  font-weight: 800;
+  font-size: 28px;
+}
+.bgm-row {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 4px solid transparent;
+  background: #eef3fb;
+  color: #2c3e66;
+  font: inherit;
+  font-weight: 800;
+  font-size: 26px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.12s, background 0.12s;
+}
+.bgm-row:hover {
+  transform: scale(1.02);
+}
+.bgm-row.is-active {
+  background: #ffe9a8;
+  border-color: #f5b83a;
+}
+.bgm-dot {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #d5deee;
+}
+.bgm-row.is-active .bgm-dot {
+  background: #3ec96b;
+}
 
 /* ============ keyframes ============ */
 @keyframes pillPulse {
@@ -1972,6 +2104,23 @@ button {
   right: calc(120px + var(--crop-x, 0px));
   bottom: calc(26px + var(--crop-y, 0px));
 }
+/* gerigi (audio-more) dan panel volume berada tepat di atas tombol suara (right 120, lebar 74) */
+.audio-more {
+  right: calc(131px + var(--crop-x, 0px));
+  bottom: calc(112px + var(--crop-y, 0px));
+}
+.audio-panel {
+  right: calc(120px + var(--crop-x, 0px));
+  bottom: calc(176px + var(--crop-y, 0px));
+}
+.bgm-btn {
+  right: calc(30px + var(--crop-x, 0px));
+  top: calc(28px + var(--crop-y, 0px));
+}
+.bgm-panel {
+  right: calc(30px + var(--crop-x, 0px));
+  top: calc(110px + var(--crop-y, 0px));
+}
 /* matahari pada peta Pulau.png ada di sekitar (1590,150) px gambar -> (1826,172) px kanvas */
 .sun-glow {
   left: 1376px;
@@ -2315,6 +2464,29 @@ button {
 .stage[data-compact] .audio-toggle {
   right: calc(160px + var(--crop-x, 0px)); /* 30 + lebar tombol layar penuh terbesar (74 x ui) + jarak */
 }
+/* gerigi + panel volume (di atas tombol suara) dan pemilih BGM (kanan atas) ikut diperbesar */
+.stage[data-compact] .audio-more {
+  scale: var(--ui);
+  transform-origin: right bottom;
+  right: calc(177px + var(--crop-x, 0px));
+  bottom: calc(160px + var(--crop-y, 0px));
+}
+.stage[data-compact] .audio-panel {
+  scale: var(--ui);
+  transform-origin: right bottom;
+  right: calc(160px + var(--crop-x, 0px));
+  bottom: calc(260px + var(--crop-y, 0px));
+}
+.stage[data-compact] .bgm-btn {
+  scale: var(--ui);
+  transform-origin: right top;
+}
+/* panel BGM lebih kecil dari --ui supaya di layar ponsel tidak menutup kado (Maluku/Papua) saat terbuka */
+.stage[data-compact] .bgm-panel {
+  scale: 1.1;
+  transform-origin: right top;
+  top: calc(147px + var(--crop-y, 0px));
+}
 .stage[data-compact] .top-actions-row,
 .stage[data-compact] .hint-pill {
   scale: var(--ui);
@@ -2326,11 +2498,11 @@ button {
 }
 
 /* ============ layar agak kotak (Fold, tablet 4:3): peta Scene 3 bisa digeser kiri-kanan, scene lain tetap di tengah ============ */
-.scene3.is-pannable {
+.scene04.is-pannable {
   cursor: grab;
-  touch-action: none; /* gerakan jari ditangani lewat pointer events di Scene3, bukan scroll bawaan browser */
+  touch-action: none; /* gerakan jari ditangani lewat pointer events di Scene04PetaKado, bukan scroll bawaan browser */
 }
-.scene3.is-pannable:active {
+.scene04.is-pannable:active {
   cursor: grabbing;
 }
 /* progres "Kado terbuka" di kiri bawah (sama seperti mobile) */

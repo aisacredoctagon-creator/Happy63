@@ -1,3 +1,9 @@
+// Scene 06 - Gasing Melihat TV
+// Satu komponen untuk tiga scene berurutan (satu rangkaian dengan state bersama):
+//   Scene 06 Gasing Melihat TV : 06a Gasing Masuk -> 06b Gasing Kaget -> 06c TV Menyala -> 06d Zoom ke TV   (fase 'room')
+//   Scene 07 Video Ucapan      : 07a Video Diputar / 07b Video Belum Ada (placeholder)                      (fase 'tv')
+//   Scene 08 Kartu Penutup     : 08a Konfeti dan Kartu -> 08b Putar Ulang                                   (status 'ended')
+// Tombol "Kembali ke Peta" (07c Awan Menutup ke Peta, CloudTransition) tersedia di ketiganya.
 import { AnimatePresence, motion, useAnimationFrame, useMotionValue } from 'framer-motion'
 import { useState } from 'react'
 import { Confetti } from '../components/Confetti'
@@ -9,7 +15,8 @@ import { Baggage, bagHeight } from '../components/Baggage'
 import { TvPlayer } from '../components/TvPlayer'
 import type { TvStatus } from '../components/TvPlayer'
 import { GASING_ASPECT, IMG, WIDE } from '../config'
-import { useLoop } from '../audio/audio'
+import { audio, useLoop } from '../audio/audio'
+import { useSceneTag } from '../dev/sceneTag'
 import { useSequence } from '../hooks/useSequence'
 
 const F = WIDE.f
@@ -20,7 +27,7 @@ const BAG_W = 150
 const BAG_H = bagHeight(1, BAG_W)
 /** kamera diam: menampilkan dunia mulai x = CAM_X */
 const CAM_X = 560
-/** posisi telapak Gasing = posisi akhir di Scene 4 (layar x=1020) */
+/** posisi telapak Gasing = posisi akhir di Scene 05 (layar x=1020) */
 const ENTER_X = 1020 + CAM_X
 const STOP_X = ENTER_X + 130
 
@@ -28,17 +35,19 @@ const STOP_X = ENTER_X + 130
 const TV_QUAD = [[1014, 92], [1757, 62], [1757, 472], [1014, 472]]
 const TV_POLY = TV_QUAD.map(([x, y]) => `${(x * F).toFixed(0)}px ${(y * F).toFixed(0)}px`).join(',')
 const TV_CENTER = { x: ((1014 + 1757) / 2) * F, y: ((92 + 62 + 472 + 472) / 4) * F }
-/** pusat layar TV pada Scene 6 (bingkai) dalam piksel kanvas 1920x1080, dan skala zoom agar sama besar */
+/** pusat layar TV pada bingkai Scene 07 dalam piksel kanvas 1920x1080, dan skala zoom agar sama besar */
 const TV_FRAME_CENTER = { x: 962, y: 515 }
 const TV_ZOOM = 1.58
 
 interface Props {
   onBack: () => void
   onVideoPlaying: (playing: boolean) => void
+  /** hanya dev (?scene=07 / ?scene=08): langsung mulai di TV layar penuh / kartu penutup, tanpa animasi 06a-06d */
+  devStart?: 'tv' | 'ended'
 }
 
-/** Scene 5: Gasing melihat TV, TV menyala, kamera zoom hingga layar penuh, video ucapan diputar. */
-export function Scene5({ onBack, onVideoPlaying }: Props) {
+/** Scene 06 - Gasing Melihat TV (lanjut ke Scene 07 Video Ucapan dan Scene 08 Kartu Penutup): Gasing melihat TV, TV menyala, kamera zoom hingga layar penuh, video ucapan diputar. */
+export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Props) {
   useLoop('airport', { fadeIn: 2, fadeOut: 1.5 })
   const tx = useMotionValue(-CAM_X)
   const ty = useMotionValue(0)
@@ -52,6 +61,7 @@ export function Scene5({ onBack, onVideoPlaying }: Props) {
   const [phase, setPhase] = useState<'room' | 'tv'>('room')
   const [status, setStatus] = useState<TvStatus>('idle')
   const [replayKey, setReplayKey] = useState(0)
+  useSceneTag(status === 'ended' ? '08' : phase === 'tv' ? '07' : '06')
 
   // koper mengekor
   const sx = useMotionValue(ENTER_X - 330)
@@ -66,6 +76,20 @@ export function Scene5({ onBack, onVideoPlaying }: Props) {
   })
 
   useSequence(async (seq) => {
+    if (import.meta.env.DEV && devStart) {
+      // hanya dev: lompat langsung ke Scene 07 / 08 (TV layar penuh), melewati 06a-06d
+      tx.set(TV_FRAME_CENTER.x - TV_CENTER.x * TV_ZOOM)
+      ty.set(TV_FRAME_CENTER.y - TV_CENTER.y * TV_ZOOM)
+      sc.set(TV_ZOOM)
+      setGState('idle')
+      setTvOn(true)
+      setPhase('tv')
+      if (devStart === 'ended') {
+        await seq.wait(0.8)
+        if (!seq.dead) handleStatus('ended')
+      }
+      return
+    }
     tx.set(-CAM_X)
     ty.set(0)
     sc.set(1)
@@ -76,22 +100,23 @@ export function Scene5({ onBack, onVideoPlaying }: Props) {
     setTvOn(false)
     setPhase('room')
 
-    await seq.wait(0.5)
+    await seq.wait(0.5) // 06a Gasing Masuk
     await seq.to(gx, STOP_X, { duration: 1.3, ease: [0.2, 0.7, 0.3, 1] })
     if (seq.dead) return
     setGState('idle')
     await seq.wait(0.4)
     if (seq.dead) return
     setSurprised(true)
-    setGState('pop') // kaget
+    setGState('pop') // 06b Gasing Kaget
     await seq.wait(1.6)
     if (seq.dead) return
     setGState('idle')
-    setTvOn(true) // layar menyala: kedip lalu terang
+    setTvOn(true) // 06c TV Menyala: layar kedip lalu terang
+    seq.sfx('tvFlicker') // 4 tik elektrik mengikuti keyframe tvOn, lalu dengung menyala
     await seq.wait(1.4)
     if (seq.dead) return
 
-    // zoom ke TV hingga bingkai memenuhi layar
+    // 06d Zoom ke TV hingga bingkai memenuhi layar
     const ease = [0.5, 0, 0.25, 1] as const
     await Promise.all([
       seq.to(sc, TV_ZOOM, { duration: 2.2, ease }),
@@ -99,19 +124,22 @@ export function Scene5({ onBack, onVideoPlaying }: Props) {
       seq.to(ty, TV_FRAME_CENTER.y - TV_CENTER.y * TV_ZOOM, { duration: 2.2, ease }),
     ])
     if (seq.dead) return
-    setPhase('tv')
+    setPhase('tv') // Scene 07 Video Ucapan dimulai
+    seq.sfx('pop') // bingkai TV layar penuh muncul
   }, [])
 
   const handleStatus = (s: TvStatus) => {
+    if (s === 'ended' && status !== 'ended') audio.playSfx('fanfare', { delay: 0.25, scope: 'scene' }) // kartu penutup + konfeti
+    if (s === 'missing' && status !== 'missing') audio.playSfx('oops', { scope: 'scene' })
     setStatus(s)
     onVideoPlaying(s === 'playing')
   }
 
   return (
-    <div className="scene scene5">
+    <div className="scene scene06">
       <motion.div className="world" style={{ width: WIDE.worldW, x: tx, y: ty, scale: sc, transformOrigin: '0 0' }}>
-        <EdgeExtend src={IMG.scene5Bg} w={WIDE.worldW} h={1080} />
-        <img className="world-img" src={IMG.scene5Bg} alt="Bandara dengan TV besar" draggable={false} width={WIDE.worldW} height={1080} />
+        <EdgeExtend src={IMG.ruangTvBg} w={WIDE.worldW} h={1080} />
+        <img className="world-img" src={IMG.ruangTvBg} alt="Bandara dengan TV besar" draggable={false} width={WIDE.worldW} height={1080} />
         <div className={`tv-glow ${tvOn ? 'on' : ''}`} style={{ clipPath: `polygon(${TV_POLY})` }} aria-hidden />
 
         <motion.div className="abs-zero" style={{ x: sx, y: sy, rotate: srot }}>
@@ -120,7 +148,7 @@ export function Scene5({ onBack, onVideoPlaying }: Props) {
             </div>
         </motion.div>
 
-        <GasingSprite src={IMG.gasing} width={GW} height={GH} x={gx} y={gy} state={gState} />
+        <GasingSprite src={IMG.gasing} width={GW} height={GH} x={gx} y={gy} state={gState} popSfx="surprise" />
 
         {/* tanda seru "kaget" */}
         <motion.div className="abs-zero" style={{ x: gx, y: gy }} aria-hidden>
@@ -147,7 +175,7 @@ export function Scene5({ onBack, onVideoPlaying }: Props) {
         </motion.div>
       </motion.div>
 
-      {/* bingkai TV layar penuh + video */}
+      {/* Scene 07 Video Ucapan: bingkai TV layar penuh + video (07a Video Diputar, 07b Video Belum Ada = placeholder di TvPlayer) */}
       <AnimatePresence>
         {phase === 'tv' && (
           <motion.div className="tv-frame" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7 }}>
@@ -159,6 +187,7 @@ export function Scene5({ onBack, onVideoPlaying }: Props) {
             </div>
 
             <AnimatePresence>
+              {/* Scene 08 Kartu Penutup: 08a Konfeti dan Kartu, 08b Putar Ulang (tombol end-replay) */}
               {status === 'ended' && (
                 <motion.div className="end-card" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }}>
                   <Confetti />
@@ -189,6 +218,7 @@ export function Scene5({ onBack, onVideoPlaying }: Props) {
         )}
       </AnimatePresence>
 
+      {/* 07c Awan Menutup ke Peta: tombol tersedia di Scene 06-08 */}
       <div className="corner-btn">
         <PrimaryButton tone="sky" delay={0.4} onClick={onBack}>
           ← Kembali ke Peta

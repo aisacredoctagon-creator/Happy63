@@ -1,9 +1,12 @@
+// Scene 03 - Pesawat di Langit
+// 03a Pesawat Masuk (0,3-1,7 s) -> 03b Pesawat Melayang (sampai 5,6 s) -> 03c Awan Menutup ke Peta (CloudTransition, 2,6 s)
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { useLoop } from '../audio/audio'
 import { DriftClouds, SpeedLines } from '../components/Atmosphere'
 import { EdgeExtend } from '../components/EdgeExtend'
 import { IMG, SKY, SPRITE, STAGE_H, STAGE_W } from '../config'
+import { useSceneTag } from '../dev/sceneTag'
 import { useSequence } from '../hooks/useSequence'
 
 const P = SPRITE.scene2Plane
@@ -15,32 +18,34 @@ const pos = {
 }
 
 interface Props {
-  /** dipanggil saat awan harus masuk (transisi ke Scene 3) */
+  /** dipanggil saat awan harus masuk (03c, transisi ke Scene 04) */
   onDone: () => void
 }
 
-/** Scene 2: pesawat melayang di langit; awan besar lalu menutup layar (CloudTransition di App). */
-export function Scene2({ onDone }: Props) {
+/** Scene 03 - Pesawat di Langit: pesawat melayang di langit; awan besar lalu menutup layar (CloudTransition di App). */
+export function Scene03PesawatDiLangit({ onDone }: Props) {
+  useSceneTag('03')
   // angin fade out halus selama transisi awan (bukan setelah scene hilang)
   const [leaving, setLeaving] = useState(false)
   useLoop('wind', { enabled: !leaving, fadeIn: 1.8, fadeOut: 2 })
   useSequence(async (seq) => {
-    await seq.wait(5.6)
+    seq.sfx('planeFlyby', { delay: 0.3 }) // 03a Pesawat Masuk (animasi mulai di 0,3 s)
+    await seq.wait(5.6) // 03b Pesawat Melayang
     if (seq.dead) return
     setLeaving(true)
-    onDone()
+    onDone() // 03c Awan Menutup ke Peta
   }, [])
 
   return (
-    <div className="scene scene2">
+    <div className="scene scene03">
       <motion.div
         className="fill"
         initial={{ scale: 1.12 }}
         animate={{ scale: 1 }}
         transition={{ duration: 2.8, ease: [0.22, 1, 0.36, 1] }}
       >
-        <img className="fill-img" src={IMG.scene2Bg} alt="Langit biru dengan awan" draggable={false} />
-        <EdgeExtend src={IMG.scene2Bg} w={STAGE_W} h={STAGE_H} />
+        <img className="fill-img" src={IMG.langitBg} alt="Langit biru dengan awan" draggable={false} />
+        <EdgeExtend src={IMG.langitBg} w={STAGE_W} h={STAGE_H} />
         <DriftClouds yMin={60} yMax={300} count={4} opacity={0.95} speed={26} size={[320, 520]} />
         <SpeedLines yMin={330} yMax={680} count={14} />
         {/* TODO: ganti dengan sprite pesawat terpisah (PNG transparan) */}
@@ -52,7 +57,7 @@ export function Scene2({ onDone }: Props) {
           transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
         >
           <div className="plane2-idle">
-            <img src={IMG.scene2Plane} alt="Pesawat terbang" draggable={false} className="fill-img" />
+            <img src={IMG.pesawatLangit} alt="Pesawat terbang" draggable={false} className="fill-img" />
           </div>
         </motion.div>
         <SpeedLines yMin={430} yMax={660} count={7} />

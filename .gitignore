@@ -2,3 +2,7 @@ node_modules
 dist
 *.local
 .claude
+
+# cadangan sumber musik BGM (WAV 18-52 MB): disimpan lokal, tidak di-commit agar repo tetap ringan
+aset proyek/original/3a. Orang Jenius Suka Berhitung 2024.wav
+aset proyek/original/Gasing Medley v4 Mastered (1).wav

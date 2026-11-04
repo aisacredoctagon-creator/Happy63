@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { audio } from '../audio/audio'
 import { VIDEO_SRC } from '../config'
 
 export type TvStatus = 'idle' | 'playing' | 'paused' | 'ended' | 'missing'
@@ -69,8 +70,17 @@ export function TvPlayer({ active, status, onStatus, replayKey }: Props) {
         playsInline
         preload="auto"
         onClick={toggle}
-        onPlay={() => !missing.current && onStatus('playing')}
-        onPause={() => !missing.current && ref.current && !ref.current.ended && onStatus('paused')}
+        onPlay={() => {
+          if (missing.current) return
+          // sedikit tunda: bila file video ternyata tidak ada, onError menyusul dan "play" tidak perlu berbunyi
+          setTimeout(() => !missing.current && audio.playSfx('play', { scope: 'scene' }), 150)
+          onStatus('playing')
+        }}
+        onPause={() => {
+          if (missing.current || !ref.current || ref.current.ended) return
+          audio.playSfx('pause', { scope: 'scene' })
+          onStatus('paused')
+        }}
         onEnded={() => onStatus('ended')}
         onError={() => {
           missing.current = true
@@ -94,7 +104,7 @@ export function TvPlayer({ active, status, onStatus, replayKey }: Props) {
       )}
 
       {showBig && (
-        <button type="button" className="tv-big-play" onClick={toggle} aria-label="Putar video">
+        <button type="button" data-sfx="none" className="tv-big-play" onClick={toggle} aria-label="Putar video">
           <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden>
             <path d="M20 12 L54 32 L20 52 Z" fill="#fff" stroke="#fff" strokeWidth="6" strokeLinejoin="round" />
           </svg>
@@ -104,7 +114,7 @@ export function TvPlayer({ active, status, onStatus, replayKey }: Props) {
 
       {status !== 'missing' && (
         <div className="tv-controls">
-          <button type="button" onClick={toggle} aria-label={status === 'playing' ? 'Jeda' : 'Putar'}>
+          <button type="button" data-sfx="none" onClick={toggle} aria-label={status === 'playing' ? 'Jeda' : 'Putar'}>
             {status === 'playing' ? (
               <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden>
                 <rect x="6" y="5" width="6" height="20" rx="2" fill="#fff" />
@@ -162,6 +172,7 @@ export function TvPlayer({ active, status, onStatus, replayKey }: Props) {
             onChange={(e) => {
               const v = ref.current
               const n = Number(e.target.value)
+              audio.playSfx('tick', { rate: 0.7 + n * 0.8, scope: 'scene' })
               setVol(n)
               if (v) {
                 v.volume = n
