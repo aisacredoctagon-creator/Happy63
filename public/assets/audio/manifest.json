@@ -1,3 +1,9 @@
 {
-  "overrides": ["music"]
+  "files": {
+    "music": "music-gasing-loop.mp3",
+    "cabin": "amb-cabin.m4a",
+    "airport": "amb-airport.m4a",
+    "paperDrop": "sfx-paperDrop.m4a",
+    "airplaneChimes": "sfx-airplaneChimes.m4a"
+  }
 }

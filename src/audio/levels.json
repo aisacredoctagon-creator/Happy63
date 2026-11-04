@@ -1,0 +1,22 @@
+{
+  "_catatan": "Pengaturan level audio. targetLufs = loudness (EBU R128) yang dituju tiap kategori; dipakai script normalisasi (npm run audio) dan kalibrasi SFX sintesis. mixDb = penyesuaian akhir saat diputar (dB, boleh minus/plus): ubah angka ini untuk menyeimbangkan tanpa menyentuh file. music dikurangi karena file musik asli (-13,8 LUFS) tidak di-encode ulang agar loop-nya tetap gapless.",
+  "targetLufs": {
+    "ambience": -22,
+    "accent": -19,
+    "ui": -19,
+    "transition": -18,
+    "action": -16,
+    "reward": -14,
+    "music": -20
+  },
+  "truePeakDb": -1.5,
+  "mixDb": {
+    "ambience": 0,
+    "accent": 0,
+    "ui": 0,
+    "transition": 0,
+    "action": 0,
+    "reward": 0,
+    "music": -6.2
+  }
+}

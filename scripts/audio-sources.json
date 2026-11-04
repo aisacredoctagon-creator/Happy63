@@ -1,0 +1,9 @@
+{
+  "_catatan": "Daftar audio yang diproses scripts/normalize-audio.mjs. name = kunci di manifest.json (nama SFX/loop di kode); src = file sumber relatif ke 'aset proyek/' (dicadangkan otomatis ke 'aset proyek/original/'); out = nama file hasil di public/assets/audio/; category = salah satu kunci targetLufs di src/audio/levels.json; trim = potong senyap di awal/akhir; trimDb = ambang senyap (dB). SFX baru: taruh file di 'aset proyek/', tambahkan satu entri di sini, jalankan npm run audio.",
+  "items": [
+    { "name": "cabin", "src": "inside airplane ambience 2.mp3", "out": "amb-cabin.m4a", "category": "ambience", "trim": "both", "trimDb": -45 },
+    { "name": "airport", "src": "Airport Ambience.wav", "out": "amb-airport.m4a", "category": "ambience", "trim": "both", "trimDb": -60 },
+    { "name": "paperDrop", "src": "Flip page.mp3", "out": "sfx-paperDrop.m4a", "category": "action", "trim": "both", "trimDb": -50 },
+    { "name": "airplaneChimes", "src": "airplane chimes.mp3", "out": "sfx-airplaneChimes.m4a", "category": "accent", "trim": "both", "trimDb": -50 }
+  ]
+}
