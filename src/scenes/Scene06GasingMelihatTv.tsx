@@ -126,7 +126,6 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Pro
 
     // 06d Zoom ke TV hingga bingkai memenuhi layar
     const ease = [0.5, 0, 0.25, 1] as const
-    seq.sfx('zoomIn')
     await Promise.all([
       seq.to(sc, TV_ZOOM, { duration: 2.2, ease }),
       seq.to(tx, TV_FRAME_CENTER.x - TV_CENTER.x * TV_ZOOM, { duration: 2.2, ease }),
@@ -216,7 +215,6 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Pro
                       type="button"
                       className="end-replay"
                       onClick={() => {
-                        audio.playSfx('whooshSoft')
                         setStatus('idle')
                         setReplayKey((k) => k + 1)
                       }}

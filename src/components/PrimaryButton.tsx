@@ -19,10 +19,12 @@ interface Props {
   sfx?: SfxName | 'none'
   /** bunyi saat tombol muncul (bawaan: pop kecil) */
   appear?: SfxName | 'none'
+  /** bunyi saat di-hover mouse (bawaan: diam) */
+  hoverSfx?: SfxName
 }
 
 /** Tombol pill bulat dengan outline putih tebal dan bayangan lembut (gaya sama untuk semua tombol utama). */
-export function PrimaryButton({ children, onClick, tone = 'sun', pulse = false, delay = 0, disabled, className = '', sfx, appear = 'pop' }: Props) {
+export function PrimaryButton({ children, onClick, tone = 'sun', pulse = false, delay = 0, disabled, className = '', sfx, appear = 'pop', hoverSfx }: Props) {
   useEffect(() => {
     if (appear === 'none') return
     const t = setTimeout(() => audio.playSfx(appear), delay * 1000 + 80)
@@ -41,6 +43,7 @@ export function PrimaryButton({ children, onClick, tone = 'sun', pulse = false, 
       <motion.button
         type="button"
         data-sfx={sfx}
+        data-sfx-hover={hoverSfx}
         className={`pill-btn pill-${tone} ${className}`}
         onClick={onClick}
         disabled={disabled}

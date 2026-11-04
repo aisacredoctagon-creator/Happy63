@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { asset } from '../config'
+import { BGM_DEFAULT, BGM_FADE, BGM_STORAGE_KEY, BGM_TRACKS } from './bgm'
 import { MAX_CONCURRENT, MAX_VARY, VOLUME } from './mix'
 import { SFX, makeNoise, synthLoop } from './synth'
 import type { SfxName, SynthLoopName } from './synth'
@@ -14,6 +15,8 @@ import type { SfxName, SynthLoopName } from './synth'
  *    lihat AUDIO_CREDITS.md); file itu menggantikan versi bawaan.
  *  - Keseimbangan volume: file dinormalisasi dan SFX sintesis dikalibrasi ke level acuan (levels.json), lalu gain per tingkat
  *    (ambience / minor / main / key, diatur di mix.ts) membentuk hierarki; soft-clipper di keluaran mencegah clipping.
+ *  - BGM (loop 'music'): lagu dipilih lewat setBgm() (disimpan di localStorage), dimuat lazy lewat bgm.ts, berganti dengan
+ *    crossfade; hanya satu lagu berbunyi pada satu waktu.
  *  - SFX bercakupan "scene" (seq.sfx / scope: 'scene') dipotong halus saat pindah scene (audio.stopScene()).
  */
 export type { SfxName }
@@ -43,6 +46,16 @@ const SEAMLESS: Partial<Record<LoopName, number>> = { cabin: 1.5, wind: 1.5, air
 /** batas total suara SFX yang berbunyi bersamaan; suara prioritas 0 (hover/tick) dibuang bila penuh */
 const MAX_VOICES = 14
 
+function loadBgm(): string {
+  try {
+    const v = localStorage.getItem(BGM_STORAGE_KEY)
+    if (v && BGM_TRACKS.some((t) => t.id === v)) return v
+  } catch {
+    /* abaikan */
+  }
+  return BGM_DEFAULT
+}
+
 const STORAGE_KEY = 'gasing-audio'
 const DEFAULTS: AudioSettings = { muted: false, sfx: 1, ambient: 1, music: 1 }
 
@@ -65,7 +78,7 @@ interface LoopState {
   count: number
   vol: number
   fade: number
-  node?: { src: AudioBufferSourceNode; gain: GainNode }
+  node?: { src: AudioBufferSourceNode; gain: GainNode; id?: string }
   starting?: boolean
   killTimer?: ReturnType<typeof setTimeout>
 }
@@ -101,6 +114,11 @@ class AudioManager {
   /** SFX berupa file (override) yang sudah di-decode; kosong = pakai resep prosedural */
   private sfxFiles = new Map<string, AudioBuffer>()
   private loops = new Map<LoopName, LoopState>()
+  /** BGM: pilihan lagu, buffer yang sudah dimuat (lazy), dan lagu lama yang sedang memudar saat berganti */
+  private _bgm = loadBgm()
+  private bgmBuffers = new Map<string, Promise<AudioBuffer | null>>()
+  private bgmOld?: { src: AudioBufferSourceNode; gain: GainNode }
+  private bgmOldTimer?: ReturnType<typeof setTimeout>
   private voices: Voice[] = []
   private lastPlay = new Map<SfxName, number>()
   private _settings = loadSettings()
@@ -164,6 +182,82 @@ class AudioManager {
     return p ?? Promise.resolve(null)
   }
 
+  /** muat dan decode satu lagu BGM (lazy, di-cache); lagu dengan `crossfade` > 0 diberi sambungan loop mulus */
+  private getBgmBuffer(id: string): Promise<AudioBuffer | null> {
+    const ctx = this.ctx
+    const track = BGM_TRACKS.find((t) => t.id === id)
+    let p = this.bgmBuffers.get(id)
+    if (!p && ctx && track) {
+      p = fetch(asset('audio/' + track.file))
+        .then((r) => (r.ok && !(r.headers.get('content-type') || '').includes('text/html') ? r.arrayBuffer() : null))
+        .then(async (data) => {
+          if (!data) return null
+          const buf = await ctx.decodeAudioData(data)
+          return track.crossfade > 0 ? makeSeamless(ctx, buf, track.crossfade) : buf
+        })
+        .catch(() => null)
+        .then((buf) => {
+          if (!buf) this.bgmBuffers.delete(id) // gagal: boleh dicoba lagi
+          return buf
+        })
+      this.bgmBuffers.set(id, p)
+    }
+    return p ?? Promise.resolve(null)
+  }
+
+  get bgmId() {
+    return this._bgm
+  }
+
+  /**
+   * Pilih lagu BGM. Pilihan disimpan dan dipakai di seluruh project. Bila musik sedang berbunyi: lagu baru dimuat dulu, lalu
+   * crossfade (BGM_FADE detik); lagu lama berhenti setelahnya, jadi hanya satu lagu yang terdengar.
+   */
+  setBgm(id: string) {
+    if (id === this._bgm || !BGM_TRACKS.some((t) => t.id === id)) return
+    this._bgm = id
+    try {
+      localStorage.setItem(BGM_STORAGE_KEY, id)
+    } catch {
+      /* abaikan */
+    }
+    this.emit()
+    void this.getBgmBuffer(id).then(() => {
+      const ctx = this.ctx
+      const s = this.loops.get('music')
+      if (this._bgm !== id || !ctx || !s || s.count <= 0 || !s.node) return // pilihan berganti lagi, atau musik tidak sedang berbunyi
+      this.killBgmOld()
+      const old = s.node
+      this.bgmOld = old
+      s.node = undefined
+      const now = ctx.currentTime
+      const gp = old.gain.gain
+      gp.cancelScheduledValues(now)
+      gp.setValueAtTime(gp.value, now)
+      gp.linearRampToValueAtTime(0, now + BGM_FADE)
+      this.bgmOldTimer = setTimeout(() => {
+        this.killBgmOld()
+        for (const k of [...this.bgmBuffers.keys()]) if (k !== this._bgm) this.bgmBuffers.delete(k) // bebaskan memori lagu yang tidak dipakai
+      }, BGM_FADE * 1000 + 150)
+      s.fade = BGM_FADE
+      void this.applyLoop('music')
+    })
+  }
+
+  private killBgmOld() {
+    if (this.bgmOldTimer) clearTimeout(this.bgmOldTimer)
+    this.bgmOldTimer = undefined
+    const old = this.bgmOld
+    this.bgmOld = undefined
+    if (!old) return
+    try {
+      old.src.stop()
+    } catch {
+      /* sudah berhenti */
+    }
+    old.gain.disconnect()
+  }
+
   /** Dipanggil pada gestur user. Aman dipanggil berulang. */
   unlock() {
     if (!this.ctx) {
@@ -192,8 +286,8 @@ class AudioManager {
       this.cat.ambient = mk(this.loopBus, this._settings.ambient)
       this.cat.music = mk(this.loopBus, this._settings.music)
       this.noise = makeNoise(ctx)
-      // siapkan file asli dan musik segera; loop prosedural lain disiapkan bertahap agar tidak menahan thread utama
-      void this.getBuffer('music')
+      // siapkan file asli segera; loop prosedural lain disiapkan bertahap agar tidak menahan thread utama
+      setTimeout(() => void this.getBgmBuffer(this._bgm), 2500) // hanya lagu terpilih; yang lain dimuat saat dipilih
       void this.manifest.then((m) => Object.keys(m).forEach((k) => void this.getBuffer(k)))
       ;(['cabin', 'wind', 'airport', 'wheels'] as const).forEach((k, i) => setTimeout(() => void this.getBuffer(k), 1500 + i * 400))
     }
@@ -315,8 +409,13 @@ class AudioManager {
         gp.linearRampToValueAtTime(s.vol, now + s.fade)
       } else if (!s.starting) {
         s.starting = true
-        const buf = await this.getBuffer(name)
+        const bgmId = this._bgm
+        const buf = await (name === 'music' ? this.getBgmBuffer(bgmId) : this.getBuffer(name))
         s.starting = false
+        if (name === 'music' && bgmId !== this._bgm) {
+          void this.applyLoop(name) // pilihan lagu berganti saat memuat: ulangi dengan lagu terbaru
+          return
+        }
         if (!buf || s.count <= 0 || s.node) return
         const src = ctx.createBufferSource()
         src.buffer = buf
@@ -326,7 +425,7 @@ class AudioManager {
         gain.gain.linearRampToValueAtTime(s.vol, ctx.currentTime + s.fade)
         src.connect(gain).connect(bus)
         src.start()
-        s.node = { src, gain }
+        s.node = { src, gain, id: name === 'music' ? bgmId : undefined }
       }
     } else if (s.node) {
       const { src, gain } = s.node
@@ -459,6 +558,11 @@ export function useLoop(name: LoopName, opts: { enabled?: boolean; fadeIn?: numb
 
 export function useMuted() {
   return useSyncExternalStore(audio.subscribe, () => audio.isMuted)
+}
+
+/** id lagu BGM terpilih (berubah saat audio.setBgm dipanggil) */
+export function useBgm() {
+  return useSyncExternalStore(audio.subscribe, () => audio.bgmId)
 }
 
 export function useAudioSettings() {

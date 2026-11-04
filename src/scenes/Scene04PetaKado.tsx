@@ -7,6 +7,7 @@ import type { CSSProperties } from 'react'
 import { audio, useLoop } from '../audio/audio'
 import { DriftClouds, Sparkles } from '../components/Atmosphere'
 import { GiftHotspot } from '../components/GiftHotspot'
+import { BgmPicker } from '../components/BgmPicker'
 import { EdgeExtend } from '../components/EdgeExtend'
 import { LetterModal } from '../components/LetterModal'
 import { PrimaryButton } from '../components/PrimaryButton'
@@ -158,7 +159,7 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
           )}
           {showActions && (
             <motion.div key="actions" className="top-actions-row" exit={{ opacity: 0 }}>
-              <PrimaryButton tone="sun" pulse appear="reward" onClick={() => setLanding(true)}>
+              <PrimaryButton tone="sun" pulse appear="reward" hoverSfx="hover" onClick={() => setLanding(true)}>
                 Mendarat
               </PrimaryButton>
               {hasCompletedOnce && (
@@ -185,6 +186,9 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
       </AnimatePresence>
 
       {/* 04b Surat Kado */}
+      {/* pilih BGM (pojok kanan atas, di atas area kado) */}
+      {!landing && <BgmPicker />}
+
       <LetterModal gift={active} onClose={close} />
     </div>
   )

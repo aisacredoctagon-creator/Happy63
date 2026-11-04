@@ -9,7 +9,7 @@ import type { Tier } from './mix'
 
 export type SfxName =
   | 'click' | 'hover' | 'tick' | 'pop' | 'start' | 'toggleOn'
-  | 'zoomIn' | 'whooshSoft' | 'planeFlyby'
+  | 'planeFlyby'
   | 'cloudWhoosh' | 'cloudSoft'
   | 'giftHover' | 'paperDrop' | 'paperClose' | 'reward' | 'takeoff'
   | 'step' | 'hopUp' | 'thud' | 'boing' | 'surprise'
@@ -154,8 +154,6 @@ export const SFX: Record<SfxName, SfxDef> = {
   },
 
   // --- whoosh / transisi ---
-  zoomIn: { tier: 'minor', dur: 2.1, vol: 7.399, max: 1, play: (c) => air(c, { f: 350, f2: 2600, q: 0.8, dur: 2.0, gain: 0.22, attack: 1.2 }) },
-  whooshSoft: { tier: 'minor', dur: 0.9, vol: 13.301, max: 2, play: (c) => air(c, { f: 500, f2: 1600, q: 0.7, dur: 0.8, gain: 0.16, attack: 0.3 }) },
   planeFlyby: {
     tier: 'minor', dur: 1.6, vol: 9.189, max: 1,
     play: (c) => {

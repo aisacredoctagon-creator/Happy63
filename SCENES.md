@@ -49,6 +49,7 @@ Sumber kebenaran di kode: `src/data/scenes.ts` (`SCENE_LIST`). **Setiap ada scen
 | 04c | Semua Kado Terbuka | 8 kado terbuka, tombol "Mendarat" (dan "Mulai Ulang") muncul | - |
 | 04d | Pesawat Lepas Landas | Pesawat terbang melengkung keluar layar | 3,4 s |
 | 04e | Awan Menutup (ke Bandara) | `CloudTransition` ke Scene 05 | 2,6 s |
+| 04f | Pilih BGM | Tombol not musik di pojok kanan atas membuka panel 3 lagu (`components/BgmPicker.tsx`, daftar di `audio/bgm.ts`); bisa dipakai kapan saja selama di peta | kapan saja |
 | 05a | Ban Berjalan | Koper bergerak di ban, Gasing datang menjemput | 0 - 5,2 s |
 | 05b | Koper Melompat | Koper melompat dari ban ke belakang Gasing | ~1 s |
 | 05c | Berjalan ke Kanan | Gasing menarik koper, kamera ikut bergeser | ~4,4 s |
@@ -62,26 +63,26 @@ Sumber kebenaran di kode: `src/data/scenes.ts` (`SCENE_LIST`). **Setiap ada scen
 | 08a | Konfeti dan Kartu | Kartu penutup muncul setelah video selesai | ~3 s |
 | 08b | Putar Ulang | Tombol "Putar ulang video" | - |
 
-Elemen yang tampil di semua scene dan tidak diberi nomor: tombol suara dan panel volume (`components/AudioToggle.tsx`). `CloudTransition` (`components/CloudTransition.tsx`) satu komponen yang dipakai di 03c, 04e, dan 07c.
+Elemen yang tampil di semua scene dan tidak diberi nomor: tombol suara dan tombol gerigi pengaturan volume (`components/AudioToggle.tsx`). `CloudTransition` (`components/CloudTransition.tsx`) satu komponen yang dipakai di 03c, 04e, dan 07c.
 
 ## SFX per scene
 
 Waktu dihitung dari saat scene tampil dan bersifat kira-kira. Detail tiap SFX: `AUDIO_CREDITS.md`.
 
-Tingkat volume (diatur di `src/audio/mix.ts`): **minor** (pelan, ±10 dB di bawah utama) = `click`, `hover`, `tick`, `pop`, `toggleOn`, `giftHover`, `play`, `pause`, `zoomIn`, `whooshSoft`, `planeFlyby`, `cloudWhoosh`, `cloudSoft`, `paperClose`, `takeoff`, `step`; **main** (sedang) = `paperDrop`, `airplaneChimes`, `hopUp`, `thud`, `boing`, `surprise`, `tvFlicker`, `tvOn`, `oops`; **key** (paling menonjol) = `start`, `reward`, `fanfare`; loop (`cabin`, `airport`, `wind`, `wheels`) = ambience, latar yang datar.
+Tingkat volume (diatur di `src/audio/mix.ts`): **minor** (pelan, ±10 dB di bawah utama) = `click`, `hover`, `tick`, `pop`, `toggleOn`, `giftHover`, `play`, `pause`, `planeFlyby`, `cloudWhoosh`, `cloudSoft`, `paperClose`, `takeoff`, `step`; **main** (sedang) = `paperDrop`, `airplaneChimes`, `hopUp`, `thud`, `boing`, `surprise`, `tvFlicker`, `tvOn`, `oops`; **key** (paling menonjol) = `start`, `reward`, `fanfare`; loop (`cabin`, `airport`, `wind`, `wheels`) = ambience, latar yang datar.
 
 | Scene | SFX (urutan) |
 | --- | --- |
-| 01 Layar Pembuka | `hover`, `start` (klik Mulai Perjalanan) |
-| 02 Kabin Pesawat | loop `cabin` (file); `airplaneChimes` (3,4 s, sekali per kunjungan, dua denting ~2,2 s); 02c: `whooshSoft` (file); zoom keluar 02b tanpa SFX |
+| 01 Layar Pembuka | `start` (klik Mulai Perjalanan); hover tombol tanpa suara |
+| 02 Kabin Pesawat | loop `cabin` (file); `airplaneChimes` (3,4 s, sekali per kunjungan, dua denting ~2,2 s); zoom keluar 02b dan crossfade 02c tanpa SFX |
 | 03 Pesawat di Langit | loop `wind`; 03a: `planeFlyby` (0,3 s); 03c: `cloudWhoosh`, lalu `cloudSoft` (+1,1 s) |
-| 04 Peta Kado | loop `music`; 04a: `pop` (0,9 s dan 1,3 s); 04b: `giftHover`, `paperDrop` (file, -7,5 dB, saat kado diklik), `paperClose`; 04c: `reward` (Mendarat muncul), `whooshSoft` (Mulai Ulang); 04d: `takeoff`; 04e: `cloudWhoosh`, `cloudSoft` |
+| 04 Peta Kado | BGM pilihan (loop `music`, default "Orang Jenius Suka Berhitung"; pilih lewat tombol not musik 04f); 04a: `pop` (0,9 s dan 1,3 s); 04b: `giftHover`, `paperDrop` (file, -7,5 dB, saat kado diklik), `paperClose`; 04c: `reward` (Mendarat muncul), `hover` (hover "Mendarat"); 04d: `takeoff`; 04e: `cloudWhoosh`, `cloudSoft` |
 | 05 Bandara Bagasi | loop `airport` (file); 05a: `step` tiap 0,46 s; 05b: `hopUp`, `thud`, `boing`; 05c: `step`, loop `wheels` (file `suitcase rolling`, mulai/berhenti bersama Gasing berjalan menarik koper) |
-| 06 Gasing Melihat TV | loop `airport`; `pop` (tombol Kembali); 06a: `step`; 06b: `surprise`; 06c: `tvFlicker` (lalu `tvOn`); 06d: `zoomIn`; `pop` (bingkai TV) |
+| 06 Gasing Melihat TV | loop `airport`; `pop` (tombol Kembali); 06a: `step`; 06b: `surprise`; 06c: `tvFlicker` (lalu `tvOn`); 06d: zoom ke TV tanpa SFX; `pop` (bingkai TV) |
 | 07 Video Ucapan | 07a: `play` / `pause`, `tick` (slider volume); 07b: `oops`; 07c: `click`, `cloudWhoosh`, `cloudSoft` |
-| 08 Kartu Penutup | 08a: `fanfare`; 08b: `whooshSoft` (Putar ulang) |
+| 08 Kartu Penutup | 08a: `fanfare`; 08b: hanya `click` (Putar ulang) |
 
-Tombol suara (`hover`, `click`, `tick`, `toggleOn`) berlaku di semua scene. SFX `chimeAir`, `gift`, `check`, `squish`, `clip`, `zoomOut`, dan loop `belt` sudah dihapus (atas feedback); gerak koper dan Gasing tetap punya suara lewat `hopUp`, `thud`, `boing`, dan `step`.
+Tombol suara (`click`, `tick`, `toggleOn`) berlaku di semua scene. **Hover hanya bersuara pada kado (`giftHover`) dan tombol "Mendarat" (`hover`)**; tombol lain tidak. SFX `chimeAir`, `gift`, `check`, `squish`, `clip`, `zoomOut`, `zoomIn`, `whooshSoft`, dan loop `belt` sudah dihapus (atas feedback); gerak koper dan Gasing tetap punya suara lewat `hopUp`, `thud`, `boing`, dan `step`.
 
 ## Alat bantu debug (hanya `npm run dev`, tidak ikut build final)
 

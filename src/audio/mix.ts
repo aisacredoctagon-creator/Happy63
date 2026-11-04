@@ -7,14 +7,14 @@
  *   minor     transisi, whoosh, klik/hover, pop, muncul/hilang  pelan: ~10 dB di bawah SFX utama
  *   main      aksi utama di scene (surat, denting, Gasing, TV)  sedang
  *   key       momen kunci/reward (mulai, mendarat, penutup)     paling menonjol
- *   music     musik (file asli -13,8 LUFS tidak di-encode ulang; dikurangi agar sekitar -20 LUFS)
+ *   music     musik BGM (ketiga lagu sudah dinormalisasi ke -20 LUFS, jadi 0 dB)
  */
 export const VOLUME = {
   ambience: 0,
   minor: -10,
   main: 0,
   key: 3,
-  music: -6.2,
+  music: 0,
 } as const
 
 export type Tier = 'minor' | 'main' | 'key'

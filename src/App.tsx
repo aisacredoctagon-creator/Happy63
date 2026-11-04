@@ -62,7 +62,8 @@ export default function App() {
   }, [videoPlaying])
 
   // SFX terpusat untuk semua tombol. Klik: data-sfx="<nama SFX>" mengganti bunyi bawaan ("click"), "none" = diam
-  // (kado diam saat diklik: bunyinya dari surat). Hover (mouse saja): data-sfx-hover dengan aturan sama, bawaan "hover".
+  // (kado diam saat diklik: bunyinya dari surat). Hover (mouse saja) HANYA untuk tombol ber-atribut data-sfx-hover:
+  // kado (giftHover) dan "Mendarat" (hover); tombol lain tidak bersuara saat di-hover.
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       const btn = (e.target as Element | null)?.closest?.('button')
@@ -74,8 +75,8 @@ export default function App() {
       if (e.pointerType !== 'mouse') return
       const btn = (e.target as Element | null)?.closest?.('button')
       if (!btn || (btn as HTMLButtonElement).disabled || btn.contains(e.relatedTarget as Node | null)) return
-      const kind = btn.closest('[data-sfx-hover]')?.getAttribute('data-sfx-hover') ?? 'hover'
-      if (kind !== 'none') audio.playSfx(kind as SfxName)
+      const kind = btn.closest('[data-sfx-hover]')?.getAttribute('data-sfx-hover')
+      if (kind && kind !== 'none') audio.playSfx(kind as SfxName)
     }
     document.addEventListener('click', onClick, true)
     document.addEventListener('pointerover', onOver, true)
@@ -125,21 +126,13 @@ export default function App() {
     setOpenedGifts(new Set())
     setHasCompletedOnce(false)
     setRunKey((k) => k + 1)
-    audio.playSfx('whooshSoft')
     goFade('scene02', 0.9)
   }, [goFade])
 
   let content
   switch (scene) {
     case 'scene02':
-      content = (
-        <Scene02KabinPesawat
-          onDone={() => {
-            audio.playSfx('whooshSoft')
-            goFade('scene03', 1.4)
-          }}
-        />
-      )
+      content = <Scene02KabinPesawat onDone={() => goFade('scene03', 1.4)} />
       break
     case 'scene03':
       content = <Scene03PesawatDiLangit onDone={() => goWithCloud('scene04')} />

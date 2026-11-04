@@ -59,10 +59,14 @@ export function AudioToggle() {
         title="Atur volume"
       >
         <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden>
-          <path d="M4 7 H22 M4 13 H22 M4 19 H22" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
-          <circle cx="9" cy="7" r="3.2" fill="#8996ab" stroke="#fff" strokeWidth="2.4" />
-          <circle cx="17" cy="13" r="3.2" fill="#8996ab" stroke="#fff" strokeWidth="2.4" />
-          <circle cx="11" cy="19" r="3.2" fill="#8996ab" stroke="#fff" strokeWidth="2.4" />
+          <path
+            d="M11.04 4.83 L11.51 1.90 L14.49 1.90 L14.96 4.83 L17.39 5.84 L19.79 4.10 L21.90 6.21 L20.16 8.61 L21.17 11.04 L24.10 11.51 L24.10 14.49 L21.17 14.96 L20.16 17.39 L21.90 19.79 L19.79 21.90 L17.39 20.16 L14.96 21.17 L14.49 24.10 L11.51 24.10 L11.04 21.17 L8.61 20.16 L6.21 21.90 L4.10 19.79 L5.84 17.39 L4.83 14.96 L1.90 14.49 L1.90 11.51 L4.83 11.04 L5.84 8.61 L4.10 6.21 L6.21 4.10 L8.61 5.84 Z"
+            fill="#fff"
+            stroke="#fff"
+            strokeWidth="1.2"
+            strokeLinejoin="round"
+          />
+          <circle cx="13" cy="13" r="3.6" fill="#8996ab" />
         </svg>
       </button>
       <button

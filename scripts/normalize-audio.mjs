@@ -64,10 +64,12 @@ function duration(file, chain = '') {
 const silence = (db) => `silenceremove=start_periods=1:start_threshold=${db}dB:start_silence=0`
 const headChain = (db) => silence(db)
 const tailChain = (db) => `areverse,${silence(db)},areverse`
+/** ambang senyap (dB) awal dan akhir: trimHeadDb / trimTailDb menimpa trimDb (mis. potong fade-out lagu dengan trimTailDb tinggi) */
+const headDb = (item) => item.trimHeadDb ?? item.trimDb ?? -50
+const tailDb = (item) => item.trimTailDb ?? item.trimDb ?? -50
 function trimChain(item) {
-  const db = item.trimDb ?? -50
   const t = item.trim ?? 'none'
-  return [t === 'both' || t === 'head' ? headChain(db) : '', t === 'both' || t === 'tail' ? tailChain(db) : ''].filter(Boolean).join(',')
+  return [t === 'both' || t === 'head' ? headChain(headDb(item)) : '', t === 'both' || t === 'tail' ? tailChain(tailDb(item)) : ''].filter(Boolean).join(',')
 }
 
 function backup(item) {
@@ -91,7 +93,7 @@ function process_(item) {
 
   const raw = measure(src)
   const durRaw = duration(src)
-  const durHead = duration(src, item.trim === 'tail' ? '' : headChain(item.trimDb ?? -50))
+  const durHead = duration(src, item.trim === 'both' || item.trim === 'head' ? headChain(headDb(item)) : '')
   const durTrim = duration(src, chain)
   const post = measure(src, chain, durTrim)
   if (!(post.I > -60)) throw new Error(`Loudness ${item.name} tidak terukur (${post.I} LUFS): file terlalu pendek atau senyap?`)
@@ -105,7 +107,7 @@ function process_(item) {
   let fin
   for (let i = 0; i < 5; i++) {
     const af = [chain, `volume=${gain.toFixed(2)}dB`, `alimiter=limit=${dbToLin(ceil).toFixed(4)}:attack=3:release=40:level=false`].filter(Boolean).join(',')
-    const r = ffmpeg(['-i', src, '-af', af, '-c:a', 'aac', '-b:a', mono ? '96k' : '128k', '-ar', '44100', '-map_metadata', '-1', '-movflags', '+faststart', tmp])
+    const r = ffmpeg(['-i', src, '-af', af, '-c:a', 'aac', '-b:a', item.bitrate ?? (mono ? '96k' : '128k'), '-ar', '44100', '-map_metadata', '-1', '-movflags', '+faststart', tmp])
     if (r.status !== 0) throw new Error(`ffmpeg gagal untuk ${item.name}:\n${r.stderr.slice(-600)}`)
     fin = measure(tmp, '', durTrim)
     const dI = target - fin.I
@@ -117,10 +119,12 @@ function process_(item) {
   renameSync(tmp, out)
   const durOut = duration(out)
 
-  // daftarkan di manifest agar dipakai SoundManager
-  const manifest = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, 'utf8')) : { files: {} }
-  manifest.files = { ...(manifest.files ?? {}), [item.name]: item.out }
-  writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n')
+  // daftarkan di manifest agar dipakai SoundManager (register: false = tidak, mis. lagu BGM yang dimuat lazy lewat src/audio/bgm.ts)
+  if (item.register !== false) {
+    const manifest = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, 'utf8')) : { files: {} }
+    manifest.files = { ...(manifest.files ?? {}), [item.name]: item.out }
+    writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n')
+  }
 
   return { name: item.name, src: item.src, out: item.out, category: item.category, target, lufsBefore: raw.I, lufsAfter: fin.I, tpAfter: fin.TP, lraAfter: fin.LRA, durRaw, durOut, headMs, tailMs }
 }
