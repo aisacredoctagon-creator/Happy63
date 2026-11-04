@@ -2,8 +2,11 @@
  * Efek Genie (macOS) untuk pop-up: kartu diiris menjadi N irisan sejajar sumbu animasi. Tiap batas irisan bergerak dari
  * posisi aslinya ke titik asal (kado), makin dekat ke titik asal makin cepat dan makin sempit, sehingga tepi kiri/kanan
  * membentuk corong melengkung dan isi kartu ikut terdistorsi seperti "tersedot". Tiap irisan adalah salinan DOM kartu yang
- * dipotong (overflow: hidden) lalu dipetakan ke trapesium di antara dua batas dengan matrix3d (homografi), jadi tepi corong
- * menyambung mulus tanpa anak tangga.
+ * dipotong (overflow: hidden) lalu dipetakan ke jajar genjang di antara dua batas dengan transformasi affine 2D, dan
+ * dipangkas (clip-path) menjadi trapesium persisnya, jadi tepi corong tetap menyambung mulus tanpa anak tangga.
+ *
+ * Sengaja TIDAK memakai matrix3d/perspektif: 40 layer dengan proyeksi perspektif ekstrem membuat sebagian GPU/Chrome gagal
+ * merasterisasi isinya (muncul garis putih tinggi di sisi corong). Transformasi affine + clip-path aman di semua GPU.
  *
  * Semua koordinat dalam piksel kanvas .stage (belum di-scale), jadi tetap benar di ukuran layar/fullscreen apa pun.
  */
@@ -20,18 +23,14 @@ interface Rect {
   height: number
 }
 
-type Quad = [Point, Point, Point, Point]
-
-const SLICES = 40
+const SLICES = 72
 /** keterlambatan irisan terjauh terhadap yang terdekat dengan titik asal (0 = serempak) */
 const LAG = 0.55
 /** irisan saling menimpa sedikit (px sumber) agar tidak ada garis tipis di sambungan */
 const OVERLAP = 2
 const MIN_SIZE = 2
-/** di atas nilai q ini kartu sudah terlalu kecil: irisan disembunyikan (segiempat nyaris titik membuat homografi tidak stabil) */
+/** di atas nilai q ini kartu sudah terlalu kecil: irisan disembunyikan */
 const HIDE_Q = 0.94
-/** bobot perspektif sudut terkecil yang masih diizinkan; di bawahnya jatuh ke transformasi affine */
-const MIN_W = 0.35
 /** ruang ekstra di sekeliling kartu agar amplop (atas) dan tombol tutup (kanan atas) yang menonjol tidak terpotong */
 const PAD = { left: 12, top: 64, right: 36, bottom: 12 }
 
@@ -41,39 +40,6 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
 /** kemajuan lokal tiap batas: halus di awal dan akhir */
 const smooth = (t: number) => t * t * (3 - 2 * t)
-
-/**
- * matrix3d yang memetakan persegi panjang sumber (0,0)-(w,h) ke segiempat q (urutan: kiri-atas, kanan-atas, kanan-bawah,
- * kiri-bawah). Rumus persegi satuan -> segiempat (Heckbert); bila segiempatnya jajar genjang jatuh ke transformasi affine.
- */
-function quadMatrix(q: Quad, w: number, h: number): string | null {
-  const [p0, p1, p2, p3] = q
-  const dx1 = p1.x - p2.x
-  const dx2 = p3.x - p2.x
-  const dx3 = p0.x - p1.x + p2.x - p3.x
-  const dy1 = p1.y - p2.y
-  const dy2 = p3.y - p2.y
-  const dy3 = p0.y - p1.y + p2.y - p3.y
-  let g = 0
-  let hh = 0
-  const det = dx1 * dy2 - dx2 * dy1
-  if ((dx3 !== 0 || dy3 !== 0) && Math.abs(det) > 1e-9) {
-    g = (dx3 * dy2 - dx2 * dy3) / det
-    hh = (dx1 * dy3 - dx3 * dy1) / det
-  }
-  // bobot perspektif tiap sudut (1, 1+g, 1+g+h, 1+h): terlalu kecil/negatif = segiempat terlalu lancip, hasilnya meledak (garis putih tinggi)
-  if (Math.min(1 + g, 1 + g + hh, 1 + hh) < MIN_W) {
-    g = 0
-    hh = 0
-  }
-  const a = p1.x - p0.x + g * p1.x
-  const b = p3.x - p0.x + hh * p3.x
-  const d = p1.y - p0.y + g * p1.y
-  const e = p3.y - p0.y + hh * p3.y
-  const m = [a / w, d / w, g / w, b / h, e / h, hh / h, p0.x, p0.y]
-  if (m.some((v) => !Number.isFinite(v) || Math.abs(v) > 1e5)) return null
-  return `matrix3d(${a / w},${d / w},0,${g / w},${b / h},${e / h},0,${hh / h},0,0,1,0,${p0.x},${p0.y},0,1)`
-}
 
 export class Genie {
   private ghost: HTMLElement
@@ -173,23 +139,33 @@ export class Genie {
     }
 
     const step = axisLen / SLICES
+    const len = step + OVERLAP
     const ext = 1 + OVERLAP / step
+    const f3 = (v: number) => v.toFixed(3)
     for (let i = 0; i < SLICES; i++) {
-      const pt = (k: number, side: -1 | 1): Point =>
-        this.axisY ? { x: mid[k] + (side * size[k]) / 2, y: pos[k] } : { x: pos[k], y: mid[k] + (side * size[k]) / 2 }
-      // A = sisi awal irisan (kiri bila sumbu vertikal, atas bila horizontal), B = sisi satunya; indeks 0/1 = batas awal/akhir irisan
-      const [a0, b0, a1, b1] = [pt(i, -1), pt(i, 1), pt(i + 1, -1), pt(i + 1, 1)]
-      // batas akhir diperpanjang sedikit (OVERLAP) searah irisan supaya menimpa irisan berikutnya
-      const grow = (from: Point, to: Point): Point => ({ x: from.x + (to.x - from.x) * ext, y: from.y + (to.y - from.y) * ext })
-      // urutan sudut sumber: kiri-atas, kanan-atas, kanan-bawah, kiri-bawah
-      const quad: Quad = this.axisY ? [a0, b0, grow(b0, b1), grow(a0, a1)] : [a0, grow(a0, a1), grow(b0, b1), b0]
-      const tf = this.axisY ? quadMatrix(quad, W, step + OVERLAP) : quadMatrix(quad, step + OVERLAP, H)
+      // titik tengah awal/akhir irisan; batas akhir diperpanjang sedikit (OVERLAP) searah irisan supaya menimpa irisan berikutnya
+      const c0: Point = this.axisY ? { x: mid[i], y: pos[i] } : { x: pos[i], y: mid[i] }
+      const cn: Point = this.axisY ? { x: mid[i + 1], y: pos[i + 1] } : { x: pos[i + 1], y: mid[i + 1] }
+      const c1: Point = { x: c0.x + (cn.x - c0.x) * ext, y: c0.y + (cn.y - c0.y) * ext }
+      const s0 = size[i]
+      const s1 = lerp(size[i], size[i + 1], ext)
+      // jajar genjang memakai lebar terbesar dari kedua batas; sisi yang lebih sempit dipangkas clip-path menjadi trapesium persis
+      const s = Math.max(s0, s1)
+      const ux = (c1.x - c0.x) / len
+      const uy = (c1.y - c0.y) / len
       const el = this.slices[i]
-      if (tf) {
-        el.style.transform = tf
-        el.style.visibility = ''
+      if (this.axisY) {
+        // lokal x = melintang sumbu (lebar W), lokal y = sepanjang sumbu
+        el.style.transform = `matrix(${s / W},0,${ux},${uy},${c0.x - s / 2},${c0.y})`
+        const r0 = (W / 2) * (s0 / s)
+        const r1 = (W / 2) * (s1 / s)
+        el.style.clipPath = `polygon(${f3(W / 2 - r0)}px 0,${f3(W / 2 + r0)}px 0,${f3(W / 2 + r1)}px ${len}px,${f3(W / 2 - r1)}px ${len}px)`
       } else {
-        el.style.visibility = 'hidden'
+        // lokal x = sepanjang sumbu, lokal y = melintang sumbu (tinggi H)
+        el.style.transform = `matrix(${ux},${uy},0,${s / H},${c0.x},${c0.y - s / 2})`
+        const r0 = (H / 2) * (s0 / s)
+        const r1 = (H / 2) * (s1 / s)
+        el.style.clipPath = `polygon(0 ${f3(H / 2 - r0)}px,${len}px ${f3(H / 2 - r1)}px,${len}px ${f3(H / 2 + r1)}px,0 ${f3(H / 2 + r0)}px)`
       }
     }
     // memudar sebelum menjadi titik; di atas HIDE_Q seluruh irisan disembunyikan

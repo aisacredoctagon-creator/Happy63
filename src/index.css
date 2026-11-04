@@ -531,7 +531,6 @@ button {
   overflow: hidden;
   transform-origin: 0 0;
   will-change: transform;
-  backface-visibility: hidden;
 }
 .letter.is-clone {
   box-shadow: none;
