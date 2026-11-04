@@ -13,6 +13,7 @@ import { GIFTS } from './data/gifts'
 import { DevSceneBadge } from './dev/DevSceneBadge'
 import { readDevJump } from './dev/devJump'
 import { usePreload } from './hooks/usePreload'
+import { prefetchNext, prepareScene } from './hooks/sceneImages'
 import { Scene01LayarPembuka } from './scenes/Scene01LayarPembuka'
 import { Scene02KabinPesawat } from './scenes/Scene02KabinPesawat'
 import { Scene03PesawatDiLangit } from './scenes/Scene03PesawatDiLangit'
@@ -58,6 +59,13 @@ export default function App() {
     if (scene !== 'scene06') setVideoPlaying(false)
   }, [scene])
 
+  // selagi pemain di scene ini, scene berikutnya di-decode di muka (setelah animasi masuk scene ini reda)
+  useEffect(() => {
+    if (!started) return
+    const t = setTimeout(() => prefetchNext(scene), 1500)
+    return () => clearTimeout(t)
+  }, [scene, started])
+
   // video ucapan sedang diputar -> pelankan ambient
   useEffect(() => {
     audio.setDuck(videoPlaying ? 0 : 1)
@@ -95,16 +103,20 @@ export default function App() {
     setScene(next)
   }, [])
 
-  /** pindah scene lewat CloudTransition: awan menutup -> ganti scene -> awan membuka */
+  /**
+   * pindah scene lewat CloudTransition: awan menutup -> ganti scene -> awan membuka.
+   * Gambar scene tujuan di-decode LEBIH DULU (biasanya sudah siap dari prefetchNext, jadi tanpa jeda); awan baru berjalan
+   * sesudahnya, supaya tidak ada decode besar di tengah animasi.
+   */
   const goWithCloud = useCallback((next: SceneId) => {
     if (cloudNext.current) return // transisi sedang berjalan: abaikan klik ganda
     cloudNext.current = next
-    setCloud({ next, runId: ++cloudId.current })
+    void prepareScene(next).then(() => setCloud({ next, runId: ++cloudId.current }))
   }, [])
-  /** layar tertutup penuh: ganti scene (cross-fade singkat di balik awan) */
+  /** layar tertutup penuh: ganti scene langsung (tanpa cross-fade: dua scene penuh tidak perlu bertumpuk di balik awan) */
   const onCloudCovered = useCallback(() => {
     if (!cloudNext.current) return
-    setFade(0.4)
+    setFade(0)
     changeScene(cloudNext.current)
   }, [changeScene])
   const onCloudDone = useCallback(() => {
@@ -113,8 +125,11 @@ export default function App() {
   }, [])
 
   const goFade = useCallback((next: SceneId, duration: number) => {
-    setFade(duration)
-    changeScene(next)
+    // gambar scene tujuan di-decode dulu, baru cross-fade dimulai
+    void prepareScene(next).then(() => {
+      setFade(duration)
+      changeScene(next)
+    })
   }, [changeScene])
 
   const openGift = useCallback((id: string) => setOpenedGifts((prev) => (prev.has(id) ? prev : new Set(prev).add(id))), [])
@@ -184,7 +199,8 @@ export default function App() {
         <FullscreenToggle />
         <Scene01LayarPembuka progress={progress} ready={done} visible={!started} onStart={() => {
             audio.unlock() // interaksi pertama: buka audio (aturan autoplay browser)
-            setStarted(true)
+            // gambar scene pertama di-decode dulu supaya tidak muncul bertahap
+            void prepareScene(scene, 1200).then(() => setStarted(true))
           }} />
       </Stage>
       <RotateNotice />
