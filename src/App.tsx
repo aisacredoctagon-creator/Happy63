@@ -62,7 +62,7 @@ export default function App() {
   }, [videoPlaying])
 
   // SFX terpusat untuk semua tombol. Klik: data-sfx="<nama SFX>" mengganti bunyi bawaan ("click"), "none" = diam
-  // (kado memakai "gift"). Hover (mouse saja): data-sfx-hover dengan aturan sama, bawaan "hover".
+  // (kado diam saat diklik: bunyinya dari surat). Hover (mouse saja): data-sfx-hover dengan aturan sama, bawaan "hover".
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       const btn = (e.target as Element | null)?.closest?.('button')

@@ -24,7 +24,7 @@ const STEP_MS = 460
 
 /**
  * Gasing sebagai sprite terpisah: bobbing/jalan, bayangan di lantai, dan pantulan.
- * Suara mengikuti state: langkah tiap siklus jalan, squish saat 'ready', boing saat 'pop'.
+ * Suara mengikuti state: langkah tiap siklus jalan, boing saat 'pop'.
  * TODO: ganti `src` dengan sprite Gasing final (PNG transparan) bila sudah tersedia.
  */
 export function GasingSprite({ src, width, height, x, y, state, popSfx = 'boing' }: Props) {
@@ -33,7 +33,7 @@ export function GasingSprite({ src, width, height, x, y, state, popSfx = 'boing'
       const id = setInterval(() => audio.playSfx('step', { scope: 'scene' }), STEP_MS)
       return () => clearInterval(id)
     }
-    const once: SfxName | null = state === 'pop' ? popSfx : state === 'ready' ? 'squish' : null
+    const once: SfxName | null = state === 'pop' ? popSfx : null
     if (!once) return
     const id = setTimeout(() => audio.playSfx(once, { scope: 'scene' }), 40)
     return () => clearTimeout(id)

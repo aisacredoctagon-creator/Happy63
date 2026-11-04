@@ -26,7 +26,7 @@ export function LetterModal({ gift, onClose }: Props) {
   // suara surat jatuh dan menutup, apa pun cara menutupnya (X, klik latar, Esc)
   const prev = useRef<Gift | null>(null)
   useEffect(() => {
-    if (gift && !prev.current) audio.playSfx('paperDrop', { delay: 0.05 })
+    if (gift && !prev.current) audio.playSfx('paperDrop') // puncak suara ~0,25 s, sejajar pantulan pertama pegas surat (~0,2 s)
     else if (!gift && prev.current) audio.playSfx('paperClose')
     prev.current = gift
   }, [gift])

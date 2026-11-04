@@ -33,7 +33,7 @@ export function GiftHotspot({ gift, opened, index, disabled, onOpen }: Props) {
       <div className={`gift-tip ${active ? 'on' : ''}`}>{gift.name}</div>
       <motion.button
         type="button"
-        data-sfx="gift"
+        data-sfx="none"
         data-sfx-hover="giftHover"
         className={`gift-btn ${opened ? 'is-opened' : ''}`}
         aria-label={`Buka kado dari ${gift.name}${opened ? ' (sudah dibuka)' : ''}`}

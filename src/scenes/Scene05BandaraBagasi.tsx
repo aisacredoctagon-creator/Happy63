@@ -41,7 +41,6 @@ interface Props {
 export function Scene05BandaraBagasi({ onDone }: Props) {
   useSceneTag('05')
   useLoop('airport', { fadeIn: 2, fadeOut: 1.5 })
-  useLoop('belt', { fadeIn: 1, fadeOut: 1.2 }) // ban berjalan (CSS) berputar selama scene ini
   const cam = useMotionValue(0)
   const worldX = useTransform(cam, (v) => -v)
 
@@ -115,7 +114,6 @@ export function Scene05BandaraBagasi({ onDone }: Props) {
     unsub()
     if (seq.dead) return
     seq.sfx('thud') // koper mendarat di lantai
-    seq.sfx('clip', { delay: 0.15 }) // tali terpasang ke Gasing
     srot.set(0)
     follow.current = true
     setCarried(true)

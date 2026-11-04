@@ -292,6 +292,8 @@ export function Scene02KabinPesawat({ onDone }: Props) {
       return
     }
     zoom.set(seq.reduced ? 1 : 1.5)
+    // denting pramugari di atas dengung kabin: sekali per kunjungan, setelah ambience terbentuk dan zoom berjalan (file ~2,3 s: dua denting)
+    seq.sfx('airplaneChimes', { delay: seq.reduced ? 0.4 : 3.4 })
     tx.set(seq.reduced ? 0 : STAGE_W / 2 - ox)
     ty.set(seq.reduced ? 0 : 560 - oy)
     await seq.wait(2.4) // 02a Fade dari Hitam: fade-in dari hitam + jeda ~2 detik

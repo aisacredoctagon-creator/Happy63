@@ -19,7 +19,7 @@ Hanya saat `npm run dev`: label nama scene aktif di pojok kiri bawah, dan lompat
 | Isi surat (9 kado), nama provinsi, warna, posisi kado (%) | `src/data/gifts.ts` |
 | Judul surat ("Untuk Prof. Yohanes Surya") | `LETTER_TITLE` di `src/data/gifts.ts` |
 | Video ucapan | `public/assets/video/ucapan.mp4` (timpa file; jika belum ada tampil "Video segera hadir") |
-| Audio (SFX, ambient, musik) | Sudah berbunyi lewat sintesis bawaan (`src/audio/synth.ts`). File asli opsional di `public/assets/audio/` + `manifest.json` - lihat `AUDIO_CREDITS.md` |
+| Audio (SFX, ambient, musik) | Campuran file (musik, ambience kabin/bandara, `paperDrop`, `airplaneChimes`) dan sintesis (`src/audio/synth.ts`). Tambah/normalisasi file: `npm run audio`; level: `src/audio/levels.json`. Lihat `AUDIO_CREDITS.md` |
 | Teks penutup (Scene 08 - Kartu Penutup) | `src/scenes/Scene06GasingMelihatTv.tsx` (blok `end-card`) |
 
 ## Struktur

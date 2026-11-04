@@ -29,9 +29,6 @@ const WAVES: Array<[number, number]> = [
   [900, 820], [1300, 820], [480, 790], [760, 640], [1000, 790],
 ]
 
-/** semiton di atas nada dasar untuk "ding" kado ke-1 sampai ke-8 (tangga pentatonik naik) */
-const CHECK_STEPS = [0, 2, 4, 7, 9, 12, 14, 16]
-
 interface Props {
   opened: Set<string>
   hasCompletedOnce: boolean
@@ -54,12 +51,10 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
   const showActions = (allOpened || hasCompletedOnce) && !landing
   const open = useCallback(
     (g: Gift) => {
-      // kado baru dibuka: "ding" yang naik satu nada pentatonik untuk setiap kado (centang hijau muncul ~0,35 s kemudian)
-      if (!opened.has(g.id)) audio.playSfx('check', { rate: 2 ** (CHECK_STEPS[Math.min(opened.size, CHECK_STEPS.length - 1)] / 12), delay: 0.35 })
       setActive(g)
       onOpenGift(g.id)
     },
-    [onOpenGift, opened],
+    [onOpenGift],
   )
 
   // pill progres (0,8 s) dan petunjuk (1,2 s, hanya bila belum ada kado terbuka) muncul dengan "pop" pelan

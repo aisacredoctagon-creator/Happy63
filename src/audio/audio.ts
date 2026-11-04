@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { asset } from '../config'
-import { SFX, makeNoise, synthLoop } from './synth'
+import levels from './levels.json'
+import { SFX, SFX_CAT, makeNoise, synthLoop } from './synth'
 import type { SfxName, SynthLoopName } from './synth'
 
 /**
@@ -8,8 +9,11 @@ import type { SfxName, SynthLoopName } from './synth'
  *  - SFX pendek dan loop (ambient + musik) lewat satu jalur, tiga kategori volume (sfx / ambient / musik) + mute global.
  *  - Autoplay: AudioContext baru dibuat/di-resume pada interaksi pertama user (klik/tekan tombol);
  *    loop yang diminta sebelum itu otomatis mulai begitu audio terbuka.
- *  - Semua SFX dan ambient punya versi prosedural bawaan (src/audio/synth.ts). File asli opsional: taruh di
- *    public/assets/audio/ lalu daftarkan namanya di manifest.json (lihat AUDIO_CREDITS.md); file itu menggantikan versi bawaan.
+ *  - Semua SFX dan ambient punya versi prosedural bawaan (src/audio/synth.ts). File asli opsional: letakkan di
+ *    public/assets/audio/ lalu daftarkan di manifest.json (nama -> file; dibuat otomatis oleh `npm run audio`,
+ *    lihat AUDIO_CREDITS.md); file itu menggantikan versi bawaan.
+ *  - Keseimbangan volume: file dinormalisasi ke target loudness kategorinya, SFX sintesis dikalibrasi ke target yang sama,
+ *    lalu levels.json (mixDb) menyesuaikan akhir per kategori; limiter di keluaran mencegah clipping.
  *  - SFX bercakupan "scene" (seq.sfx / scope: 'scene') dipotong halus saat pindah scene (audio.stopScene()).
  */
 export type { SfxName }
@@ -23,21 +27,19 @@ export interface AudioSettings {
   music: number
 }
 
-const LOOP_FILES: Record<LoopName, string> = {
-  cabin: asset('audio/amb-cabin.mp3'),
-  wind: asset('audio/amb-wind.mp3'),
-  airport: asset('audio/amb-airport.mp3'),
-  belt: asset('audio/amb-belt.mp3'),
-  wheels: asset('audio/amb-wheels.mp3'),
-  music: asset('audio/music-gasing-loop.mp3'), // "2b. Coba Soal Gasing Loop.mp3"
-}
-const isLoopName = (k: string): k is LoopName => k in LOOP_FILES
-const fileOf = (key: string) => (isLoopName(key) ? LOOP_FILES[key] : asset(`audio/sfx-${key}.mp3`))
+const LOOP_NAMES: LoopName[] = ['cabin', 'wind', 'airport', 'wheels', 'music']
+const isLoopName = (k: string): k is LoopName => (LOOP_NAMES as string[]).includes(k)
 
-/** keseimbangan volume: musik di bawah SFX, ambient paling pelan */
-const LOOP_VOL: Record<LoopName, number> = { cabin: 0.32, wind: 0.34, airport: 0.3, music: 0.38, belt: 0.24, wheels: 0.22 }
-/** loop ambient dibuat mulus dengan crossfade sambungan (detik); musik dibiarkan apa adanya */
-const SEAMLESS: Partial<Record<LoopName, number>> = { cabin: 1.5, wind: 1.5, airport: 2, belt: 1, wheels: 1 }
+/** pengali linear dari dB */
+const lin = (db: number) => 10 ** (db / 20)
+/** penyesuaian akhir per kategori dari levels.json (mixDb, dalam dB) */
+const mixLin = (c: keyof typeof levels.mixDb) => lin(levels.mixDb[c])
+const loopMix = (n: LoopName) => mixLin(n === 'music' ? 'music' : 'ambience')
+
+/** gain tambahan per loop (linear, 1 = apa adanya): file loop sudah dinormalisasi dan loop sintesis sudah dikalibrasi */
+const LOOP_VOL: Record<LoopName, number> = { cabin: 1, wind: 1, airport: 1, wheels: 1, music: 1 }
+/** loop ambient dibuat mulus dengan crossfade sambungan (detik); musik dibiarkan apa adanya (gapless dari file) */
+const SEAMLESS: Partial<Record<LoopName, number>> = { cabin: 1.5, wind: 1.5, airport: 2, wheels: 1 }
 /** batas total suara SFX yang berbunyi bersamaan; suara prioritas 0 (hover/tick) dibuang bila penuh */
 const MAX_VOICES = 14
 
@@ -93,7 +95,7 @@ class AudioManager {
   private globalBus?: GainNode
   private sceneBus?: GainNode
   private noise?: AudioBuffer
-  private manifest: Promise<Set<string>>
+  private manifest: Promise<Record<string, string>>
   private raw = new Map<string, Promise<ArrayBuffer | null>>()
   private buffers = new Map<string, Promise<AudioBuffer | null>>()
   /** SFX berupa file (override) yang sudah di-decode; kosong = pakai resep prosedural */
@@ -109,9 +111,9 @@ class AudioManager {
     // manifest kecil berisi daftar file asli yang tersedia: tanpa itu tidak ada permintaan 404 ke file yang belum ada
     this.manifest = fetch(asset('audio/manifest.json'))
       .then((r) => r.json())
-      .then((j: { overrides?: unknown }) => new Set<string>(Array.isArray(j.overrides) ? (j.overrides as string[]) : []))
-      .catch(() => new Set<string>())
-    void this.manifest.then((set) => set.forEach((k) => this.fetchRaw(k))) // ambil data file sedini mungkin (decode menunggu AudioContext)
+      .then((j: { files?: Record<string, string> }) => (j && typeof j.files === 'object' && j.files ? j.files : {}))
+      .catch(() => ({}) as Record<string, string>)
+    void this.manifest.then((m) => Object.keys(m).forEach((k) => this.fetchRaw(k))) // ambil data file sedini mungkin (decode menunggu AudioContext)
 
     const unlock = () => this.unlock()
     for (const ev of ['pointerdown', 'keydown', 'touchstart']) window.addEventListener(ev, unlock, { capture: true })
@@ -128,7 +130,7 @@ class AudioManager {
     let p = this.raw.get(key)
     if (!p) {
       p = this.manifest
-        .then((set) => (set.has(key) ? fetch(fileOf(key)) : null))
+        .then((m) => (m[key] ? fetch(asset('audio/' + m[key])) : null))
         .then((r) => (r && r.ok && !(r.headers.get('content-type') || '').includes('text/html') ? r.arrayBuffer() : null))
         .catch(() => null)
       this.raw.set(key, p)
@@ -170,7 +172,15 @@ class AudioManager {
       const ctx = (this.ctx = new AC())
       this.master = ctx.createGain()
       this.master.gain.value = this._settings.muted ? 0 : 1
-      this.master.connect(ctx.destination)
+      // limiter di keluaran: mencegah clipping saat beberapa suara bertumpuk
+      const limiter = ctx.createDynamicsCompressor()
+      limiter.threshold.value = -3
+      limiter.knee.value = 0
+      limiter.ratio.value = 20
+      limiter.attack.value = 0.002
+      limiter.release.value = 0.12
+      this.master.connect(limiter)
+      limiter.connect(ctx.destination)
       const mk = (parent: AudioNode, v: number) => {
         const g = ctx.createGain()
         g.gain.value = v
@@ -186,8 +196,8 @@ class AudioManager {
       this.noise = makeNoise(ctx)
       // siapkan file asli dan musik segera; loop prosedural lain disiapkan bertahap agar tidak menahan thread utama
       void this.getBuffer('music')
-      void this.manifest.then((set) => set.forEach((k) => void this.getBuffer(k)))
-      ;(['cabin', 'wind', 'airport', 'belt', 'wheels'] as const).forEach((k, i) => setTimeout(() => void this.getBuffer(k), 1500 + i * 400))
+      void this.manifest.then((m) => Object.keys(m).forEach((k) => void this.getBuffer(k)))
+      ;(['cabin', 'wind', 'airport', 'wheels'] as const).forEach((k, i) => setTimeout(() => void this.getBuffer(k), 1500 + i * 400))
     }
     if (this.ctx.state === 'suspended' && !document.hidden) {
       void this.ctx.resume().then(() => this.syncLoops())
@@ -226,11 +236,12 @@ class AudioManager {
 
     const t = now + (opts.delay ?? 0) + 0.005
     const rate = (opts.rate ?? 1) * (def.vary ? 1 + (Math.random() * 2 - 1) * def.vary : 1)
+    const file = this.sfxFiles.get(name)
     const voice = ctx.createGain()
-    voice.gain.value = def.vol * (opts.volume ?? 1)
+    // file sudah dinormalisasi ke target kategorinya (gain 1); resep sintesis memakai def.vol hasil kalibrasi
+    voice.gain.value = (file ? 1 : def.vol) * mixLin(SFX_CAT[name]) * (opts.volume ?? 1)
     voice.connect(bus)
 
-    const file = this.sfxFiles.get(name)
     if (file) {
       const src = ctx.createBufferSource()
       src.buffer = file
@@ -261,7 +272,7 @@ class AudioManager {
     this.voices = this.voices.filter((v) => v.scope === 'global')
   }
 
-  startLoop(name: LoopName, fade = 1.5, volume = LOOP_VOL[name]) {
+  startLoop(name: LoopName, fade = 1.5, volume = LOOP_VOL[name] * loopMix(name)) {
     const s = this.loops.get(name) ?? { count: 0, vol: volume, fade }
     s.count++
     s.vol = volume
@@ -382,18 +393,36 @@ class AudioManager {
   }
 }
 
-/** sambungan loop mulus: ekor dicampur (equal-power) ke kepala, lalu dipotong */
+/**
+ * sambungan loop mulus: ekor dicampur (equal-power) ke kepala, lalu dipotong.
+ * Daya campuran = 1 + korelasi * sin(2t): ekor-kepala yang berkorelasi negatif (umum pada dengung bernada rendah) membuat level
+ * turun di sambungan, yang positif membuatnya naik, jadi dikoreksi dengan korelasi terukur agar level tetap rata.
+ */
 function makeSeamless(ctx: AudioContext, buf: AudioBuffer, fadeSec: number) {
   const f = Math.min(Math.floor(fadeSec * buf.sampleRate), Math.floor(buf.length / 3))
   const n = buf.length - f
+  let sxy = 0
+  let sxx = 0
+  let syy = 0
+  for (let c = 0; c < buf.numberOfChannels; c++) {
+    const d = buf.getChannelData(c)
+    for (let i = 0; i < f; i++) {
+      sxy += d[i] * d[n + i]
+      sxx += d[i] * d[i]
+      syy += d[n + i] * d[n + i]
+    }
+  }
+  const corr = Math.max(-0.9, Math.min(0.9, sxy / Math.sqrt(sxx * syy || 1)))
   const out = ctx.createBuffer(buf.numberOfChannels, n, buf.sampleRate)
   for (let c = 0; c < buf.numberOfChannels; c++) {
     const src = buf.getChannelData(c)
     const dst = out.getChannelData(c)
     for (let i = 0; i < n; i++) dst[i] = src[i]
     for (let i = 0; i < f; i++) {
-      const t = i / f
-      dst[i] = src[i] * Math.sin((t * Math.PI) / 2) + src[n + i] * Math.cos((t * Math.PI) / 2)
+      const t = (i / f) * (Math.PI / 2)
+      const head = Math.sin(t)
+      const tail = Math.cos(t)
+      dst[i] = (src[i] * head + src[n + i] * tail) / Math.sqrt(Math.max(0.2, 1 + corr * 2 * head * tail))
     }
   }
   return out
