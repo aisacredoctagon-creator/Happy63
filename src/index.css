@@ -485,33 +485,34 @@ button {
 }
 
 /* layar kecil (ponsel landscape, kanvas diperkecil): kartu dilebarkan dan teks diperbesar relatif ke kanvas agar terbaca */
+/* mobile: kartu dilebarkan (max-width .letter menjaga agar tetap di area yang terlihat) dan teks diperbesar */
 .stage[data-compact] .letter {
-  width: 1120px;
-  padding: 70px 64px 34px;
+  width: 1560px;
+  padding: 72px 90px 36px;
 }
 .stage[data-compact] .letter-title {
-  font-size: calc(56px * var(--fs, 1));
+  font-size: calc(62px * var(--fs, 1));
 }
 .stage[data-compact] .letter-title[data-size='m'] {
-  font-size: calc(50px * var(--fs, 1));
+  font-size: calc(56px * var(--fs, 1));
 }
 .stage[data-compact] .letter-title[data-size='s'] {
-  font-size: calc(44px * var(--fs, 1));
+  font-size: calc(48px * var(--fs, 1));
 }
 .stage[data-compact] .letter-chip {
-  font-size: calc(32px * var(--fs, 1));
+  font-size: calc(36px * var(--fs, 1));
 }
 .stage[data-compact] .letter-body {
   max-height: none;
+  font-size: calc(38px * var(--fs, 1));
+  line-height: 58px;
+}
+.stage[data-compact] .letter-body.is-long {
   font-size: calc(34px * var(--fs, 1));
   line-height: 52px;
 }
-.stage[data-compact] .letter-body.is-long {
-  font-size: calc(32px * var(--fs, 1));
-  line-height: 48px;
-}
 .stage[data-compact] .letter-members {
-  font-size: calc(30px * var(--fs, 1));
+  font-size: calc(33px * var(--fs, 1));
 }
 
 /* salinan kartu untuk animasi Genie (lihat genie.ts): tanpa bayangan besar supaya ringan, tidak bisa diklik */
@@ -2323,4 +2324,59 @@ button {
 .letter[data-font='atma'] {
   --font-popup: 'Atma', 'Nunito', ui-rounded, system-ui, sans-serif;
   --fs: 1;
+}
+
+/* ============ mobile (layar kecil, .stage[data-compact]) ============
+   Mengikuti desain Figma "Mobile": UI diperbesar, progres "Kado terbuka" dipindah ke kiri bawah, tombol suara dan layar
+   penuh di kanan bawah. Pembesaran memakai properti `scale` (terpisah dari `transform` milik framer-motion/hover) dengan
+   titik tumpu di sudut tempat elemen menempel, jadi posisinya di tepi layar tidak bergeser. */
+.stage[data-compact] {
+  --ui: 1.55;
+}
+.stage[data-compact] .progress-pill {
+  left: calc(30px + var(--crop-x, 0px));
+  translate: none;
+  scale: var(--ui);
+  transform-origin: left bottom;
+}
+.stage[data-compact] .audio-toggle,
+.stage[data-compact] .fs-toggle {
+  scale: var(--ui);
+  transform-origin: right bottom;
+}
+.stage[data-compact] .fs-toggle {
+  right: calc(160px + var(--crop-x, 0px)); /* 30 + lebar tombol suara terbesar (74 x ui) + jarak */
+}
+.stage[data-compact] .fs-hint {
+  bottom: calc(170px + var(--crop-y, 0px));
+  scale: 1.35;
+  transform-origin: right bottom;
+}
+.stage[data-compact] .top-actions-row,
+.stage[data-compact] .hint-pill {
+  scale: var(--ui);
+  transform-origin: center top;
+}
+.stage[data-compact] .corner-btn {
+  scale: var(--ui);
+  transform-origin: left top;
+}
+
+/* ============ layar agak kotak (Fold, tablet 4:3): peta Scene 3 bisa digeser kiri-kanan, scene lain tetap di tengah ============ */
+.scene3.is-pannable {
+  cursor: grab;
+  touch-action: none; /* gerakan jari ditangani lewat pointer events di Scene3, bukan scroll bawaan browser */
+}
+.scene3.is-pannable:active {
+  cursor: grabbing;
+}
+/* progres "Kado terbuka" di kiri bawah (sama seperti mobile) */
+.stage[data-pan] .progress-pill {
+  left: calc(30px + var(--crop-x, 0px));
+  translate: none;
+}
+
+/* saat pop-up surat terbuka, tombol layar penuh ikut berada di bawah peredam gelap (seperti tombol suara) agar tidak menimpa kartu */
+.stage:has(.letter-backdrop) .fs-toggle {
+  z-index: 150;
 }

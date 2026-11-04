@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { createContext, useContext, useLayoutEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { STAGE_H, STAGE_W } from '../config'
 
@@ -7,7 +7,26 @@ interface Props {
   children: ReactNode
   /** lapisan tambahan di atas segalanya (awan transisi) */
   overlay?: ReactNode
+  /**
+   * Scene ini boleh digeser kiri-kanan di layar yang agak kotak (mis. Fold, tablet 4:3): kanvas diskalakan agar TINGGI layar
+   * terisi penuh, dan bagian lebar yang tidak muat digeser lewat StageView (lihat Scene3). Scene lain tidak terpengaruh
+   * (tetap di tengah dengan skala biasa).
+   */
+  pannable?: boolean
 }
+
+/** info tampilan kanvas untuk scene: skala, bagian kanvas yang terpotong per sisi (px kanvas), dan apakah mode geser aktif */
+export interface StageViewInfo {
+  scale: number
+  cropX: number
+  cropY: number
+  panMode: boolean
+}
+const StageViewContext = createContext<StageViewInfo>({ scale: 1, cropX: 0, cropY: 0, panMode: false })
+export const useStageView = () => useContext(StageViewContext)
+
+/** layar dengan rasio lebar/tinggi di bawah ini dianggap "agak kotak" (16:9 = 1.78; 4:3 = 1.33; Fold landscape ~ 1.25-1.4) */
+const PAN_BELOW_ASPECT = 1.6
 
 /** Seberapa besar kanvas boleh diperbesar melebihi mode "muat" (contain) supaya layar terisi: 1.2 = potong maksimal ~8% tiap sisi. */
 const MAX_FILL = 1.2
@@ -31,9 +50,9 @@ export function stageScale(vw: number, vh: number) {
 /** di bawah skala ini (layar kecil, mis. ponsel landscape) pop-up dan teksnya dibuat relatif lebih besar agar terbaca */
 const COMPACT_BELOW = 0.55
 
-export function Stage({ children, overlay }: Props) {
+export function Stage({ children, overlay, pannable }: Props) {
   const viewport = useRef<HTMLDivElement>(null)
-  const [view, setView] = useState({ scale: 1, cropX: 0, cropY: 0 })
+  const [view, setView] = useState<StageViewInfo>({ scale: 1, cropX: 0, cropY: 0, panMode: false })
   useLayoutEffect(() => {
     const el = viewport.current
     if (!el) return
@@ -43,11 +62,13 @@ export function Stage({ children, overlay }: Props) {
       const vw = el.clientWidth
       const vh = el.clientHeight
       if (!vw || !vh) return
-      const scale = stageScale(vw, vh)
+      const panMode = !!pannable && vw / vh < PAN_BELOW_ASPECT
+      const scale = panMode ? vh / STAGE_H : stageScale(vw, vh)
       setView({
         scale,
         cropX: Math.max(0, (STAGE_W - vw / scale) / 2),
         cropY: Math.max(0, (STAGE_H - vh / scale) / 2),
+        panMode,
       })
     }
     update()
@@ -64,7 +85,7 @@ export function Stage({ children, overlay }: Props) {
       document.removeEventListener('fullscreenchange', update)
       document.removeEventListener('webkitfullscreenchange', update)
     }
-  }, [])
+  }, [pannable])
   const style = {
     transform: `translate(-50%, -50%) scale(${view.scale})`,
     '--crop-x': `${Math.round(view.cropX)}px`,
@@ -72,8 +93,10 @@ export function Stage({ children, overlay }: Props) {
   } as CSSProperties
   return (
     <div className="viewport" ref={viewport}>
-      <div className="stage" style={style} data-compact={view.scale < COMPACT_BELOW ? '' : undefined}>
-        <div className="stage-content">{children}</div>
+      <div className="stage" style={style} data-compact={view.scale < COMPACT_BELOW ? '' : undefined} data-pan={view.panMode ? '' : undefined}>
+        <StageViewContext.Provider value={view}>
+          <div className="stage-content">{children}</div>
+        </StageViewContext.Provider>
         {overlay}
       </div>
     </div>

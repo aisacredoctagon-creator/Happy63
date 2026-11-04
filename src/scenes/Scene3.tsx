@@ -1,6 +1,7 @@
-import { AnimatePresence, motion, useMotionValue, useTransform } from 'framer-motion'
-import { useCallback, useMemo, useState } from 'react'
-import type { CSSProperties } from 'react'
+import { AnimatePresence, animate, motion, useMotionValue, useTransform } from 'framer-motion'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react'
+import { useStageView } from '../components/Stage'
 import { useLoop } from '../audio/audio'
 import { DriftClouds, Sparkles } from '../components/Atmosphere'
 import { GiftHotspot } from '../components/GiftHotspot'
@@ -57,6 +58,63 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
   )
   const close = useCallback(() => setActive(null), [])
 
+  // ===== geser peta kiri-kanan (hanya di layar agak kotak, mis. Fold): lapisan peta bergeser, UI tetap di tepi layar =====
+  const { scale, cropX, panMode } = useStageView()
+  /** geseran lapisan peta (px kanvas); +cropX = tepi kiri peta terlihat, -cropX = tepi kanan peta terlihat */
+  const panX = useMotionValue(0)
+  const limit = panMode ? cropX : 0
+  const limitRef = useRef(limit)
+  limitRef.current = limit
+  const panInit = useRef(false)
+  useEffect(() => {
+    if (!panMode) {
+      panX.set(0)
+      panInit.current = false
+      return
+    }
+    // awal: tepi kiri peta (Sumatra + pesawat) terlihat; saat ukuran layar berubah, geseran dijaga di dalam batas
+    panX.set(panInit.current ? Math.max(-limit, Math.min(limit, panX.get())) : limit)
+    panInit.current = true
+  }, [panMode, limit, panX])
+
+  const drag = useRef<{ id: number; startX: number; startPan: number; moved: boolean } | null>(null)
+  const suppressClick = useRef(false)
+  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!panMode || active || landing || (e.pointerType === 'mouse' && e.button !== 0)) return
+    drag.current = { id: e.pointerId, startX: e.clientX, startPan: panX.get(), moved: false }
+  }
+  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current
+    if (!d || d.id !== e.pointerId) return
+    const dxScreen = e.clientX - d.startX
+    if (!d.moved) {
+      if (Math.abs(dxScreen) < 8) return // di bawah ambang = klik biasa pada kado
+      d.moved = true
+      e.currentTarget.setPointerCapture(e.pointerId)
+    }
+    panX.set(Math.max(-limitRef.current, Math.min(limitRef.current, d.startPan + dxScreen / scale)))
+  }
+  const endDrag = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current
+    if (!d || d.id !== e.pointerId) return
+    drag.current = null
+    if (d.moved) {
+      suppressClick.current = true // klik yang menyusul setelah menggeser tidak boleh membuka kado
+      window.setTimeout(() => (suppressClick.current = false), 0)
+    }
+  }
+  const onClickCapture = (e: React.MouseEvent) => {
+    if (suppressClick.current) {
+      suppressClick.current = false
+      e.stopPropagation()
+      e.preventDefault()
+    }
+  }
+  // mendarat: pesawat terbang dari kiri atas peta, jadi peta dikembalikan ke tepi kiri dulu
+  useEffect(() => {
+    if (landing && panMode) animate(panX, limitRef.current, { duration: 0.6, ease: 'easeOut' })
+  }, [landing, panMode, panX])
+
   // penerbangan parabola: kiri atas -> kanan bawah (keluar layar)
   const t = useMotionValue(0)
   const px = useTransform(t, (v) => v * 2150)
@@ -87,7 +145,15 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
   )
 
   return (
-    <div className="scene scene3">
+    <div
+      className={`scene scene3 ${panMode ? 'is-pannable' : ''}`}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+      onClickCapture={onClickCapture}
+    >
+      <motion.div className="fill" style={{ x: panX }}>
       <motion.div
         className="fill"
         inert={active ? true : undefined}
@@ -139,6 +205,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
           )}
         </AnimatePresence>
       </motion.div>
+      </motion.div>
 
       {/* UI atas-tengah */}
       <div className="top-actions" inert={active ? true : undefined}>
@@ -152,7 +219,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
               exit={{ opacity: 0, y: -20 }}
               transition={{ delay: 1.2, duration: 0.5 }}
             >
-              Klik kado di peta untuk membuka suratnya
+              {panMode ? 'Geser peta ke kiri-kanan, lalu klik kado untuk membuka suratnya' : 'Klik kado di peta untuk membuka suratnya'}
             </motion.div>
           )}
           {showActions && (
