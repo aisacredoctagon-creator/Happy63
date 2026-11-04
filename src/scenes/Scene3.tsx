@@ -59,7 +59,14 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
   const close = useCallback(() => setActive(null), [])
 
   // ===== geser peta kiri-kanan (hanya di layar agak kotak, mis. Fold): lapisan peta bergeser, UI tetap di tepi layar =====
-  const { scale, cropX, panMode } = useStageView()
+  const { scale, cropX, cropY, panMode, anchorBottom } = useStageView()
+  // ponsel: peta memenuhi layar dan menempel di bawah. Stage berpusat, jadi seluruh lapisan peta (latar + kado + pesawat + awan,
+  // semuanya satu koordinat) digeser naik sebesar cropY: tepi bawah peta = tepi bawah layar, kelebihan terpotong di atas.
+  const shiftY = anchorBottom ? -cropY : 0
+  /** batas atas area peta yang terlihat (koordinat lapisan peta, px kanvas) */
+  const visibleTop = anchorBottom ? 2 * cropY : 0
+  // pesawat dan awan adalah dekorasi di langit atas: ikut turun supaya tetap terlihat saat bagian atas peta terpotong
+  const planeLift = Math.max(0, visibleTop + 24 - planeBox.top)
   /** geseran lapisan peta (px kanvas); +cropX = tepi kiri peta terlihat, -cropX = tepi kanan peta terlihat */
   const panX = useMotionValue(0)
   const limit = panMode ? cropX : 0
@@ -153,7 +160,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
       onPointerCancel={endDrag}
       onClickCapture={onClickCapture}
     >
-      <motion.div className="fill" style={{ x: panX }}>
+      <motion.div className="fill" style={{ x: panX, y: shiftY }}>
       <motion.div
         className="fill"
         inert={active ? true : undefined}
@@ -167,7 +174,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
         {/* latar yang hidup */}
         <div className="sun-glow" aria-hidden />
         <div className="sun-rays" aria-hidden />
-        <DriftClouds yMin={40} yMax={290} count={5} opacity={0.9} speed={150} size={[260, 460]} />
+        <DriftClouds yMin={40 + visibleTop} yMax={290 + visibleTop} count={5} opacity={0.9} speed={150} size={[260, 460]} />
         <Sparkles count={22} region={[2, 3, 98, 96]} seed={11} />
         <div className="waves" aria-hidden>
           {waves.map((w, i) => (
@@ -178,7 +185,7 @@ export function Scene3({ opened, hasCompletedOnce, onOpenGift, onLand, onRestart
         </div>
 
         {/* pesawat berisi Gasing (kiri atas). TODO: ganti dengan sprite pesawat+Gasing terpisah */}
-        <motion.div className="plane3" style={{ ...planeBox, x: px, y: py, rotate: rot }}>
+        <motion.div className="plane3" style={{ ...planeBox, top: planeBox.top + planeLift, x: px, y: py, rotate: rot }}>
           <div className="contrail" aria-hidden>
             <i className="ct ct1" />
             <i className="ct ct2" />

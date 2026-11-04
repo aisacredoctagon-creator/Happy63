@@ -13,6 +13,12 @@ interface Props {
    * (tetap di tengah dengan skala biasa).
    */
   pannable?: boolean
+  /**
+   * Di layar ponsel (landscape), kanvas scene ini diperbesar sampai MENUTUP layar penuh (tanpa batas MAX_FILL, jadi tidak ada
+   * perluasan tepi) dan tepi BAWAH gambar menempel ke tepi bawah layar; bagian yang berlebih terpotong di atas. Scene yang
+   * memakainya wajib menggeser lapisan petanya ke atas sebesar `cropY` (lihat Scene3), karena Stage sendiri tetap berpusat.
+   */
+  fillBottom?: boolean
 }
 
 /** info tampilan kanvas untuk scene: skala, bagian kanvas yang terpotong per sisi (px kanvas), dan apakah mode geser aktif */
@@ -21,8 +27,10 @@ export interface StageViewInfo {
   cropX: number
   cropY: number
   panMode: boolean
+  /** mode ponsel "fill + anchor bawah" aktif (lihat prop fillBottom) */
+  anchorBottom: boolean
 }
-const StageViewContext = createContext<StageViewInfo>({ scale: 1, cropX: 0, cropY: 0, panMode: false })
+const StageViewContext = createContext<StageViewInfo>({ scale: 1, cropX: 0, cropY: 0, panMode: false, anchorBottom: false })
 export const useStageView = () => useContext(StageViewContext)
 
 /** layar dengan rasio lebar/tinggi di bawah ini dianggap "agak kotak" (16:9 = 1.78; 4:3 = 1.33; Fold landscape ~ 1.25-1.4) */
@@ -50,9 +58,12 @@ export function stageScale(vw: number, vh: number) {
 /** di bawah skala ini (layar kecil, mis. ponsel landscape) pop-up dan teksnya dibuat relatif lebih besar agar terbaca */
 const COMPACT_BELOW = 0.55
 
-export function Stage({ children, overlay, pannable }: Props) {
+/** tinggi viewport (px CSS) di bawah ini dianggap layar ponsel (landscape) untuk mode fillBottom */
+const MOBILE_BELOW_H = 600
+
+export function Stage({ children, overlay, pannable, fillBottom }: Props) {
   const viewport = useRef<HTMLDivElement>(null)
-  const [view, setView] = useState<StageViewInfo>({ scale: 1, cropX: 0, cropY: 0, panMode: false })
+  const [view, setView] = useState<StageViewInfo>({ scale: 1, cropX: 0, cropY: 0, panMode: false, anchorBottom: false })
   useLayoutEffect(() => {
     const el = viewport.current
     if (!el) return
@@ -63,12 +74,14 @@ export function Stage({ children, overlay, pannable }: Props) {
       const vh = el.clientHeight
       if (!vw || !vh) return
       const panMode = !!pannable && vw / vh < PAN_BELOW_ASPECT
-      const scale = panMode ? vh / STAGE_H : stageScale(vw, vh)
+      const anchorBottom = !!fillBottom && !panMode && vh < MOBILE_BELOW_H
+      const scale = panMode ? vh / STAGE_H : anchorBottom ? Math.max(vw / STAGE_W, vh / STAGE_H) : stageScale(vw, vh)
       setView({
         scale,
         cropX: Math.max(0, (STAGE_W - vw / scale) / 2),
         cropY: Math.max(0, (STAGE_H - vh / scale) / 2),
         panMode,
+        anchorBottom,
       })
     }
     update()
@@ -85,7 +98,7 @@ export function Stage({ children, overlay, pannable }: Props) {
       document.removeEventListener('fullscreenchange', update)
       document.removeEventListener('webkitfullscreenchange', update)
     }
-  }, [pannable])
+  }, [pannable, fillBottom])
   const style = {
     transform: `translate(-50%, -50%) scale(${view.scale})`,
     '--crop-x': `${Math.round(view.cropX)}px`,

@@ -138,7 +138,7 @@ export default function App() {
 
   return (
     <>
-      <Stage overlay={cloudOverlay} pannable={scene === 'scene3'}>
+      <Stage overlay={cloudOverlay} pannable={scene === 'scene3'} fillBottom={scene === 'scene3'}>
         <AnimatePresence custom={fade}>
           {started && (
             <motion.div
