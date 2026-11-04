@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { forwardRef, memo, useEffect, useRef, useState } from 'react'
 import { animate, motion, useMotionValue, useReducedMotion } from 'framer-motion'
 import { audio } from '../audio/audio'
 import { CLOUDS, STAGE_H, STAGE_W } from '../config'
@@ -11,7 +11,8 @@ import { stageScale } from './Stage'
  *   hanyut pelan ke kiri) menampakkan scene baru -> `onDone`.
  * Ukuran lapisan awan dihitung dari ukuran jendela (melewati tepi kanvas bila perlu), jadi layar tetap tertutup penuh di
  * rasio apa pun: desktop, pita letterbox, mobile landscape, jendela sangat tinggi.
- * Strip awan hanya dipasang saat `busy` (hemat memori); animasi dimulai saat `runId` berubah.
+ * Strip awan hanya dipasang saat `busy` (hemat memori). Saat `runId` berubah, sprite awan dipastikan sudah ter-decode dan
+ * strip digambar ke canvas LEBIH DULU; baru setelah itu timeline animasi dimulai (tidak ada decode/raster saat bergerak).
  * Hanya memakai transform/opacity. prefers-reduced-motion: diganti fade singkat.
  */
 interface Props {
@@ -130,26 +131,78 @@ function makeSprites(layer: Layer, W: number, H: number) {
   return out
 }
 
-const CloudStrip = memo(function CloudStrip({ layer, W, H }: { layer: Layer; W: number; H: number }) {
-  const sprites = useMemo(() => makeSprites(layer, W, H), [layer, W, H])
-  return (
-    <div className="cloud-strip-inner" style={{ width: W, height: H }}>
-      {/* isian di balik awan, DIINSET jauh dari tepi strip (tepinya tersembunyi di balik badan awan) sehingga tidak
-          pernah tampak sebagai panel persegi */}
-      <div className="cloud-fill" style={{ left: RAMP + 400, width: W - 2 * RAMP - 800, top: 260, height: H - 520 }} />
-      {sprites.map((s, i) => (
-        <img
-          key={i}
-          src={s.src}
-          alt=""
-          draggable={false}
-          decoding="async"
-          style={{ left: s.x, top: s.y, width: s.w, transform: s.flip ? 'scaleX(-1)' : undefined }}
-        />
-      ))}
-    </div>
-  )
-})
+/**
+ * Strip awan digambar SEKALI ke satu <canvas> berukuran terbatas (bukan puluhan <img> di layer DOM raksasa). Sebelumnya tiap
+ * strip ~4000x1700 px CSS berisi ~30 gambar, dan karena di-composite pada resolusi piksel perangkat (DPR 2-3) tiap strip
+ * jadi tekstur puluhan MB; tiga strip + opacity yang dianimasikan melewati batas memori GPU Chrome mobile, sehingga raster
+ * dikerjakan per ubin dan sebagian ubin muncul terlambat (artefak kotak-kotak). Canvas = satu tekstur yang sudah jadi,
+ * resolusinya dibatasi (awan memang lembut), tidak ada raster/decode saat animasi: yang bergerak hanya transform dan opacity.
+ */
+const PX_BUDGET_FINE = 7_000_000 // desktop: ~ resolusi penuh
+const PX_BUDGET_COARSE = 2_400_000 // ponsel/tablet: ~10 MB per strip
+
+function canvasScale(W: number, H: number) {
+  const coarse = window.matchMedia?.('(pointer: coarse)').matches || Math.min(window.innerWidth, window.innerHeight) < 700
+  const dpr = Math.min(window.devicePixelRatio || 1, 2)
+  const s = stageScale(window.innerWidth, window.innerHeight)
+  const budget = Math.sqrt((coarse ? PX_BUDGET_COARSE : PX_BUDGET_FINE) / (W * H))
+  return Math.max(0.25, Math.min(1, s * dpr, budget))
+}
+
+const cloudImages = new Map<string, HTMLImageElement>()
+/** muat + decode kedua sprite awan (kecil, 2 file); tahan referensinya agar bitmap tidak dibuang antar transisi */
+export function loadCloudImages(): Promise<void> {
+  return Promise.all(
+    CLOUDS.map(async (src) => {
+      if (cloudImages.has(src)) return
+      const img = new Image()
+      img.src = src
+      try {
+        await img.decode()
+      } catch {
+        /* gagal: strip digambar tanpa sprite itu */
+      }
+      cloudImages.set(src, img)
+    }),
+  ).then(() => undefined)
+}
+
+function paintStrip(canvas: HTMLCanvasElement, layer: Layer, W: number, H: number, q: number) {
+  canvas.width = Math.ceil(W * q)
+  canvas.height = Math.ceil(H * q)
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+  ctx.imageSmoothingQuality = 'high'
+  // isian di balik awan, DIINSET jauh dari tepi strip (tepinya tersembunyi di balik badan awan) sehingga tidak
+  // pernah tampak sebagai panel persegi
+  const fy = 260 * q
+  const grad = ctx.createLinearGradient(0, fy, 0, (H - 260) * q)
+  grad.addColorStop(0, '#f6f8ff')
+  grad.addColorStop(1, '#cfe0fb')
+  ctx.fillStyle = grad
+  ctx.fillRect((RAMP + 400) * q, fy, (W - 2 * RAMP - 800) * q, (H - 520) * q)
+  for (const s of makeSprites(layer, W, H)) {
+    const img = cloudImages.get(s.src)
+    if (!img || !img.naturalWidth) continue
+    const h = (s.w * img.naturalHeight) / img.naturalWidth
+    if (s.flip) {
+      ctx.save()
+      ctx.translate((s.x + s.w / 2) * q, 0)
+      ctx.scale(-1, 1)
+      ctx.drawImage(img, (-s.w / 2) * q, s.y * q, s.w * q, h * q)
+      ctx.restore()
+    } else {
+      ctx.drawImage(img, s.x * q, s.y * q, s.w * q, h * q)
+    }
+  }
+}
+
+const CloudStrip = memo(
+  forwardRef<HTMLCanvasElement, { W: number; H: number }>(function CloudStrip({ W, H }, ref) {
+    // ukuran piksel canvas diatur saat menggambar (paintStrip), bukan lewat atribut: re-render tidak menghapus gambarnya
+    return <canvas ref={ref} style={{ width: W, height: H }} />
+  }),
+)
 
 export function CloudTransition({ runId, busy, onCovered, onDone }: Props) {
   const reduced = useReducedMotion()
@@ -170,18 +223,13 @@ export function CloudTransition({ runId, busy, onCovered, onDone }: Props) {
   const o2 = useMotionValue(0)
   const os = [o0, o1, o2]
   const veil = useMotionValue(0)
+  const canvases = useRef<Array<HTMLCanvasElement | null>>([null, null, null])
 
   useEffect(() => {
     if (runId === 0) return
     const stops: Array<() => void> = []
-    // suara awan dijadwalkan pada jam audio, sinkron dengan timeline: masuk (0-1,1 s), tertutup (1,1 s)
     if (reduced) {
       audio.playSfx('cloudSoft', { delay: 0.3 })
-    } else {
-      audio.playSfx('cloudWhoosh')
-      audio.playSfx('cloudSoft', { delay: COVER_AT })
-    }
-    if (reduced) {
       const c = animate(veil, [0, 1, 1, 0], { duration: 1.2, times: [0, 0.3, 0.55, 1], ease: 'easeInOut' })
       const t = setTimeout(() => covered.current?.(), 400)
       c.finished.then(() => done.current?.())
@@ -190,41 +238,64 @@ export function CloudTransition({ runId, busy, onCovered, onDone }: Props) {
         c.stop()
       }
     }
-    const T = CLOUD_TOTAL
-    const { offscreenX, coverX } = geoRef.current
-    let finishAt = 0
-    LAYERS.forEach((layer, i) => {
-      // posisi: masuk dari kanan (melambat), tahan saat tertutup, lalu hanyut pelan ke kiri sambil memudar
-      const fadeEnd = Math.min(T, HOLD_END + layer.fadeOut)
-      finishAt = Math.max(finishAt, fadeEnd)
-      const ctl = animate(xs[i], [offscreenX, offscreenX, coverX, coverX, coverX + layer.drift], {
-        duration: T,
-        times: [0, layer.delayIn / T, COVER_AT / T, HOLD_END / T, fadeEnd / T],
-        ease: ['linear', EASE_IN_PHASE, 'linear', EASE_FADE],
+    let cancelled = false
+    stops.push(() => (cancelled = true))
+    // sprite di-decode dan strip digambar dulu (batas tunggu 2 dtk supaya tidak menggantung), baru timeline dimulai
+    const ready = Promise.race([loadCloudImages(), new Promise<void>((r) => setTimeout(r, 2000))])
+    void ready.then(() => {
+      if (cancelled) return
+      const g = geoRef.current
+      const q = canvasScale(g.W, g.H)
+      LAYERS.forEach((layer, i) => {
+        const c = canvases.current[i]
+        if (c) paintStrip(c, layer, g.W, g.H, q)
       })
-      const fade = animate(os[i], [1, 1, 0], {
-        duration: T,
-        times: [0, HOLD_END / T, fadeEnd / T],
-        ease: ['linear', EASE_FADE],
-      })
-      stops.push(() => ctl.stop(), () => fade.stop())
+      // suara awan dijadwalkan pada jam audio, sinkron dengan timeline: masuk (0-1,1 s), tertutup (1,1 s)
+      audio.playSfx('cloudWhoosh')
+      audio.playSfx('cloudSoft', { delay: COVER_AT })
+      stops.push(runTimeline())
     })
-    const doneTimer = setTimeout(() => done.current?.(), finishAt * 1000 + 60)
-    // scene diganti tepat ketika layar sudah tertutup penuh
-    const t = setTimeout(() => covered.current?.(), ((COVER_AT + HOLD_END) / 2) * 1000)
-    stops.push(() => clearTimeout(t), () => clearTimeout(doneTimer))
     return () => stops.forEach((s) => s())
+
+    function runTimeline() {
+      const stops: Array<() => void> = []
+      const T = CLOUD_TOTAL
+      const { offscreenX, coverX } = geoRef.current
+      let finishAt = 0
+      LAYERS.forEach((layer, i) => {
+        // posisi: masuk dari kanan (melambat), tahan saat tertutup, lalu hanyut pelan ke kiri sambil memudar
+        const fadeEnd = Math.min(T, HOLD_END + layer.fadeOut)
+        finishAt = Math.max(finishAt, fadeEnd)
+        const ctl = animate(xs[i], [offscreenX, offscreenX, coverX, coverX, coverX + layer.drift], {
+          duration: T,
+          times: [0, layer.delayIn / T, COVER_AT / T, HOLD_END / T, fadeEnd / T],
+          ease: ['linear', EASE_IN_PHASE, 'linear', EASE_FADE],
+        })
+        const fade = animate(os[i], [1, 1, 0], {
+          duration: T,
+          times: [0, HOLD_END / T, fadeEnd / T],
+          ease: ['linear', EASE_FADE],
+        })
+        stops.push(() => ctl.stop(), () => fade.stop())
+      })
+      const doneTimer = setTimeout(() => done.current?.(), finishAt * 1000 + 60)
+      // scene diganti tepat ketika layar sudah tertutup penuh
+      const t = setTimeout(() => covered.current?.(), ((COVER_AT + HOLD_END) / 2) * 1000)
+      stops.push(() => clearTimeout(t), () => clearTimeout(doneTimer))
+      return () => stops.forEach((s) => s())
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId])
 
   return (
     <>
       <div className={`cloud-layer ${busy ? '' : 'is-idle'}`} aria-hidden>
-        {/* strip raksasa (~4000x1700 px x 3) hanya dipasang selama transisi; saat diam dibuang agar memori GPU iPhone lega */}
-        {(busy || reduced) &&
+        {/* 3 strip (canvas, lihat CloudStrip) hanya dipasang selama transisi; saat diam dibuang agar memori GPU lega */}
+        {busy &&
+          !reduced &&
           LAYERS.map((layer, i) => (
             <motion.div key={layer.seed} className="cloud-strip" style={{ x: xs[i], opacity: os[i], top: geo.top }}>
-              <CloudStrip layer={layer} W={geo.W} H={geo.H} />
+              <CloudStrip ref={(el) => void (canvases.current[i] = el)} W={geo.W} H={geo.H} />
             </motion.div>
           ))}
         {reduced && <motion.div className="cloud-fade" style={{ opacity: veil }} />}

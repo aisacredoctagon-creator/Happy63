@@ -26,7 +26,7 @@ Hanya saat `npm run dev`: label nama scene aktif di pojok kiri bawah, dan lompat
 
 ## Catatan pop-up, layar penuh
 
-- Pop-up selalu di tengah layar; buka/tutup memakai efek Genie dari/ke kado yang diklik (`src/components/genie.ts`; fade biasa bila `prefers-reduced-motion`).
+- Pop-up selalu di tengah layar; buka/tutup memakai efek Genie dari/ke kado yang diklik: satu elemen (kartu itu sendiri) dianimasikan dengan transform + opacity lewat Web Animations API (`src/components/genie.ts`; fade biasa bila `prefers-reduced-motion`).
 - Tombol layar penuh (kiri tombol suara) memakai Fullscreen API (+ awalan webkit). iPhone Safari tidak mendukungnya: tombol menampilkan petunjuk "Tambah ke Layar Utama" (manifest `display: fullscreen` + meta apple-mobile-web-app-capable).
 
 ## Struktur

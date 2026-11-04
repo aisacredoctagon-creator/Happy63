@@ -322,7 +322,11 @@ button {
   position: absolute;
   left: 0;
   top: -60px;
-  will-change: transform;
+  /* hanya terpasang selama transisi, jadi will-change ikut hilang bersama elemennya */
+  will-change: transform, opacity;
+}
+.cloud-strip canvas {
+  display: block;
 }
 
 /* ============ surat ============ */
@@ -333,15 +337,26 @@ button {
   inset: calc(-1 * var(--pad-y, 800px)) calc(-1 * var(--pad-x, 800px));
   padding: var(--pad-y, 800px) var(--pad-x, 800px);
   z-index: 160; /* di atas semua kado, tombol, progres, dan tombol suara (150); di bawah awan transisi (300) */
-  background: rgba(8, 40, 100, 0.3);
   display: flex;
   justify-content: center;
   align-items: center;
+}
+/* peredam gelap ada di pseudo-element supaya yang memudar HANYA peredamnya (opacity), sedangkan kartu yang sedang
+   disedot Genie (child .letter-backdrop) tetap terlihat penuh sampai animasinya sendiri selesai */
+.letter-backdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(8, 40, 100, 0.3);
   animation: dimIn 0.35s ease-out both;
+  pointer-events: none;
 }
 .letter-backdrop.is-closing {
-  animation: dimOut 0.52s ease-in both;
   pointer-events: none;
+}
+.letter-backdrop.is-closing::before {
+  animation: dimOut 0.4s ease-in both;
 }
 @keyframes dimIn {
   from {
@@ -515,34 +530,9 @@ button {
   font-size: calc(33px * var(--fs, 1));
 }
 
-/* salinan kartu untuk animasi Genie (lihat genie.ts): tanpa bayangan besar supaya ringan, tidak bisa diklik */
-.genie-ghost {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 0;
-  height: 0;
-  z-index: 161;
-  pointer-events: none;
-}
-.genie-slice {
-  position: absolute;
-  left: 0;
-  top: 0;
-  overflow: hidden;
-  transform-origin: 0 0;
-  will-change: transform;
-}
-.letter.is-clone {
-  box-shadow: none;
-  pointer-events: none;
-}
-.letter.is-clone .letter-body {
-  overflow: hidden;
-}
 @media (prefers-reduced-motion: reduce) {
-  .letter-backdrop,
-  .letter-backdrop.is-closing {
+  .letter-backdrop::before,
+  .letter-backdrop.is-closing::before {
     animation-duration: 0.18s;
   }
 }
@@ -1719,20 +1709,6 @@ button {
 }
 
 /* ============ awan transisi (sprite) & opening menu ============ */
-.cloud-strip-inner {
-  position: relative;
-}
-.cloud-strip-inner img {
-  position: absolute;
-  max-width: none;
-  display: block;
-}
-.cloud-fill {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  background: linear-gradient(#f6f8ff, #cfe0fb);
-}
 .patrol-lane {
   position: relative;
   width: 1500px;
@@ -2514,4 +2490,12 @@ button {
 /* saat pop-up surat terbuka, tombol layar penuh ikut berada di bawah peredam gelap (seperti tombol suara) agar tidak menimpa kartu */
 .stage:has(.letter-backdrop) .fs-toggle {
   z-index: 150;
+}
+
+/* ponsel: dua lapisan matahari raksasa di peta (900x900 dan 1500x1500) tidak memakai mix-blend-mode. Blend mode memaksa
+   seluruh latar di bawahnya dirender ke permukaan tambahan seukuran layar tiap frame; dengan alpha biasa tampilannya
+   hampir sama (cahaya pucat di atas langit terang) tetapi jauh lebih ringan di GPU mobile. */
+.stage[data-compact] .sun-glow,
+.stage[data-compact] .sun-rays {
+  mix-blend-mode: normal;
 }

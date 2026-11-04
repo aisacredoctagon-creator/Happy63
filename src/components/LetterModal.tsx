@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react'
 import { audio } from '../audio/audio'
 import type { Gift } from '../data/gifts'
 import { ENVELOPE_HEART, ENVELOPE_PASTEL, pastel } from '../data/pastel'
-import { Genie } from './genie'
+import { genieAnimate } from './genie'
 import type { Point } from './genie'
 
 /** Warna amplop lewat CSS variable (--env-*), diturunkan dari warna kado dalam versi pastel. */
@@ -34,7 +34,7 @@ function Envelope() {
 
 interface Props {
   gift: Gift | null
-  /** elemen kado yang diklik (titik asal Genie); posisinya dibaca ulang tiap frame, jadi tetap akurat saat resize/fullscreen */
+  /** elemen kado yang diklik (titik asal Genie); posisinya dibaca saat animasi buka/tutup dimulai */
   originEl: HTMLElement | null
   onClose: () => void
 }
@@ -51,8 +51,8 @@ function fontsReady(el: HTMLElement): Promise<void> {
   return Promise.race([load, new Promise<void>((r) => window.setTimeout(r, FONT_WAIT_MS))]).catch(() => undefined)
 }
 
-const OPEN_MS = 640
-const CLOSE_MS = 520
+const OPEN_MS = 500
+const CLOSE_MS = 400
 const REDUCED_MS = 180
 
 /** ukuran judul mengikuti panjang teks supaya ucapan panjang tidak meluap */
@@ -73,7 +73,8 @@ export function LetterModal({ gift, originEl, onClose }: Props) {
     prevGift.current = gift
   }, [gift])
   const card = useRef<HTMLElement>(null)
-  const genie = useRef<Genie | null>(null)
+  /** animasi Genie yang sedang berjalan pada kartu (satu elemen, Web Animations API) */
+  const genie = useRef<Animation | null>(null)
   const lastOrigin = useRef<Point | null>(null)
   const returnFocus = useRef<HTMLElement | null>(null)
   /** true sejak penutupan dimulai: animasi buka yang masih menunggu font tidak boleh jalan lagi */
@@ -133,15 +134,19 @@ export function LetterModal({ gift, originEl, onClose }: Props) {
         el.focus({ preventScroll: true })
         return
       }
-      const g = new Genie(el, host, readOrigin, readOrigin() ?? fallbackOrigin(), 1)
+      const g = genieAnimate(el, host, readOrigin() ?? fallbackOrigin(), 'open', OPEN_MS)
       genie.current = g
-      void g.animateTo(0, OPEN_MS).then((done) => {
-        // done=false: animasi buka diganti animasi tutup (Esc/klik saat masih membuka); ghost kini milik animasi tutup
-        if (!done || cancelled || genie.current !== g) return
-        g.destroy()
-        genie.current = null
-        el.focus({ preventScroll: true })
-      })
+      el.style.visibility = '' // animasi sudah terpasang (fill: both), jadi frame pertama langsung berupa titik asal
+      g.finished.then(
+        () => {
+          // bila penutupan sudah dimulai (Esc/klik saat masih membuka), animasi ini dibalik oleh animasi tutup
+          if (cancelled || closingRef.current || genie.current !== g) return
+          g.cancel()
+          genie.current = null
+          el.focus({ preventScroll: true })
+        },
+        () => {}, // dibatalkan
+      )
     })
     return () => {
       cancelled = true
@@ -158,7 +163,7 @@ export function LetterModal({ gift, originEl, onClose }: Props) {
     closingRef.current = true
     setClosing(true)
     const finish = () => {
-      genie.current?.destroy(false)
+      // animasi tidak di-cancel di sini: keadaan akhirnya (tak terlihat) tertahan sampai kartu lepas dari DOM, tanpa kedipan
       genie.current = null
       setShown(null)
       setClosing(false)
@@ -170,12 +175,22 @@ export function LetterModal({ gift, originEl, onClose }: Props) {
       const t = window.setTimeout(finish, REDUCED_MS)
       return () => window.clearTimeout(t)
     }
-    // bila pop-up masih setengah terbuka, lanjutkan dari posisi animasi saat ini
-    const g = genie.current ?? new Genie(el, host, readOrigin, readOrigin() ?? fallbackOrigin(), 0)
+    // bila pop-up masih setengah terbuka, balikkan animasi buka dari posisinya saat ini; selain itu mulai animasi tutup
+    let g = genie.current
+    if (g && g.playState === 'running') {
+      g.reverse()
+    } else {
+      g?.cancel()
+      g = genieAnimate(el, host, readOrigin() ?? fallbackOrigin(), 'close', CLOSE_MS)
+    }
     genie.current = g
-    void g.animateTo(1, CLOSE_MS).then((done) => {
-      if (done && genie.current === g) finish()
-    })
+    const cur = g
+    cur.finished.then(
+      () => {
+        if (genie.current === cur) finish()
+      },
+      () => {}, // dibatalkan
+    )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gift])
 
@@ -188,7 +203,7 @@ export function LetterModal({ gift, originEl, onClose }: Props) {
 
   useEffect(
     () => () => {
-      genie.current?.destroy(false)
+      genie.current?.cancel()
       genie.current = null
     },
     [],
