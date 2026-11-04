@@ -3,8 +3,10 @@
  * Setiap SFX adalah resep kecil `play(c)` yang menjadwalkan node pada waktu `c.t`.
  * Bila sebuah SFX/loop punya file yang didaftarkan di `public/assets/audio/manifest.json` (dibuat oleh `npm run audio`),
  * file itu dipakai menggantikan resep ini. `vol` tiap SFX dan `LOOP_PEAK` hasil kalibrasi ke target di levels.json
- * (scripts/measure-synth-levels.js); kategori tiap SFX ada di `SFX_CAT`.
+ * (scripts/measure-synth-levels.js). Tiap SFX wajib punya `tier` (minor/main/key); gain tingkatnya ada di mix.ts.
  */
+import type { Tier } from './mix'
+
 export type SfxName =
   | 'click' | 'hover' | 'tick' | 'pop' | 'start' | 'toggleOn'
   | 'zoomOut' | 'zoomIn' | 'whooshSoft' | 'planeFlyby'
@@ -27,11 +29,13 @@ export interface SynthCtx {
 }
 
 export interface SfxDef {
+  /** tingkat prioritas volume (minor/main/key): gain-nya diatur di mix.ts */
+  tier: Tier
   play: (c: SynthCtx) => void
   /** perkiraan lama bunyi (detik), untuk menghitung polifoni */
   dur: number
   vol: number
-  /** variasi pitch acak +/- (mis. 0.05 = 5%) agar aksi berulang tidak monoton */
+  /** variasi acak +/- pada pitch dan volume (maks. 0.05 = 5%, lihat MAX_VARY) agar aksi berulang tidak monoton */
   vary?: number
   /** maksimum suara bersamaan untuk nama ini */
   max?: number
@@ -122,17 +126,17 @@ const tvOn = (c: SynthCtx) => {
 export const SFX: Record<SfxName, SfxDef> = {
   // --- klik / UI ---
   click: {
-    dur: 0.1, vol: 1.043, vary: 0.04, max: 3, clip: 0.28,
+    tier: 'minor', dur: 0.1, vol: 1.474, vary: 0.05, max: 3, clip: 0.28,
     play: (c) => {
       osc(c, { f: 880, f2: 520, dur: 0.07, gain: 0.55, attack: 0.004 })
       osc(c, { type: 'triangle', f: 1760, f2: 1200, dur: 0.04, gain: 0.15, attack: 0.003 })
     },
   },
-  hover: { dur: 0.04, vol: 3.417, vary: 0.06, max: 2, cd: 70, prio: 0, play: (c) => osc(c, { f: 1500, dur: 0.035, gain: 0.12, attack: 0.004 }) },
-  tick: { dur: 0.04, vol: 2.603, max: 2, cd: 60, prio: 0, play: (c) => osc(c, { f: 1100, dur: 0.03, gain: 0.2, attack: 0.003 }) },
-  pop: { dur: 0.12, vol: 1.109, vary: 0.05, max: 2, play: (c) => osc(c, { f: 420, f2: 880, dur: 0.1, gain: 0.5, attack: 0.004 }) },
+  hover: { tier: 'minor', dur: 0.04, vol: 4.827, vary: 0.05, max: 2, cd: 70, prio: 0, play: (c) => osc(c, { f: 1500, dur: 0.035, gain: 0.12, attack: 0.004 }) },
+  tick: { vary: 0.05, tier: 'minor', dur: 0.04, vol: 3.676, max: 2, cd: 60, prio: 0, play: (c) => osc(c, { f: 1100, dur: 0.03, gain: 0.2, attack: 0.003 }) },
+  pop: { tier: 'minor', dur: 0.12, vol: 1.567, vary: 0.05, max: 2, play: (c) => osc(c, { f: 420, f2: 880, dur: 0.1, gain: 0.5, attack: 0.004 }) },
   start: {
-    dur: 0.9, vol: 1.641, prio: 2,
+    tier: 'key', dur: 0.9, vol: 1.31, prio: 2,
     play: (c) => {
       notes(c, [C5, E5, G5, C6, E6], 0.07, { dur: 0.45, gain: 0.3 })
       air(c, { f: 500, f2: 3000, dur: 0.6, gain: 0.12, attack: 0.3 })
@@ -140,7 +144,7 @@ export const SFX: Record<SfxName, SfxDef> = {
     },
   },
   toggleOn: {
-    dur: 0.25, vol: 1.462, prio: 2,
+    tier: 'minor', dur: 0.25, vol: 2.066, prio: 2,
     play: (c) => {
       osc(c, { f: 660, dur: 0.09, gain: 0.35 })
       osc(c, { f: 990, dur: 0.12, gain: 0.35, at: 0.07 })
@@ -148,19 +152,19 @@ export const SFX: Record<SfxName, SfxDef> = {
   },
 
   // --- whoosh / transisi ---
-  zoomOut: { dur: 1.9, vol: 6.32, max: 1, play: (c) => air(c, { f: 2200, f2: 500, q: 0.8, dur: 1.8, gain: 0.22, attack: 0.5 }) },
-  zoomIn: { dur: 2.1, vol: 7.472, max: 1, play: (c) => air(c, { f: 350, f2: 2600, q: 0.8, dur: 2.0, gain: 0.22, attack: 1.2 }) },
-  whooshSoft: { dur: 0.9, vol: 12.66, max: 2, play: (c) => air(c, { f: 500, f2: 1600, q: 0.7, dur: 0.8, gain: 0.16, attack: 0.3 }) },
+  zoomOut: { tier: 'minor', dur: 1.9, vol: 6.107, max: 1, play: (c) => air(c, { f: 2200, f2: 500, q: 0.8, dur: 1.8, gain: 0.22, attack: 0.5 }) },
+  zoomIn: { tier: 'minor', dur: 2.1, vol: 7.399, max: 1, play: (c) => air(c, { f: 350, f2: 2600, q: 0.8, dur: 2.0, gain: 0.22, attack: 1.2 }) },
+  whooshSoft: { tier: 'minor', dur: 0.9, vol: 13.301, max: 2, play: (c) => air(c, { f: 500, f2: 1600, q: 0.7, dur: 0.8, gain: 0.16, attack: 0.3 }) },
   planeFlyby: {
-    dur: 1.6, vol: 8.179, max: 1,
+    tier: 'minor', dur: 1.6, vol: 9.189, max: 1,
     play: (c) => {
       air(c, { f: 300, f2: 1200, dur: 1.5, gain: 0.2, attack: 0.6 })
       osc(c, { type: 'triangle', f: 95, f2: 70, dur: 1.5, gain: 0.08, attack: 0.5 })
     },
   },
-  cloudWhoosh: { dur: 1.2, vol: 6.91, max: 1, prio: 2, play: (c) => air(c, { f: 350, f2: 1900, q: 0.6, dur: 1.15, gain: 0.26, attack: 0.6 }) },
+  cloudWhoosh: { tier: 'minor', dur: 1.2, vol: 6.809, max: 1, prio: 2, play: (c) => air(c, { f: 350, f2: 1900, q: 0.6, dur: 1.15, gain: 0.26, attack: 0.6 }) },
   cloudSoft: {
-    dur: 0.4, vol: 1.399, max: 1, prio: 2,
+    tier: 'minor', dur: 0.4, vol: 1.777, max: 1, prio: 2,
     play: (c) => {
       osc(c, { f: 180, f2: 70, dur: 0.35, gain: 0.45 })
       air(c, { type: 'lowpass', f: 900, dur: 0.3, gain: 0.15 })
@@ -168,29 +172,29 @@ export const SFX: Record<SfxName, SfxDef> = {
   },
   // --- kado / surat ---
   giftHover: {
-    dur: 0.2, vol: 2.946, vary: 0.1, max: 2, cd: 90, prio: 0,
+    tier: 'minor', dur: 0.2, vol: 4.162, vary: 0.05, max: 2, cd: 90, prio: 0,
     play: (c) => {
       osc(c, { f: 1760, dur: 0.14, gain: 0.12 })
       osc(c, { f: 2637, dur: 0.1, gain: 0.07, at: 0.05 })
     },
   },
   paperDrop: {
-    dur: 0.5, vol: 2.786, max: 1,
+    tier: 'main', dur: 0.5, vol: 2.771, max: 1,
     play: (c) => {
       air(c, { type: 'highpass', f: 1000, dur: 0.28, gain: 0.18, attack: 0.12 })
       osc(c, { f: 150, f2: 70, dur: 0.2, gain: 0.3, at: 0.22 })
     },
   },
-  paperClose: { dur: 0.3, vol: 15.954, max: 1, play: (c) => air(c, { f: 1600, f2: 450, dur: 0.22, gain: 0.15, attack: 0.05 }) },
+  paperClose: { tier: 'minor', dur: 0.3, vol: 14.472, max: 1, play: (c) => air(c, { f: 1600, f2: 450, dur: 0.22, gain: 0.15, attack: 0.05 }) },
   reward: {
-    dur: 1.6, vol: 1.953, max: 1, prio: 2,
+    tier: 'key', dur: 1.6, vol: 1.666, max: 1, prio: 2,
     play: (c) => {
       notes(c, [C5, E5, G5, C6, E6, G6], 0.075, { type: 'triangle', dur: 0.5, gain: 0.26 })
       for (const f of [C6, E6, G6]) osc(c, { f, dur: 0.9, gain: 0.16, at: 0.5 })
     },
   },
   takeoff: {
-    dur: 2.5, vol: 5.688, max: 1, prio: 2,
+    tier: 'minor', dur: 2.5, vol: 7.104, max: 1, prio: 2,
     play: (c) => {
       air(c, { f: 200, f2: 1800, dur: 2.4, gain: 0.26, attack: 1.4 })
       osc(c, { type: 'triangle', f: 80, f2: 240, dur: 2.4, gain: 0.1, attack: 1 })
@@ -199,21 +203,21 @@ export const SFX: Record<SfxName, SfxDef> = {
 
   // --- Gasing / koper ---
   step: {
-    dur: 0.15, vol: 1.904, vary: 0.12, max: 3, cd: 150,
+    tier: 'minor', dur: 0.15, vol: 1.904, vary: 0.05, max: 3, cd: 150,
     play: (c) => {
       osc(c, { f: 280, f2: 520, dur: 0.11, gain: 0.45, attack: 0.005 })
       air(c, { f: 2500, dur: 0.02, gain: 0.08, attack: 0.003 })
     },
   },
   hopUp: {
-    dur: 0.45, vol: 2.453, max: 1,
+    tier: 'main', dur: 0.45, vol: 2.452, max: 1,
     play: (c) => {
       osc(c, { f: 280, f2: 880, dur: 0.4, gain: 0.3 })
       air(c, { f: 600, f2: 2000, dur: 0.4, gain: 0.1, attack: 0.2 })
     },
   },
   thud: {
-    dur: 0.4, vol: 1.236, max: 1,
+    tier: 'main', dur: 0.4, vol: 1.241, max: 1,
     play: (c) => {
       osc(c, { f: 120, f2: 45, dur: 0.3, gain: 0.7, attack: 0.004 })
       osc(c, { f: 100, f2: 50, dur: 0.2, gain: 0.3, at: 0.2 })
@@ -221,14 +225,14 @@ export const SFX: Record<SfxName, SfxDef> = {
     },
   },
   boing: {
-    dur: 0.45, vol: 1.663, vary: 0.04, max: 2,
+    tier: 'main', dur: 0.45, vol: 1.663, vary: 0.05, max: 2,
     play: (c) => {
       osc(c, { f: 230, path: [[0.1, 620], [0.22, 300], [0.34, 480]], dur: 0.4, gain: 0.45 })
       osc(c, { type: 'triangle', f: 460, path: [[0.1, 1240], [0.22, 600], [0.34, 960]], dur: 0.4, gain: 0.08 })
     },
   },
   surprise: {
-    dur: 0.6, vol: 1.515, max: 1, prio: 2,
+    tier: 'main', dur: 0.6, vol: 1.515, max: 1, prio: 2,
     play: (c) => {
       notes(c, [740, 1109], 0.09, { type: 'triangle', dur: 0.3, gain: 0.35 })
       osc(c, { f: 230, path: [[0.1, 620], [0.22, 300], [0.34, 480]], dur: 0.4, gain: 0.3 })
@@ -237,7 +241,7 @@ export const SFX: Record<SfxName, SfxDef> = {
 
   // --- TV / video ---
   tvFlicker: {
-    dur: 2.0, vol: 3.676, max: 1, prio: 2,
+    tier: 'main', dur: 2.0, vol: 3.676, max: 1, prio: 2,
     play: (c) => {
       // sinkron dengan keyframe tvOn (8%, 22%, 40%, 60% dari 1.4 s)
       for (const at of [0.11, 0.31, 0.56]) {
@@ -247,12 +251,12 @@ export const SFX: Record<SfxName, SfxDef> = {
       tvOn({ ...c, t: c.t + 0.84 })
     },
   },
-  tvOn: { dur: 1.1, vol: 3.676, max: 1, prio: 2, play: tvOn },
-  play: { dur: 0.12, vol: 1.89, max: 1, play: (c) => osc(c, { type: 'triangle', f: 560, f2: 840, dur: 0.1, gain: 0.35 }) },
-  pause: { dur: 0.12, vol: 1.839, max: 1, play: (c) => osc(c, { type: 'triangle', f: 840, f2: 560, dur: 0.1, gain: 0.35 }) },
-  oops: { dur: 0.4, vol: 2.467, max: 1, play: (c) => osc(c, { f: 420, path: [[0.15, 300], [0.3, 230]], dur: 0.35, gain: 0.3 }) },
+  tvOn: { tier: 'main', dur: 1.1, vol: 3.676, max: 1, prio: 2, play: tvOn },
+  play: { tier: 'minor', dur: 0.12, vol: 2.522, max: 1, play: (c) => osc(c, { type: 'triangle', f: 560, f2: 840, dur: 0.1, gain: 0.35 }) },
+  pause: { tier: 'minor', dur: 0.12, vol: 2.532, max: 1, play: (c) => osc(c, { type: 'triangle', f: 840, f2: 560, dur: 0.1, gain: 0.35 }) },
+  oops: { tier: 'main', dur: 0.4, vol: 2.467, max: 1, play: (c) => osc(c, { f: 420, path: [[0.15, 300], [0.3, 230]], dur: 0.35, gain: 0.3 }) },
   fanfare: {
-    dur: 2.5, vol: 1.471, max: 1, prio: 2,
+    tier: 'key', dur: 2.5, vol: 1.471, max: 1, prio: 2,
     play: (c) => {
       notes(c, [C5, E5, G5, C6], 0.1, { type: 'triangle', dur: 0.4, gain: 0.3 })
       for (const f of [C6, E6, G6]) osc(c, { f, dur: 1.2, gain: 0.2, at: 0.45 })
@@ -267,23 +271,12 @@ export const SFX: Record<SfxName, SfxDef> = {
   // --- suasana kabin ---
   // Versi aslinya file sfx-airplaneChimes.m4a (denting dua nada pramugari); ini cadangan sintesis bila file tidak ada
   airplaneChimes: {
-    dur: 2.3, vol: 1.418, max: 1,
+    tier: 'main', dur: 2.3, vol: 2.003, max: 1,
     play: (c) => {
       osc(c, { f: E6, dur: 1.1, gain: 0.3, attack: 0.01 })
       osc(c, { f: C6, dur: 1.2, gain: 0.3, attack: 0.01, at: 1.0 })
     },
   },
-}
-
-/** kategori tiap SFX untuk keseimbangan volume (target loudness per kategori ada di levels.json) */
-export type SfxCat = 'ui' | 'transition' | 'action' | 'reward' | 'accent'
-export const SFX_CAT: Record<SfxName, SfxCat> = {
-  click: 'ui', hover: 'ui', tick: 'ui', pop: 'ui', toggleOn: 'ui', giftHover: 'ui', play: 'ui', pause: 'ui',
-  zoomOut: 'transition', zoomIn: 'transition', whooshSoft: 'transition', planeFlyby: 'transition', cloudWhoosh: 'transition', cloudSoft: 'transition',
-  takeoff: 'transition', paperDrop: 'action', paperClose: 'action', step: 'action', hopUp: 'action', thud: 'action', boing: 'action',
-  surprise: 'action', tvFlicker: 'action', tvOn: 'action', oops: 'action',
-  start: 'reward', reward: 'reward', fanfare: 'reward',
-  airplaneChimes: 'accent',
 }
 
 // ---------------------------------------------------------------------------

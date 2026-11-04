@@ -1,21 +1,47 @@
 # Audio
 
-Semua audio dikelola satu modul: `src/audio/audio.ts` (manager, volume, mute, polifoni, limiter), `src/audio/synth.ts` (resep suara sintesis), dan `src/audio/levels.json` (target loudness dan penyeimbang volume per kategori).
+Semua audio dikelola satu modul: `src/audio/audio.ts` (manager, volume, mute, polifoni, pengaman puncak), `src/audio/synth.ts` (registrasi dan resep suara sintesis), `src/audio/mix.ts` (**hierarki volume**), dan `src/audio/levels.json` (target kalibrasi).
 
 Ada dua jenis sumber suara:
 
 - **File** (`public/assets/audio/`, didaftarkan di `manifest.json`): musik, ambience kabin dan bandara, `paperDrop`, dan `airplaneChimes`.
 - **Sintesis** (dibuat dari osilator/noise lewat Web Audio API): semua SFX lain, ambience `wind` dan `wheels`, serta cadangan bila sebuah file hilang atau rusak. Tanpa file, tanpa lisensi, tanpa biaya loading.
 
+## Hierarki volume
+
+Diatur di **satu tempat**: `VOLUME` di `src/audio/mix.ts` (dalam dB; 0 = level hasil normalisasi/kalibrasi). Mengubah angka di sana langsung menyeimbangkan seluruh tingkat tanpa menyentuh file audio.
+
+| Tingkat | Isi | `VOLUME` (dB) | Efektif (LUFS) |
+| --- | --- | --- | --- |
+| `ambience` | loop latar: kabin, bandara, angin, roda | 0 | -22 (paling datar, hanya latar) |
+| `minor` | transisi, whoosh, klik/hover, pop, muncul/hilang, langkah | -10 | sekitar -26 (±10 dB di bawah `main`) |
+| `main` | aksi utama di scene: `paperDrop`, `airplaneChimes`, koper, Gasing, TV | 0 | sekitar -16 |
+| `key` | momen kunci/reward: `start`, `reward`, `fanfare` | +3 | sekitar -13 sampai -15 (paling menonjol) |
+| `music` | musik | -6,2 | -20 |
+
+- **Tiap SFX wajib punya `tier`** di registrasinya (`synth.ts`; TypeScript menolak SFX tanpa tier), jadi SFX baru otomatis mengikuti gain tingkatnya.
+- **Batas SFX kecil:** paling banyak 4 SFX `minor` berbunyi bersamaan (`MAX_CONCURRENT` di `mix.ts`); yang berprioritas 2 (mis. awan, `takeoff`) tetap lolos. Total maksimum 14 suara.
+- **Variasi:** SFX yang sering berulang (`click`, `hover`, `tick`, `pop`, `giftHover`, `step`, `boing`) bervariasi acak ±5% pada pitch dan volume (`MAX_VARY`), tetap di dalam batas tingkatnya.
+- **Pengaman puncak:** soft-clipper di keluaran meloloskan sinyal di bawah -3 dBFS apa adanya dan melunakkan puncak di atasnya (misalnya saat `key` +3 dB bertumpuk dengan suara lain). `DynamicsCompressor` bawaan browser sengaja tidak dipakai karena menekan SFX pendek ±10 dB.
+- Suara yang puncaknya tinggi (`tvFlicker`, `tvOn`, `surprise`, `fanfare`) tidak bisa dinaikkan sampai level acuan tanpa clipping, jadi sedikit lebih pelan dari tingkatnya.
+
+### Normalisasi dan kalibrasi (level acuan)
+
+`src/audio/levels.json` berisi target kalibrasi: ambience -22 LUFS, **semua SFX -16 LUFS**, musik -20 LUFS, true peak maks. -1,5 dBTP.
+
+- **File** dinormalisasi ke target itu oleh `npm run audio`.
+- **SFX/loop sintesis** dikalibrasi ke target yang sama (`vol` tiap SFX di `synth.ts`, `LOOP_PEAK` untuk loop) memakai `scripts/measure-synth-levels.js` (tempel di konsol browser saat `npm run dev`). Jalankan ulang setelah menambah atau mengubah SFX sintesis.
+- Musik tidak di-encode ulang (loop tetap gapless); volumenya dikurangi lewat `VOLUME.music`.
+
 ## File yang dipakai sekarang
 
 | Nama | File | Dipakai di | Sumber (di `aset proyek/original/`) | Catatan |
 | --- | --- | --- | --- | --- |
-| `music` | `music-gasing-loop.mp3` | Scene 04 - Peta Kado (fade out saat Mendarat) | `2b. Coba Soal Gasing Loop.mp3` | Tidak di-encode ulang (loop tetap gapless); volumenya dikurangi lewat `mixDb.music`. |
-| `cabin` | `amb-cabin.m4a` | Scene 02 - Kabin Pesawat (loop) | `inside airplane ambience 2.mp3` | Senyap awal/akhir dipotong; loop diberi crossfade 1,5 s. |
-| `airport` | `amb-airport.m4a` | Scene 05 - Bandara Bagasi dan Scene 06-08 (loop) | `Airport Ambience.wav` | WAV 11,4 MB menjadi AAC 1,0 MB; loop diberi crossfade 2 s. |
-| `paperDrop` | `sfx-paperDrop.m4a` | Scene 04, surat jatuh (04b) | `Flip page.mp3` | Dipotong 113 ms di awal dan 223 ms di akhir; puncak suara ~0,25 s. |
-| `airplaneChimes` | `sfx-airplaneChimes.m4a` | Scene 02 (02b), denting pramugari | `airplane chimes.mp3` | Dua denting (~2,2 s), diputar sekali per kunjungan pada detik ke-3,4. |
+| `music` | `music-gasing-loop.mp3` | Scene 04 - Peta Kado (fade out saat Mendarat) | `2b. Coba Soal Gasing Loop.mp3` | Tidak di-encode ulang. |
+| `cabin` | `amb-cabin.m4a` | Scene 02 - Kabin Pesawat (loop) | `inside airplane ambience 2.mp3` | -22 LUFS; senyap awal/akhir dipotong; loop diberi crossfade 1,5 s. |
+| `airport` | `amb-airport.m4a` | Scene 05 - Bandara Bagasi dan Scene 06-08 (loop) | `Airport Ambience.wav` | -22 LUFS; WAV 11,4 MB menjadi AAC 1,0 MB; crossfade 2 s. |
+| `paperDrop` | `sfx-paperDrop.m4a` | Scene 04, surat jatuh (04b) | `Flip page.mp3` | -16 LUFS; dipotong 113 ms awal dan 223 ms akhir; puncak suara ~0,25 s. |
+| `airplaneChimes` | `sfx-airplaneChimes.m4a` | Scene 02 (02b), denting pramugari | `airplane chimes.mp3` | -16 LUFS (tingkat `main`); dua denting (~2,2 s), sekali per kunjungan pada detik ke-3,4. |
 
 Format `.m4a` (AAC) dipilih karena ringan dan didukung semua browser; titik awalnya akurat (latensi awal < 5 ms, sudah diuji).
 
@@ -28,29 +54,10 @@ Format `.m4a` (AAC) dipilih karena ringan dan didukung semua browser; titik awal
 
 `cabin` dan `airport` juga punya cadangan sintesis (dipakai hanya bila file-nya hilang).
 
-## Level audio (volume seragam)
-
-Dua mekanisme, semuanya diatur di `src/audio/levels.json`:
-
-| Kategori | Target loudness (LUFS) | Isi |
-| --- | --- | --- |
-| `ambience` | -22 | loop ambience (kabin, bandara, angin, roda) |
-| `accent` | -19 | `airplaneChimes` |
-| `ui` | -19 | klik, hover, tick, pop, play/pause, `toggleOn`, `giftHover` |
-| `transition` | -18 | whoosh dan transisi (`zoomOut`, `zoomIn`, `whooshSoft`, `planeFlyby`, `cloudWhoosh`, `cloudSoft`, `takeoff`) |
-| `action` | -16 | aksi dan karakter (`paperDrop`, `paperClose`, `step`, `hopUp`, `thud`, `boing`, `surprise`, `tvFlicker`, `tvOn`, `oops`) |
-| `reward` | -14 | `start`, `reward`, `fanfare` (sedikit menonjol) |
-| `music` | -20 | musik |
-
-- **File** dinormalisasi ke target kategorinya (EBU R128, true peak maks. -1,5 dBTP) oleh `npm run audio`.
-- **SFX/loop sintesis** dikalibrasi ke target yang sama (`vol` tiap SFX di `synth.ts`, `LOOP_PEAK` untuk loop), memakai `scripts/measure-synth-levels.js`.
-- **`mixDb`** di `levels.json` = penyesuaian akhir per kategori saat diputar (dB). Ubah angka ini bila ingin menyeimbangkan tanpa menyentuh file. Contoh: ambience terlalu keras, ubah `"ambience": 0` menjadi `-3`.
-- Suara yang puncaknya tinggi (mis. `tvFlicker`, `fanfare`) tidak bisa dinaikkan sampai target tanpa clipping, jadi sedikit lebih pelan dari targetnya. Ada limiter di keluaran sebagai pengaman.
-
 ## Menambah atau mengganti suara dengan file
 
 1. Taruh file sumber (mp3/wav/dll.) di `aset proyek/`.
-2. Tambahkan satu entri di `scripts/audio-sources.json` (`name`, `src`, `out`, `category`, `trim`).
+2. Tambahkan satu entri di `scripts/audio-sources.json` (`name`, `src`, `out`, `category`: `ambience` / `sfx` / `music`, `trim`).
 3. Jalankan:
 
    ```bash
@@ -58,38 +65,44 @@ Dua mekanisme, semuanya diatur di `src/audio/levels.json`:
    ```
 
    Script mencadangkan sumber ke `aset proyek/original/`, memotong senyap, mengukur dan menormalisasi loudness, meng-encode ke `public/assets/audio/`, dan memperbarui `manifest.json`. `npm run audio -- cabin` memproses satu item saja.
-4. Untuk SFX baru, tambahkan juga nama di `SfxName` dan satu entri di `SFX` (dan `SFX_CAT`) pada `src/audio/synth.ts` (resep cadangan, boleh sederhana), lalu picu dari kode (lihat di bawah).
+4. Untuk SFX baru, tambahkan juga nama di `SfxName` dan satu entri di `SFX` pada `src/audio/synth.ts` (wajib mengisi `tier`; resep cadangan boleh sederhana), lalu picu dari kode (lihat di bawah).
 
 Script butuh **ffmpeg** (di PATH, atau set variabel `FFMPEG` ke lokasi `ffmpeg.exe`). Memasangnya di Windows: `winget install Gyan.FFmpeg`.
 
-## Daftar SFX
+## Daftar SFX dan tingkatnya
 
-| Nama | Kategori | Dipicu |
-| --- | --- | --- |
-| `click` | ui | semua tombol (`App.tsx`, bawaan `data-sfx`) |
-| `hover` | ui | hover tombol (mouse saja, dibatasi frekuensinya) |
-| `tick` | ui | geser slider volume (panel dan TV) |
-| `pop` | ui | tombol muncul (`PrimaryButton`), pill progres/petunjuk, bingkai TV |
-| `toggleOn` | ui | suara dinyalakan kembali |
-| `giftHover` | ui | hover kado |
-| `play` / `pause` | ui | putar / jeda video |
-| `zoomOut` / `zoomIn` | transition | zoom kamera 02b / zoom ke TV 06d |
-| `whooshSoft` | transition | crossfade 02c (Scene 02 ke 03), Mulai Ulang, Putar ulang video |
-| `planeFlyby` | transition | pesawat masuk di 03a |
-| `cloudWhoosh` / `cloudSoft` | transition | transisi awan (masuk, menutup) |
-| `takeoff` | transition | pesawat lepas landas (04d) |
-| `paperDrop` | action | surat jatuh (file) |
-| `paperClose` | action | surat ditutup (X, Esc, klik latar) |
-| `step` | action | langkah Gasing (tiap siklus jalan, 0,46 s) |
-| `hopUp` / `thud` | action | koper melompat, mendarat |
-| `boing` | action | Gasing melonjak (`GasingSprite`) |
-| `surprise` | action | Gasing kaget di 06b |
-| `tvFlicker` / `tvOn` | action | layar TV berkedip lalu menyala |
-| `oops` | action | video ucapan belum ada |
-| `start` | reward | tombol "Mulai Perjalanan" |
-| `reward` | reward | tombol "Mendarat" muncul (8 kado terbuka) |
-| `fanfare` | reward | video selesai (kartu penutup, konfeti, kilau) |
-| `airplaneChimes` | accent | denting pramugari di Scene 02 (file) |
+| Tingkat | SFX |
+| --- | --- |
+| **minor** | `click`, `hover`, `tick`, `pop`, `toggleOn`, `giftHover`, `play`, `pause`, `zoomOut`, `zoomIn`, `whooshSoft`, `planeFlyby`, `cloudWhoosh`, `cloudSoft`, `paperClose`, `takeoff`, `step` |
+| **main** | `paperDrop` (file), `airplaneChimes` (file), `hopUp`, `thud`, `boing`, `surprise`, `tvFlicker`, `tvOn`, `oops` |
+| **key** | `start`, `reward`, `fanfare` |
+
+| Nama | Dipicu |
+| --- | --- |
+| `click` | semua tombol (`App.tsx`, bawaan `data-sfx`) |
+| `hover` | hover tombol (mouse saja, dibatasi frekuensinya) |
+| `tick` | geser slider volume (panel dan TV) |
+| `pop` | tombol muncul (`PrimaryButton`), pill progres/petunjuk, bingkai TV |
+| `toggleOn` | suara dinyalakan kembali |
+| `giftHover` | hover kado |
+| `play` / `pause` | putar / jeda video |
+| `zoomOut` / `zoomIn` | zoom kamera 02b / zoom ke TV 06d |
+| `whooshSoft` | crossfade 02c (Scene 02 ke 03), Mulai Ulang, Putar ulang video |
+| `planeFlyby` | pesawat masuk di 03a |
+| `cloudWhoosh` / `cloudSoft` | transisi awan (masuk, menutup) |
+| `takeoff` | pesawat lepas landas (04d) |
+| `paperDrop` | surat jatuh (file) |
+| `paperClose` | surat ditutup (X, Esc, klik latar) |
+| `step` | langkah Gasing (tiap siklus jalan, 0,46 s) |
+| `hopUp` / `thud` | koper melompat, mendarat |
+| `boing` | Gasing melonjak (`GasingSprite`) |
+| `surprise` | Gasing kaget di 06b |
+| `tvFlicker` / `tvOn` | layar TV berkedip lalu menyala |
+| `oops` | video ucapan belum ada |
+| `start` | tombol "Mulai Perjalanan" |
+| `reward` | tombol "Mendarat" muncul (8 kado terbuka) |
+| `fanfare` | video selesai (kartu penutup, konfeti, kilau) |
+| `airplaneChimes` | denting pramugari di Scene 02 (file) |
 
 SFX per scene: lihat `SCENES.md`.
 

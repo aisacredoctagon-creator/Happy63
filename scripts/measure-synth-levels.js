@@ -1,16 +1,19 @@
 /**
- * Ukur dan kalibrasi level SFX/loop SINTESIS (src/audio/synth.ts) terhadap target loudness di src/audio/levels.json.
+ * Ukur dan kalibrasi level SFX/loop SINTESIS (src/audio/synth.ts) ke target di src/audio/levels.json.
  * File audio (m4a/mp3) dinormalisasi oleh `npm run audio`; skrip ini melakukan hal setara untuk suara hasil sintesis.
+ * Semua SFX dikalibrasi ke level acuan yang sama (targetLufs.sfx); hierarki minor/main/key diterapkan saat diputar (mix.ts).
  *
  * Cara pakai: jalankan `npm run dev`, buka halaman di browser, buka konsol (F12), tempel seluruh isi file ini lalu Enter.
- * Hasil: tabel (console.table) berisi loudness sekarang (LUFS), target, `vol` baru, dan puncak. Salin angka `vol` baru ke
- * `vol:` tiap SFX di synth.ts, dan `LOOP_PEAK` ke konstanta di synth.ts (fungsi synthLoop).
+ * Hasil: tabel berisi loudness sekarang (LUFS), `vol` baru, puncak, dan loudness EFEKTIF saat diputar (setelah gain tingkat).
+ * Salin `vol` baru ke tiap SFX di synth.ts, dan `LOOP_PEAK` ke konstanta di synth.ts (fungsi synthLoop).
  *
  * Metode: render offline 48 kHz, K-weighting ITU-R BS.1770, rata-rata kuadrat selama durasi nominal SFX (`dur`).
  * Sumber mono diputar ke dua speaker (L = R), jadi dihitung sebagai stereo identik (+3 LU), sama seperti saat diputar.
+ * Puncak sampel dibatasi -1,5 dBFS. Tingkat key (+3 dB saat diputar) bisa melewati batas itu pada puncak yang singkat; soft-clipper di keluaran (audio.ts) melunakkannya.
  */
 ;(async () => {
   const synth = await import('/src/audio/synth.ts')
+  const { VOLUME } = await import('/src/audio/mix.ts')
   const levels = (await import('/src/audio/levels.json')).default
   const SR = 48000
   const KW = [
@@ -47,7 +50,6 @@
     for (const ch of channels) for (let i = 0; i < n; i++) m = Math.max(m, Math.abs(ch[i]))
     return 20 * Math.log10(m || 1e-9)
   }
-  const PEAK_CAP = -1.5 // dBFS: batas puncak sampel setelah gain
 
   const sfx = []
   for (const [name, def] of Object.entries(synth.SFX)) {
@@ -61,24 +63,22 @@
     const n = Math.min(len, Math.ceil((def.dur + 0.005) * SR))
     const L = lufs([x, x], n)
     const pk = peakDb([x], len)
-    const cat = synth.SFX_CAT[name]
-    const target = levels.targetLufs[cat === 'accent' ? 'accent' : cat]
-    let g = target - L
-    const capped = pk + g > PEAK_CAP
-    if (capped) g = PEAK_CAP - pk
-    sfx.push({ name, cat, lufsNow: +L.toFixed(1), target, volNow: def.vol, volNew: +(def.vol * 10 ** (g / 20)).toFixed(3), peakNew: +(pk + g).toFixed(1), capped })
+    const tierDb = VOLUME[def.tier]
+    const cap = -1.5
+    let g = levels.targetLufs.sfx - L
+    const capped = pk + g > cap
+    if (capped) g = cap - pk
+    sfx.push({ name, tier: def.tier, lufsNow: +L.toFixed(1), volNow: def.vol, volNew: +(def.vol * 10 ** (g / 20)).toFixed(3), peakNew: +(pk + g).toFixed(1), calibrated: +(L + g).toFixed(1), effective: +(L + g + tierDb).toFixed(1), capped })
   }
 
   const loops = []
   for (const name of ['cabin', 'wind', 'airport', 'wheels']) {
     const oc = new OfflineAudioContext(2, SR * 8, SR)
-    const buf = synth.synthLoop(oc, name) // dengan puncak 0,7 (nilai saat ini)
+    const buf = synth.synthLoop(oc, name) // dengan puncak saat ini
     const ch = [buf.getChannelData(0), buf.getChannelData(1)]
     const L = lufs(ch, buf.length)
     const peakNow = 10 ** (peakDb(ch, buf.length) / 20)
-    const target = levels.targetLufs.ambience
-    const peakNew = +(peakNow * 10 ** ((target - L) / 20)).toFixed(4)
-    loops.push({ name, lufsNow: +L.toFixed(1), target, peakNow: +peakNow.toFixed(3), LOOP_PEAK: peakNew })
+    loops.push({ name, lufsNow: +L.toFixed(1), target: levels.targetLufs.ambience, peakNow: +peakNow.toFixed(3), LOOP_PEAK: +(peakNow * 10 ** ((levels.targetLufs.ambience - L) / 20)).toFixed(4) })
   }
   console.table(sfx)
   console.table(loops)

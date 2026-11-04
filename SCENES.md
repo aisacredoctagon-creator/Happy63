@@ -66,7 +66,9 @@ Elemen yang tampil di semua scene dan tidak diberi nomor: tombol suara dan panel
 
 ## SFX per scene
 
-Waktu dihitung dari saat scene tampil dan bersifat kira-kira. Detail tiap SFX dan kategorinya: `AUDIO_CREDITS.md`.
+Waktu dihitung dari saat scene tampil dan bersifat kira-kira. Detail tiap SFX: `AUDIO_CREDITS.md`.
+
+Tingkat volume (diatur di `src/audio/mix.ts`): **minor** (pelan, ±10 dB di bawah utama) = `click`, `hover`, `tick`, `pop`, `toggleOn`, `giftHover`, `play`, `pause`, `zoomOut`, `zoomIn`, `whooshSoft`, `planeFlyby`, `cloudWhoosh`, `cloudSoft`, `paperClose`, `takeoff`, `step`; **main** (sedang) = `paperDrop`, `airplaneChimes`, `hopUp`, `thud`, `boing`, `surprise`, `tvFlicker`, `tvOn`, `oops`; **key** (paling menonjol) = `start`, `reward`, `fanfare`; loop (`cabin`, `airport`, `wind`, `wheels`) = ambience, latar yang datar.
 
 | Scene | SFX (urutan) |
 | --- | --- |

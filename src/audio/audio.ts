@@ -1,7 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { asset } from '../config'
-import levels from './levels.json'
-import { SFX, SFX_CAT, makeNoise, synthLoop } from './synth'
+import { MAX_CONCURRENT, MAX_VARY, VOLUME } from './mix'
+import { SFX, makeNoise, synthLoop } from './synth'
 import type { SfxName, SynthLoopName } from './synth'
 
 /**
@@ -12,8 +12,8 @@ import type { SfxName, SynthLoopName } from './synth'
  *  - Semua SFX dan ambient punya versi prosedural bawaan (src/audio/synth.ts). File asli opsional: letakkan di
  *    public/assets/audio/ lalu daftarkan di manifest.json (nama -> file; dibuat otomatis oleh `npm run audio`,
  *    lihat AUDIO_CREDITS.md); file itu menggantikan versi bawaan.
- *  - Keseimbangan volume: file dinormalisasi ke target loudness kategorinya, SFX sintesis dikalibrasi ke target yang sama,
- *    lalu levels.json (mixDb) menyesuaikan akhir per kategori; limiter di keluaran mencegah clipping.
+ *  - Keseimbangan volume: file dinormalisasi dan SFX sintesis dikalibrasi ke level acuan (levels.json), lalu gain per tingkat
+ *    (ambience / minor / main / key, diatur di mix.ts) membentuk hierarki; soft-clipper di keluaran mencegah clipping.
  *  - SFX bercakupan "scene" (seq.sfx / scope: 'scene') dipotong halus saat pindah scene (audio.stopScene()).
  */
 export type { SfxName }
@@ -32,9 +32,9 @@ const isLoopName = (k: string): k is LoopName => (LOOP_NAMES as string[]).includ
 
 /** pengali linear dari dB */
 const lin = (db: number) => 10 ** (db / 20)
-/** penyesuaian akhir per kategori dari levels.json (mixDb, dalam dB) */
-const mixLin = (c: keyof typeof levels.mixDb) => lin(levels.mixDb[c])
-const loopMix = (n: LoopName) => mixLin(n === 'music' ? 'music' : 'ambience')
+/** gain tingkat volume dari mix.ts (VOLUME, dalam dB) */
+const tierGain = (t: keyof typeof VOLUME) => lin(VOLUME[t])
+const loopMix = (n: LoopName) => tierGain(n === 'music' ? 'music' : 'ambience')
 
 /** gain tambahan per loop (linear, 1 = apa adanya): file loop sudah dinormalisasi dan loop sintesis sudah dikalibrasi */
 const LOOP_VOL: Record<LoopName, number> = { cabin: 1, wind: 1, airport: 1, wheels: 1, music: 1 }
@@ -172,15 +172,13 @@ class AudioManager {
       const ctx = (this.ctx = new AC())
       this.master = ctx.createGain()
       this.master.gain.value = this._settings.muted ? 0 : 1
-      // limiter di keluaran: mencegah clipping saat beberapa suara bertumpuk
-      const limiter = ctx.createDynamicsCompressor()
-      limiter.threshold.value = -3
-      limiter.knee.value = 0
-      limiter.ratio.value = 20
-      limiter.attack.value = 0.002
-      limiter.release.value = 0.12
-      this.master.connect(limiter)
-      limiter.connect(ctx.destination)
+      // pengaman puncak di keluaran: soft-clipper yang meloloskan sinyal di bawah -3 dBFS apa adanya (DynamicsCompressor bawaan
+      // browser menekan SFX pendek ~10 dB, jadi tidak dipakai)
+      const safety = ctx.createWaveShaper()
+      safety.curve = softClipCurve()
+      safety.oversample = '2x'
+      this.master.connect(safety)
+      safety.connect(ctx.destination)
       const mk = (parent: AudioNode, v: number) => {
         const g = ctx.createGain()
         g.gain.value = v
@@ -231,15 +229,21 @@ class AudioManager {
     const now = ctx.currentTime
     this.voices = this.voices.filter((v) => v.end > now)
     if (def.max && this.voices.filter((v) => v.name === name).length >= def.max) return
+    // SFX kecil tidak boleh menumpuk: batasi jumlah per tingkat (suara prioritas 2 tetap lolos)
+    const cap = MAX_CONCURRENT[def.tier]
+    if (cap && (def.prio ?? 1) < 2 && this.voices.filter((v) => SFX[v.name].tier === def.tier).length >= cap) return
     if (this.voices.length >= MAX_VOICES && (def.prio ?? 1) < 1) return
     this.lastPlay.set(name, nowMs)
 
     const t = now + (opts.delay ?? 0) + 0.005
-    const rate = (opts.rate ?? 1) * (def.vary ? 1 + (Math.random() * 2 - 1) * def.vary : 1)
+    // variasi kecil pitch dan volume (maks. +/-5%) untuk aksi yang sering berulang; tetap di dalam batas tingkatnya
+    const jitter = def.vary ? Math.min(def.vary, MAX_VARY) : 0
+    const rate = (opts.rate ?? 1) * (1 + (Math.random() * 2 - 1) * jitter)
+    const level = 1 + (Math.random() * 2 - 1) * jitter
     const file = this.sfxFiles.get(name)
     const voice = ctx.createGain()
     // file sudah dinormalisasi ke target kategorinya (gain 1); resep sintesis memakai def.vol hasil kalibrasi
-    voice.gain.value = (file ? 1 : def.vol) * mixLin(SFX_CAT[name]) * (opts.volume ?? 1)
+    voice.gain.value = (file ? 1 : def.vol) * tierGain(def.tier) * level * (opts.volume ?? 1)
     voice.connect(bus)
 
     if (file) {
@@ -391,6 +395,19 @@ class AudioManager {
   private emit() {
     this.listeners.forEach((f) => f())
   }
+}
+
+/** kurva soft-clip: lurus (y = x) sampai -3 dBFS, lalu melandai halus (tanh) ke maksimum 1,0 */
+function softClipCurve() {
+  const T = 0.708
+  const n = 4096
+  const c = new Float32Array(n)
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1
+    const a = Math.abs(x)
+    c[i] = a <= T ? x : Math.sign(x) * (T + (1 - T) * Math.tanh((a - T) / (1 - T)))
+  }
+  return c
 }
 
 /**
