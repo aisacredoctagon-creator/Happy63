@@ -330,8 +330,8 @@ button {
    peredam gelapnya menutup seluruh viewport), dan .stage selalu berpusat di .viewport. */
 .letter-backdrop {
   position: absolute;
-  inset: -800px;
-  padding: 800px;
+  inset: calc(-1 * var(--pad-y, 800px)) calc(-1 * var(--pad-x, 800px));
+  padding: var(--pad-y, 800px) var(--pad-x, 800px);
   z-index: 160; /* di atas semua kado, tombol, progres, dan tombol suara (150); di bawah awan transisi (300) */
   background: rgba(8, 40, 100, 0.3);
   display: flex;
@@ -1920,20 +1920,20 @@ button {
   overflow: visible;
 }
 .cabin-backdrop {
-  inset: -800px;
+  inset: calc(-1 * var(--pad-y, 800px)) calc(-1 * var(--pad-x, 800px));
 }
 .cabin-shade-top,
 .cabin-shade-bottom,
 .cabin-floor {
-  left: -800px;
-  right: -800px;
+  left: calc(-1 * var(--pad-x, 800px));
+  right: calc(-1 * var(--pad-x, 800px));
 }
 .blackout {
-  inset: -800px;
+  inset: calc(-1 * var(--pad-y, 800px)) calc(-1 * var(--pad-x, 800px));
 }
 .loading {
-  inset: -800px;
-  padding: 800px;
+  inset: calc(-1 * var(--pad-y, 800px)) calc(-1 * var(--pad-x, 800px));
+  padding: var(--pad-y, 800px) var(--pad-x, 800px);
 }
 .tv-frame {
   overflow: visible;
@@ -2165,38 +2165,6 @@ button {
   outline: 4px solid #17539d;
   outline-offset: 4px;
 }
-.fs-hint {
-  position: absolute;
-  right: calc(30px + var(--crop-x, 0px));
-  bottom: calc(118px + var(--crop-y, 0px));
-  z-index: 211;
-  width: 560px;
-  padding: 18px 26px 20px;
-  font-family: var(--font-popup);
-  font-weight: 500;
-  font-size: 28px;
-  line-height: 1.35;
-  color: #17539d;
-  background: #fff;
-  border-radius: 26px;
-  box-shadow: 0 10px 26px rgba(10, 60, 140, 0.35);
-}
-.fs-hint b {
-  font-weight: 700;
-}
-.fs-hint button {
-  display: block;
-  margin: 12px 0 0 auto;
-  padding: 4px 22px 6px;
-  font-family: var(--font-popup);
-  font-weight: 700;
-  font-size: 26px;
-  color: #fff;
-  background: #3d86ee;
-  border: 0;
-  border-radius: 99px;
-  cursor: pointer;
-}
 
 /* ============ cincin putih tanpa border CSS (anti garis/seam) ============
    Border 1 warna di sudut membulat + latar berwarna di bawahnya kadang menyisakan garis tipis (jahitan) di titik temu sisi
@@ -2346,11 +2314,6 @@ button {
 }
 .stage[data-compact] .fs-toggle {
   right: calc(160px + var(--crop-x, 0px)); /* 30 + lebar tombol suara terbesar (74 x ui) + jarak */
-}
-.stage[data-compact] .fs-hint {
-  bottom: calc(170px + var(--crop-y, 0px));
-  scale: 1.35;
-  transform-origin: right bottom;
 }
 .stage[data-compact] .top-actions-row,
 .stage[data-compact] .hint-pill {

@@ -29,8 +29,15 @@ export interface StageViewInfo {
   panMode: boolean
   /** mode ponsel "fill + anchor bawah" aktif (lihat prop fillBottom) */
   anchorBottom: boolean
+  /**
+   * Seberapa jauh (px kanvas) layar terlihat melewati tiap sisi kanvas 16:9 (+ margin), dibulatkan ke atas per 50.
+   * Perluasan latar (EdgeExtend, backdrop, loading) cukup sebesar ini; dulu tetap 800-1000 px sehingga di ponsel membuat
+   * lapisan raksasa (belasan juta piksel) yang memakan memori GPU iOS sampai tab dimatikan Safari.
+   */
+  padX: number
+  padY: number
 }
-const StageViewContext = createContext<StageViewInfo>({ scale: 1, cropX: 0, cropY: 0, panMode: false, anchorBottom: false })
+const StageViewContext = createContext<StageViewInfo>({ scale: 1, cropX: 0, cropY: 0, panMode: false, anchorBottom: false, padX: 800, padY: 800 })
 export const useStageView = () => useContext(StageViewContext)
 
 /** layar dengan rasio lebar/tinggi di bawah ini dianggap "agak kotak" (16:9 = 1.78; 4:3 = 1.33; Fold landscape ~ 1.25-1.4) */
@@ -61,9 +68,12 @@ const COMPACT_BELOW = 0.55
 /** tinggi viewport (px CSS) di bawah ini dianggap layar ponsel (landscape) untuk mode fillBottom */
 const MOBILE_BELOW_H = 600
 
+/** celah (px kanvas) + margin, dibulatkan ke atas per 50 agar tidak memicu render ulang tiap perubahan kecil */
+const pad = (gap: number) => Math.min(1200, Math.ceil((Math.max(0, gap) + 60) / 50) * 50)
+
 export function Stage({ children, overlay, pannable, fillBottom }: Props) {
   const viewport = useRef<HTMLDivElement>(null)
-  const [view, setView] = useState<StageViewInfo>({ scale: 1, cropX: 0, cropY: 0, panMode: false, anchorBottom: false })
+  const [view, setView] = useState<StageViewInfo>({ scale: 1, cropX: 0, cropY: 0, panMode: false, anchorBottom: false, padX: 800, padY: 800 })
   useLayoutEffect(() => {
     const el = viewport.current
     if (!el) return
@@ -82,6 +92,8 @@ export function Stage({ children, overlay, pannable, fillBottom }: Props) {
         cropY: Math.max(0, (STAGE_H - vh / scale) / 2),
         panMode,
         anchorBottom,
+        padX: pad((vw / scale - STAGE_W) / 2),
+        padY: pad((vh / scale - STAGE_H) / 2),
       })
     }
     update()
@@ -103,6 +115,8 @@ export function Stage({ children, overlay, pannable, fillBottom }: Props) {
     transform: `translate(-50%, -50%) scale(${view.scale})`,
     '--crop-x': `${Math.round(view.cropX)}px`,
     '--crop-y': `${Math.round(view.cropY)}px`,
+    '--pad-x': `${view.padX}px`,
+    '--pad-y': `${view.padY}px`,
   } as CSSProperties
   return (
     <div className="viewport" ref={viewport}>
