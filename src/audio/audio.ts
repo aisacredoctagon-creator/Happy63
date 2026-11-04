@@ -27,11 +27,18 @@ const SFX_MAX: Partial<Record<SfxName, number>> = { click: 0.28 }
 /** loop ambient dibuat mulus dengan crossfade sambungan (detik); musik dibiarkan apa adanya */
 const SEAMLESS: Partial<Record<LoopName, number>> = { cabin: 1.5, wind: 1.5, airport: 2 }
 
+/**
+ * Loop yang panjang (musik ~3 menit) TIDAK di-decode utuh ke memori: hasil decode-nya ~80 MB PCM, yang bersama gambar
+ * membuat tab iPhone dimatikan Safari ("A problem repeatedly occurred"). Sebagai gantinya diputar streaming lewat <audio>
+ * dan tetap disambung ke jalur gain yang sama (mute, duck, fade tetap bekerja).
+ */
+const STREAMED = new Set<string>(['music'])
+
 interface LoopState {
   count: number
   vol: number
   fade: number
-  node?: { src: AudioBufferSourceNode; gain: GainNode }
+  node?: { stop: () => void; gain: GainNode }
   starting?: boolean
   killTimer?: ReturnType<typeof setTimeout>
 }
@@ -55,7 +62,7 @@ class AudioManager {
 
   constructor() {
     // ambil data file sedini mungkin (fetch tidak butuh interaksi); decode menunggu AudioContext
-    for (const key of Object.keys(FILES)) this.fetchRaw(key)
+    for (const key of Object.keys(FILES)) if (!STREAMED.has(key)) this.fetchRaw(key)
     const unlock = () => this.unlock()
     for (const ev of ['pointerdown', 'keydown', 'touchstart']) window.addEventListener(ev, unlock, { capture: true })
   }
@@ -104,7 +111,7 @@ class AudioManager {
       this.loopBus.connect(this.master)
     }
     // decode semua file di muka agar loop/SFX langsung siap saat dipakai (mis. musik di scene peta)
-    for (const key of Object.keys(FILES)) void this.getBuffer(key as SfxName | LoopName)
+    for (const key of Object.keys(FILES)) if (!STREAMED.has(key)) void this.getBuffer(key as SfxName | LoopName)
     if (this.ctx.state === 'suspended') {
       void this.ctx.resume().then(() => this.syncLoops())
     } else {
@@ -171,6 +178,31 @@ class AudioManager {
         gp.linearRampToValueAtTime(s.vol, now + s.fade)
       } else if (!s.starting) {
         s.starting = true
+        if (STREAMED.has(name)) {
+          const el = new Audio()
+          el.loop = true
+          el.preload = 'auto'
+          el.src = FILES[name]
+          const src = ctx.createMediaElementSource(el)
+          const gain = ctx.createGain()
+          gain.gain.setValueAtTime(0, ctx.currentTime)
+          gain.gain.linearRampToValueAtTime(s.vol, ctx.currentTime + s.fade)
+          src.connect(gain).connect(this.loopBus)
+          el.play().catch(() => {
+            /* file belum ada / diblokir: diam saja */
+          })
+          s.starting = false
+          s.node = {
+            gain,
+            stop: () => {
+              el.pause()
+              el.removeAttribute('src')
+              el.load() // lepaskan buffer stream
+              src.disconnect()
+            },
+          }
+          return
+        }
         const buf = await this.getBuffer(name)
         s.starting = false
         if (!buf || s.count <= 0 || s.node || !this.loopBus) return
@@ -182,20 +214,25 @@ class AudioManager {
         gain.gain.linearRampToValueAtTime(s.vol, ctx.currentTime + s.fade)
         src.connect(gain).connect(this.loopBus)
         src.start()
-        s.node = { src, gain }
+        s.node = {
+          gain,
+          stop: () => {
+            try {
+              src.stop()
+            } catch {
+              /* sudah berhenti */
+            }
+          },
+        }
       }
     } else if (s.node) {
-      const { src, gain } = s.node
+      const { stop, gain } = s.node
       const gp = gain.gain
       gp.cancelScheduledValues(now)
       gp.setValueAtTime(gp.value, now)
       gp.linearRampToValueAtTime(0, now + Math.max(0.05, s.fade))
       s.killTimer = setTimeout(() => {
-        try {
-          src.stop()
-        } catch {
-          /* sudah berhenti */
-        }
+        stop()
         s.node = undefined
       }, s.fade * 1000 + 120)
     }

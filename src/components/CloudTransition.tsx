@@ -10,7 +10,7 @@ import { stageScale } from './Stage'
  *   hanyut pelan ke kiri) menampakkan scene baru -> `onDone`.
  * Ukuran lapisan awan dihitung dari ukuran jendela (melewati tepi kanvas bila perlu), jadi layar tetap tertutup penuh di
  * rasio apa pun: desktop, pita letterbox, mobile landscape, jendela sangat tinggi.
- * Komponen selalu terpasang (gambar awan sudah di-decode sebelum dipakai); animasi dimulai saat `runId` berubah.
+ * Strip awan hanya dipasang saat `busy` (hemat memori); animasi dimulai saat `runId` berubah.
  * Hanya memakai transform/opacity. prefers-reduced-motion: diganti fade singkat.
  */
 interface Props {
@@ -212,11 +212,13 @@ export function CloudTransition({ runId, busy, onCovered, onDone }: Props) {
   return (
     <>
       <div className={`cloud-layer ${busy ? '' : 'is-idle'}`} aria-hidden>
-        {LAYERS.map((layer, i) => (
-          <motion.div key={layer.seed} className="cloud-strip" style={{ x: xs[i], opacity: os[i], top: geo.top }}>
-            <CloudStrip layer={layer} W={geo.W} H={geo.H} />
-          </motion.div>
-        ))}
+        {/* strip raksasa (~4000x1700 px x 3) hanya dipasang selama transisi; saat diam dibuang agar memori GPU iPhone lega */}
+        {(busy || reduced) &&
+          LAYERS.map((layer, i) => (
+            <motion.div key={layer.seed} className="cloud-strip" style={{ x: xs[i], opacity: os[i], top: geo.top }}>
+              <CloudStrip layer={layer} W={geo.W} H={geo.H} />
+            </motion.div>
+          ))}
         {reduced && <motion.div className="cloud-fade" style={{ opacity: veil }} />}
       </div>
     </>
