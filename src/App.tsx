@@ -52,11 +52,16 @@ export default function App() {
   const [openedGifts, setOpenedGifts] = useState<Set<string>>(() => new Set(DEV?.allGifts ? GIFTS.map((g) => g.id) : []))
   const [hasCompletedOnce, setHasCompletedOnce] = useState(!!DEV?.completed)
   const [videoPlaying, setVideoPlaying] = useState(false)
+  /** Scene 07 aktif: tombol suara/pengaturan/layar penuh disembunyikan (dilaporkan Scene 06; di-reset di bawah) */
+  const [controlsHidden, setControlsHidden] = useState(false)
   const cloudId = useRef(0)
   const cloudNext = useRef<SceneId | null>(null)
 
   useEffect(() => {
-    if (scene !== 'scene06') setVideoPlaying(false)
+    if (scene !== 'scene06') {
+      setVideoPlaying(false)
+      setControlsHidden(false) // penyembunyian tidak bocor ke scene lain
+    }
   }, [scene])
 
   // selagi pemain di scene ini, scene berikutnya di-decode di muka (setelah animasi masuk scene ini reda)
@@ -169,7 +174,7 @@ export default function App() {
       content = <Scene05BandaraBagasi onDone={() => goFade('scene06', 1.0)} />
       break
     case 'scene06':
-      content = <Scene06GasingMelihatTv onBack={() => goWithCloud('scene04')} onVideoPlaying={setVideoPlaying} devStart={devStart} />
+      content = <Scene06GasingMelihatTv onBack={() => goWithCloud('scene04')} onVideoPlaying={setVideoPlaying} onHideControls={setControlsHidden} devStart={devStart} />
       break
   }
 
@@ -195,8 +200,8 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        <AudioToggle />
-        <FullscreenToggle />
+        <AudioToggle hidden={controlsHidden} />
+        <FullscreenToggle hidden={controlsHidden} />
         <Scene01LayarPembuka progress={progress} ready={done} visible={!started} onStart={() => {
             audio.unlock() // interaksi pertama: buka audio (aturan autoplay browser)
             // gambar scene pertama di-decode dulu supaya tidak muncul bertahap

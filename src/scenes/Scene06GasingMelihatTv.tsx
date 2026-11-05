@@ -46,12 +46,14 @@ const TV_ZOOM = 2.21
 interface Props {
   onBack: () => void
   onVideoPlaying: (playing: boolean) => void
+  /** true selama Scene 07 (TV layar penuh + video); false di Scene 06 dan Scene 08: App menyembunyikan tombol suara/pengaturan/layar penuh */
+  onHideControls: (hidden: boolean) => void
   /** hanya dev (?scene=07 / ?scene=08): langsung mulai di TV layar penuh / kartu penutup, tanpa animasi 06a-06d */
   devStart?: 'tv' | 'ended'
 }
 
 /** Scene 06 - Gasing Melihat TV (lanjut ke Scene 07 Video Ucapan dan Scene 08 Kartu Penutup): Gasing melihat TV, TV menyala, kamera zoom hingga layar penuh, video ucapan diputar. */
-export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Props) {
+export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, onHideControls, devStart }: Props) {
   useLoop('airport', { fadeIn: 2, fadeOut: 1.5 })
   const tx = useMotionValue(-CAM_X)
   const ty = useMotionValue(0)
@@ -67,6 +69,12 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Pro
   const [replayKey, setReplayKey] = useState(0)
   // keluar dari scene saat video berputar: musik/ambient tidak boleh tetap dibisukan
   useEffect(() => () => onVideoPlaying(false), []) // eslint-disable-line react-hooks/exhaustive-deps
+  // Scene 07 = TV layar penuh dan belum selesai; saat video habis (Scene 08) tombol muncul lagi; keluar scene: selalu muncul lagi
+  const hideControls = phase === 'tv' && status !== 'ended'
+  useEffect(() => {
+    onHideControls(hideControls)
+  }, [hideControls]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => onHideControls(false), []) // eslint-disable-line react-hooks/exhaustive-deps
   useSceneTag(status === 'ended' ? '08' : phase === 'tv' ? '07' : '06')
 
   // koper mengekor

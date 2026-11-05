@@ -2542,3 +2542,14 @@ html.lite .pill-btn {
   accent-color: #3b8be0;
   cursor: pointer;
 }
+
+/* ============ tombol UI global (suara, pengaturan, layar penuh) disembunyikan di Scene 07: fade 250 ms, lalu tidak bisa diklik ============ */
+.ui-fade.ui-fade {
+  transition: opacity 0.25s ease, visibility 0s linear 0s, transform 0.15s;
+}
+.ui-fade.ui-fade.is-hidden {
+  opacity: 0;
+  visibility: hidden; /* setelah fade: tidak bisa diklik atau difokus */
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s, transform 0.15s;
+}

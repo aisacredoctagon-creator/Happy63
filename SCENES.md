@@ -64,7 +64,7 @@ Sumber kebenaran di kode: `src/data/scenes.ts` (`SCENE_LIST`). **Setiap ada scen
 | 08a | Konfeti dan Kartu | Kartu penutup muncul setelah video selesai | ~3 s |
 | 08b | Putar Ulang | Tombol "Putar ulang video" | - |
 
-Elemen yang tampil di semua scene dan tidak diberi nomor: tombol suara dan tombol gerigi pengaturan volume (`components/AudioToggle.tsx`). `CloudTransition` (`components/CloudTransition.tsx`) satu komponen yang dipakai di 03c, 04e, dan 07c.
+Elemen yang tampil di semua scene dan tidak diberi nomor: tombol suara dan tombol gerigi pengaturan volume (`components/AudioToggle.tsx`). Tombol suara, gerigi, dan layar penuh (`components/FullscreenToggle.tsx`) disembunyikan dengan fade 250 ms HANYA selama Scene 07 (supaya tidak menutupi video TV) dan muncul lagi di Scene 08 serta saat keluar scene: Scene 06 melaporkan `onHideControls` ke `App`, yang meneruskan `hidden` ke kedua komponen (tetap terpasang, jadi mute/volume/BGM tidak berubah; saat tersembunyi `visibility: hidden` + `pointer-events: none`). `CloudTransition` (`components/CloudTransition.tsx`) satu komponen yang dipakai di 03c, 04e, dan 07c.
 
 ## SFX per scene
 
