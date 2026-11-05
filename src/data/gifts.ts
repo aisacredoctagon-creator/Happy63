@@ -191,7 +191,7 @@ Di usia ke-63 ini, kami mendoakan semoga Prof senantiasa diberikan kesehatan, ke
 
 Selamat bertambah usia, Prof Yohanes Surya!
 
-Terus menginspirasi, terus berinovasi, dan terus mencerdaskan Indonesia, Prof! 🇮🇩✨
+Terus menginspirasi, terus berinovasi, dan terus mencerdaskan Indonesia, Prof! ✨
 Dengan hormat dan rasa terima kasih,
 
 Tim Operasional Gasing Academy`,
