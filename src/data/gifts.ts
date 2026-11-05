@@ -6,7 +6,9 @@
  *             0 kuning, 1 biru, 2 ungu, 3 pink, 4 cokelat, 5 merah, 6 biru keunguan, 7 abu-abu, 8 cyan.
  *             (4, 5, 7 berasal dari "updated giftbox.png" / "updated giftbox2.png", diproses manual; menjalankan
  *             npm run assets:v2 akan menimpanya dengan kado lama dari Giftbox1/2.png.)
- *             (kado ke-10 di pojok kanan-bawah sheet sengaja tidak dipakai.)
+ *             9 hijau teal ("Festive Teal Gift Boxes.png"), 10 pink ("Glossy Green and Pink Gift Boxes.png" / "Neon Gift Boxes with Sparkles.png")
+ *             (tools/process-gifts-green-pink.mjs). Kado 5 (merah) dan 7 (abu-abu) kini tidak dipakai.
+ *             (kado ke-10 di pojok kanan-bawah sheet Giftbox1/2 sengaja tidak dipakai.)
  * - font    : kunci font pop-up surat (tiap divisi beda). Definisinya (nama keluarga Google Fonts + skala ukuran) ada di blok
  *             `.letter[data-font=...]` di src/index.css, dan fontnya dimuat lewat <link> di index.html.
  * - title   : judul pop-up surat (ucapan singkat, berbeda untuk tiap divisi).
@@ -78,8 +80,8 @@ Kami tim Digital Learning berharap dapat terus bersama-sama menjadi bagian dari 
     name: 'Divisi Material Sosial Media',
     members: ['Clara', 'Dara'],
     ...pct(1275, 588),
-    sprite: 7,
-    color: '#7b8497',
+    sprite: 10,
+    color: '#ff2fa8',
     letter: `Kami dari tim Material mengucapkan selamat ulang tahun Prof. Yohanes.
 
 Semoga panjang umur dan sehat selalu agar lebih banyak anak Indonesia bisa merasakan manfaat belajar dengan Metode Gasing. God bless always`,
@@ -154,8 +156,8 @@ Melisa & Felicia HR Gasing Academy`,
     name: 'Divisi Formal Education & Talent Development',
     members: ['Hana', 'Ekklesia', 'Mega', 'Fera', 'Julfikri'],
     ...pct(1100, 628),
-    sprite: 5,
-    color: '#e63946',
+    sprite: 9,
+    color: '#14c987',
     letter: `Selamat ulang tahun, Prof. Yohanes Surya!
 
 Kiranya Prof. senantiasa diberikan kesehatan, umur panjang, sukacita, dan kekuatan dalam menjalankan setiap panggilan dan karya yang Tuhan percayakan.
@@ -196,7 +198,7 @@ Tim Operasional Gasing Academy`,
   },
   {
     id: 'material-kurikulum',
-    font: 'atma',
+    font: 'bricolage',
     title: 'Kasih dan penyertaan Tuhan senantiasa menaungi setiap langkah Prof',
     name: 'Divisi Material Kurikulum',
     members: ['Asrida', 'John', 'Yoani', 'Joni'],

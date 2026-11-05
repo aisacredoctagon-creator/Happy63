@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { audio, useAudioSettings, useMuted } from '../audio/audio'
 import type { Category } from '../audio/audio'
 
-const ROWS: Array<{ cat: Category; label: string }> = [
-  { cat: 'sfx', label: 'Efek' },
-  { cat: 'ambient', label: 'Suasana' },
-  { cat: 'music', label: 'Musik' },
+/** Satu baris bisa mengatur beberapa kategori sekaligus: "Musik" menggerakkan musik latar dan suasana bersamaan. */
+const ROWS: Array<{ cats: Category[]; label: string }> = [
+  { cats: ['sfx'], label: 'Efek' },
+  { cats: ['music', 'ambient'], label: 'Musik' },
 ]
 
-/** Tombol mute global (SFX, ambient, dan musik) di pojok kanan bawah, plus panel volume per kategori. */
+/** Tombol mute global (SFX, ambient, dan musik) dan gerigi pengaturan di pojok kanan atas, plus panel volume. */
 export function AudioToggle() {
   const muted = useMuted()
   const settings = useAudioSettings()
@@ -35,16 +35,16 @@ export function AudioToggle() {
       {open && (
         <div className="audio-panel" role="group" aria-label="Volume suara">
           {ROWS.map((r) => (
-            <label key={r.cat} className="audio-row">
+            <label key={r.label} className="audio-row">
               <span>{r.label}</span>
               <input
                 type="range"
                 min={0}
                 max={1}
                 step={0.05}
-                value={settings[r.cat]}
+                value={settings[r.cats[0]]}
                 aria-label={`Volume ${r.label}`}
-                onChange={(e) => audio.setVolume(r.cat, Number(e.target.value))}
+                onChange={(e) => r.cats.forEach((c) => audio.setVolume(c, Number(e.target.value)))}
               />
             </label>
           ))}

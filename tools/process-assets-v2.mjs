@@ -9,7 +9,7 @@ fs.mkdirSync(OUT, { recursive: true })
 const meta = {}
 
 const need = [
-  'Character GASING.png', 'awan.png', 'awan2.png', 'Giftbox1.png', 'Giftbox2.png', 'Maskot Pesawat.png',
+  'Character GASING.png', 'awan.png', 'awan2.png', 'Transisi.webp', 'Giftbox1.png', 'Giftbox2.png', 'Maskot Pesawat.png',
   'langit1.png', 'Bandara.png', 'Baggage.png', 'Pulau.png', 'Dalam Pesawat.png', 'Airplane Seat Cartoon Character Cutouts.png',
 ]
 for (const f of need) if (!fs.existsSync(`${SRC}/${f}`)) throw new Error(`Aset tidak ditemukan: ${SRC}/${f}`)
@@ -44,6 +44,13 @@ for (const [src, dst] of [['awan.png', 'awan1.webp'], ['awan2.png', 'awan2.webp'
   await webp(sharp(f).extract(box).resize({ width: 1200 }), dst)
   const m = await sharp(`${OUT}/${dst}`).metadata()
   meta[dst] = { width: m.width, height: m.height }
+}
+
+// ---- Transisi: satu gambar awan lebar (tengah padat, tepi kiri/kanan transparan), dipakai CloudTransition
+await webp(sharp(`${SRC}/Transisi.webp`, { limitInputPixels: false }).resize({ width: 3000 }), 'transisi.webp', 85)
+{
+  const m = await sharp(`${OUT}/transisi.webp`).metadata()
+  meta.transisi = { width: m.width, height: m.height }
 }
 
 // ---- Langit, bandara, cabin shell

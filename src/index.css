@@ -318,15 +318,18 @@ button {
 .cloud-fade {
   background: #eef3ff;
 }
-.cloud-strip {
+.cloud-big,
+.cloud-sweep {
   position: absolute;
   left: 0;
-  top: -60px;
+  max-width: none; /* jangan terkena aturan img global; ukuran dari style */
+  pointer-events: none;
+  user-select: none;
   /* hanya terpasang selama transisi, jadi will-change ikut hilang bersama elemennya */
   will-change: transform, opacity;
 }
-.cloud-strip canvas {
-  display: block;
+.cloud-big {
+  image-rendering: auto;
 }
 
 /* ============ surat ============ */
@@ -376,13 +379,13 @@ button {
   /* batas = bagian kanvas yang terlihat (dikurangi bagian terpotong --crop-*) dikurangi ruang amplop/tombol tutup yang menonjol */
   max-width: calc(1920px - 2 * var(--crop-x, 0px) - 120px);
   max-height: calc(1080px - 2 * var(--crop-y, 0px) - 150px);
-  padding: 74px 70px 40px;
+  padding: 58px 70px 40px;
   color: var(--ink);
   text-align: center;
   font-family: var(--font-popup);
   font-weight: 400;
   background: #fff8e3 repeating-linear-gradient(transparent 0 51px, rgba(212, 168, 88, 0.2) 51px 53px);
-  background-position: 0 150px;
+  background-position: 0 134px;
   border: 9px solid #fff;
   border-radius: 34px;
   box-shadow: 0 0 0 4px #f2d99a, 0 34px 70px rgba(5, 40, 100, 0.5);
@@ -429,7 +432,7 @@ button {
   font-size: calc(42px * var(--fs, 1));
 }
 .letter-title[data-size='s'] {
-  font-size: calc(37px * var(--fs, 1));
+  font-size: calc(34px * var(--fs, 1));
 }
 .letter-chip {
   flex: none;
@@ -503,7 +506,7 @@ button {
 /* mobile: kartu dilebarkan (max-width .letter menjaga agar tetap di area yang terlihat) dan teks diperbesar */
 .stage[data-compact] .letter {
   width: 1560px;
-  padding: 72px 90px 36px;
+  padding: 58px 90px 36px;
 }
 .stage[data-compact] .letter-title {
   font-size: calc(62px * var(--fs, 1));
@@ -1205,13 +1208,14 @@ button {
 }
 
 /* ============ audio ============ */
+/* deretan kanan atas, dari kanan ke kiri: pengaturan (gerigi), mute, musik (BGM, hanya di Scene 04); semua 66 px, jarak 16 px */
 .audio-toggle {
   position: absolute;
-  right: 30px;
-  bottom: 26px;
+  right: 112px;
+  top: 28px;
   z-index: 150;
-  width: 74px;
-  height: 74px;
+  width: 66px;
+  height: 66px;
   border-radius: 50%;
   border: 6px solid #fff;
   background: linear-gradient(#b9c5d8, #8996ab);
@@ -1233,13 +1237,13 @@ button {
 }
 .audio-more {
   position: absolute;
-  right: 41px;
-  bottom: 112px;
+  right: 30px;
+  top: 28px;
   z-index: 150;
-  width: 52px;
-  height: 52px;
+  width: 66px;
+  height: 66px;
   border-radius: 50%;
-  border: 5px solid #fff;
+  border: 6px solid #fff;
   background: linear-gradient(#b9c5d8, #8996ab);
   cursor: pointer;
   display: grid;
@@ -1254,7 +1258,7 @@ button {
 .audio-panel {
   position: absolute;
   right: 30px;
-  bottom: 176px;
+  top: 110px;
   z-index: 150;
   width: 380px;
   padding: 22px 26px;
@@ -1287,7 +1291,7 @@ button {
 }
 .bgm-btn {
   position: absolute;
-  right: 30px;
+  right: 194px;
   top: 28px;
   z-index: 90;
   width: 66px;
@@ -1307,7 +1311,7 @@ button {
 }
 .bgm-panel {
   position: absolute;
-  right: 30px;
+  right: 194px;
   top: 110px;
   z-index: 90;
   width: 480px;
@@ -2072,29 +2076,35 @@ button {
 }
 .top-actions {
   top: calc(36px + var(--crop-y, 0px));
+  /* tetap di tengah; margin simetris menyisakan tempat untuk deretan tombol musik/mute/gerigi di kanan atas */
+  left: calc(280px + var(--crop-x, 0px));
+  right: calc(280px + var(--crop-x, 0px));
+}
+.stage[data-compact] .top-actions {
+  left: calc(390px + var(--crop-x, 0px));
+  right: calc(390px + var(--crop-x, 0px));
 }
 .progress-pill {
   bottom: calc(28px + var(--crop-y, 0px));
 }
 .audio-toggle {
-  right: calc(120px + var(--crop-x, 0px));
-  bottom: calc(26px + var(--crop-y, 0px));
+  right: calc(112px + var(--crop-x, 0px));
+  top: calc(28px + var(--crop-y, 0px));
 }
-/* gerigi (audio-more) dan panel volume berada tepat di atas tombol suara (right 120, lebar 74) */
 .audio-more {
-  right: calc(131px + var(--crop-x, 0px));
-  bottom: calc(112px + var(--crop-y, 0px));
-}
-.audio-panel {
-  right: calc(120px + var(--crop-x, 0px));
-  bottom: calc(176px + var(--crop-y, 0px));
-}
-.bgm-btn {
   right: calc(30px + var(--crop-x, 0px));
   top: calc(28px + var(--crop-y, 0px));
 }
-.bgm-panel {
+.audio-panel {
   right: calc(30px + var(--crop-x, 0px));
+  top: calc(110px + var(--crop-y, 0px));
+}
+.bgm-btn {
+  right: calc(194px + var(--crop-x, 0px));
+  top: calc(28px + var(--crop-y, 0px));
+}
+.bgm-panel {
+  right: calc(194px + var(--crop-x, 0px));
   top: calc(110px + var(--crop-y, 0px));
 }
 /* matahari pada peta Pulau.png ada di sekitar (1590,150) px gambar -> (1826,172) px kanvas */
@@ -2189,10 +2199,10 @@ button {
   top: -52px;
   width: 104px;
   height: 104px;
-  padding: 7px; /* cincin putih seperti tombol lain (latar putih + gambar lebih kecil, tanpa border CSS agar tanpa seam) */
+  padding: 0; /* tanpa cincin putih tambahan: Button Mendarat.png sudah berbentuk bulat utuh */
   border: 0;
   border-radius: 50%;
-  background: #fff;
+  background: transparent;
   box-shadow: 0 7px 0 rgba(10, 60, 140, 0.18), 0 14px 26px rgba(10, 70, 160, 0.38);
   cursor: pointer;
 }
@@ -2414,8 +2424,8 @@ button {
   --font-popup: 'Fredoka', 'Fredoka Variable', 'Nunito', ui-rounded, system-ui, sans-serif;
   --fs: 1;
 }
-.letter[data-font='atma'] {
-  --font-popup: 'Atma', 'Nunito', ui-rounded, system-ui, sans-serif;
+.letter[data-font='bricolage'] {
+  --font-popup: 'Bricolage Grotesque', 'Nunito', ui-rounded, system-ui, sans-serif;
   --fs: 1;
 }
 
@@ -2432,36 +2442,32 @@ button {
   scale: var(--ui);
   transform-origin: left bottom;
 }
-.stage[data-compact] .audio-toggle,
 .stage[data-compact] .fs-toggle {
   scale: var(--ui);
   transform-origin: right bottom;
 }
-.stage[data-compact] .audio-toggle {
-  right: calc(160px + var(--crop-x, 0px)); /* 30 + lebar tombol layar penuh terbesar (74 x ui) + jarak */
-}
-/* gerigi + panel volume (di atas tombol suara) dan pemilih BGM (kanan atas) ikut diperbesar */
-.stage[data-compact] .audio-more {
-  scale: var(--ui);
-  transform-origin: right bottom;
-  right: calc(177px + var(--crop-x, 0px));
-  bottom: calc(160px + var(--crop-y, 0px));
-}
-.stage[data-compact] .audio-panel {
-  scale: var(--ui);
-  transform-origin: right bottom;
-  right: calc(160px + var(--crop-x, 0px));
-  bottom: calc(260px + var(--crop-y, 0px));
-}
+/* deretan kanan atas (gerigi, mute, musik) ikut diperbesar; tiap tombol 66 x ui = 102 px, jarak 18 px */
+.stage[data-compact] .audio-more,
+.stage[data-compact] .audio-toggle,
 .stage[data-compact] .bgm-btn {
   scale: var(--ui);
   transform-origin: right top;
 }
-/* panel BGM lebih kecil dari --ui supaya di layar ponsel tidak menutup kado (Maluku/Papua) saat terbuka */
+.stage[data-compact] .audio-toggle {
+  right: calc(150px + var(--crop-x, 0px));
+}
+.stage[data-compact] .bgm-btn {
+  right: calc(270px + var(--crop-x, 0px));
+}
+/* panel lebih kecil dari --ui supaya di layar ponsel tidak menutup kado (Maluku/Papua) saat terbuka */
+.stage[data-compact] .audio-panel,
 .stage[data-compact] .bgm-panel {
   scale: 1.1;
   transform-origin: right top;
   top: calc(147px + var(--crop-y, 0px));
+}
+.stage[data-compact] .bgm-panel {
+  right: calc(270px + var(--crop-x, 0px));
 }
 .stage[data-compact] .top-actions-row,
 .stage[data-compact] .hint-pill {
