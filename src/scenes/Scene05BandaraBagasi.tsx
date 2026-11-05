@@ -146,7 +146,7 @@ export function Scene05BandaraBagasi({ onDone }: Props) {
             </div>
         </motion.div>
 
-        <GasingSprite src={IMG.gasing} width={GW} height={GH} x={gx} y={gy} state={gState} />
+        <GasingSprite src={IMG.gasingBadan} width={GW} height={GH} x={gx} y={gy} state={gState} />
       </motion.div>
     </div>
   )

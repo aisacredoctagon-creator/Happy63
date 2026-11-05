@@ -9,9 +9,12 @@ import type { SceneId } from '../types'
  * Hanya scene saat ini dan kemungkinan berikutnya yang di-decode dan ditahan (bukan semua gambar sekaligus): men-decode
  * semuanya membuat memori ponsel jebol (lihat catatan di usePreload).
  */
+/** maskot berlapis (badan, mata terbuka/tertutup, topi); pose kaget dan menghadap TV hanya dipakai Scene 06 */
+const MASCOT = [IMG.gasingBadan, IMG.mataBuka, IMG.mataTutup, IMG.partyHat]
+
 const SCENE_IMAGES: Record<SceneId, string[]> = {
   scene02: [
-    IMG.cabinShell, IMG.cabinWindows, IMG.langit1, IMG.gasing,
+    IMG.cabinShell, IMG.cabinWindows, IMG.langit1, ...MASCOT,
     IMG.charWoman, IMG.charMan, IMG.charGirl, IMG.charBoy, IMG.charZz,
     IMG.charBWoman, IMG.charBMan, IMG.charBGirl, IMG.charBBoy,
   ],
@@ -20,8 +23,8 @@ const SCENE_IMAGES: Record<SceneId, string[]> = {
     IMG.petaBg, IMG.planeMascot, IMG.partyHat, IMG.btnMendarat, ...CLOUDS,
     ...GIFT_SIZE.map((_, i) => giftImg(i, 'closed')),
   ],
-  scene05: [IMG.bandara, IMG.gasing, ...BAG_SIZE.map((_, i) => bagImg(i))],
-  scene06: [IMG.ruangTvBg, IMG.tv, IMG.gasing],
+  scene05: [IMG.bandara, ...MASCOT, ...BAG_SIZE.map((_, i) => bagImg(i))],
+  scene06: [IMG.ruangTvBg, IMG.tv, ...MASCOT, IMG.gasingAlert, IMG.gasingAlertMata, IMG.gasingMirrored],
 }
 
 /** scene yang bisa menyusul tiap scene (lihat App.tsx) */

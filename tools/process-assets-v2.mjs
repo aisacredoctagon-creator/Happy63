@@ -15,7 +15,9 @@ const need = [
 for (const f of need) if (!fs.existsSync(`${SRC}/${f}`)) throw new Error(`Aset tidak ditemukan: ${SRC}/${f}`)
 
 const png = (img, name) => img.png({ compressionLevel: 9 }).toFile(`${OUT}/${name}`)
-const webp = (img, name, q = 90) => img.webp({ quality: q, alphaQuality: 95, effort: 5 }).toFile(`${OUT}/${name}`)
+// bandara.webp sudah DIGANTI (tools/process-visual.mjs): jangan ditulis ulang
+const RETIRED = new Set(['bandara.webp'])
+const webp = (img, name, q = 90) => RETIRED.has(name) ? Promise.resolve() : img.webp({ quality: q, alphaQuality: 95, effort: 5 }).toFile(`${OUT}/${name}`)
 
 /** bounding box alpha > thr */
 async function alphaBox(file, thr = 12) {
@@ -27,15 +29,8 @@ async function alphaBox(file, thr = 12) {
   return { left: x0, top: y0, width: x1 - x0 + 1, height: y1 - y0 + 1 }
 }
 
-// ---- Gasing (sprite utama, diperkecil dari 14171x16913)
-{
-  const f = `${SRC}/Character GASING.png`
-  const box = await alphaBox(f)
-  const img = sharp(f, { limitInputPixels: false }).extract(box).resize({ width: 900 })
-  await png(img, 'gasing.png')
-  const m = await sharp(`${OUT}/gasing.png`).metadata()
-  meta.gasing = { width: m.width, height: m.height }
-}
+// ---- Gasing: sprite lama (gasing.png) sudah DIGANTI badan Glossy + layer mata (tools/process-visual.mjs); proporsi kotak sprite 1148x1371
+meta.gasing = { width: 1148, height: 1371 }
 
 // ---- Awan (alpha) trim
 for (const [src, dst] of [['awan.png', 'awan1.webp'], ['awan2.png', 'awan2.webp']]) {

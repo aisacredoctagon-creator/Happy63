@@ -9,13 +9,22 @@ const ROWS: Array<{ cats: Category[]; label: string }> = [
   { cats: ['music', 'ambient'], label: 'Musik' },
 ]
 
-/** Tombol mute global (SFX, ambient, dan musik) dan gerigi pengaturan di pojok kanan atas, plus panel volume. */
-export function AudioToggle() {
+/**
+ * Tombol mute global (SFX, ambient, dan musik) dan gerigi pengaturan di pojok kanan atas, plus panel volume.
+ * `hidden`: disembunyikan dengan fade (Scene 07, supaya tidak menutupi video TV); komponen tetap terpasang, jadi pengaturan
+ * (mute, volume, pilihan BGM) tidak berubah. Saat tersembunyi tidak bisa diklik/difokus (visibility: hidden).
+ */
+export function AudioToggle({ hidden = false }: { hidden?: boolean }) {
   const muted = useMuted()
   const settings = useAudioSettings()
   const lite = useLite()
   const [open, setOpen] = useState(false)
   const dock = useRef<HTMLDivElement>(null)
+
+  // panel volume yang sedang terbuka ikut menutup saat tombol disembunyikan
+  useEffect(() => {
+    if (hidden) setOpen(false)
+  }, [hidden])
 
   // panel tertutup saat klik di luar atau menekan Esc
   useEffect(() => {
@@ -58,7 +67,9 @@ export function AudioToggle() {
       )}
       <button
         type="button"
-        className={`audio-more ${open ? 'is-open' : ''}`}
+        className={`audio-more ui-fade ${open ? 'is-open' : ''} ${hidden ? 'is-hidden' : ''}`}
+        aria-hidden={hidden || undefined}
+        tabIndex={hidden ? -1 : undefined}
         onClick={() => setOpen((o) => !o)}
         aria-label="Atur volume"
         aria-expanded={open}
@@ -78,7 +89,9 @@ export function AudioToggle() {
       <button
         type="button"
         data-sfx="none"
-        className={`audio-toggle ${muted ? '' : 'is-on'}`}
+        className={`audio-toggle ui-fade ${muted ? '' : 'is-on'} ${hidden ? 'is-hidden' : ''}`}
+        aria-hidden={hidden || undefined}
+        tabIndex={hidden ? -1 : undefined}
         onClick={() => audio.toggleMute()}
         aria-label={muted ? 'Nyalakan suara' : 'Matikan suara'}
         aria-pressed={!muted}

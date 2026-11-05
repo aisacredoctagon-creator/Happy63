@@ -41,9 +41,9 @@ function Icon({ active }: { active: boolean }) {
  * Tombol layar penuh (pojok kanan bawah, di kanan tombol suara). Memakai Fullscreen API (termasuk awalan webkit untuk
  * Safari) dan mengikuti event fullscreenchange, jadi tetap sinkron saat pengguna keluar lewat Esc. Setelah masuk layar
  * penuh orientasi dikunci ke landscape bila didukung (Android). Di browser tanpa Fullscreen API (iPhone Safari)
- * tombol disembunyikan.
+ * tombol disembunyikan. `hidden`: disembunyikan dengan fade (Scene 07), komponen tetap terpasang.
  */
-export function FullscreenToggle() {
+export function FullscreenToggle({ hidden = false }: { hidden?: boolean }) {
   const [active, setActive] = useState(fsActive)
   const supported = fsSupported()
 
@@ -85,7 +85,7 @@ export function FullscreenToggle() {
 
   const label = active ? 'Keluar dari layar penuh' : 'Masuk layar penuh'
   return (
-    <button type="button" data-sfx="none" className="fs-toggle" onClick={toggle} aria-label={label} title={label} aria-pressed={active}>
+    <button type="button" data-sfx="none" className={`fs-toggle ui-fade ${hidden ? 'is-hidden' : ''}`} aria-hidden={hidden || undefined} tabIndex={hidden ? -1 : undefined} onClick={toggle} aria-label={label} title={label} aria-pressed={active}>
       <Icon active={active} />
     </button>
   )

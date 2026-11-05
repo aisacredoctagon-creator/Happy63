@@ -20,7 +20,7 @@ const fmt = (s: number) => {
 }
 
 /**
- * Pemutar video di dalam layar TV. Sumber: public/assets/video/ucapan.mp4
+ * Pemutar video di dalam layar TV. Sumber: public/assets/video/ucapan-ultah.mp4
  * Kontrol: putar/jeda, volume, layar penuh. Jika autoplay diblokir browser -> tombol Putar besar.
  * Jika file belum ada -> placeholder "Video segera hadir".
  */
@@ -68,7 +68,7 @@ export function TvPlayer({ active, status, onStatus, replayKey }: Props) {
         className="tv-video"
         src={VIDEO_SRC}
         playsInline
-        preload="auto"
+        preload="auto" /* lazy: elemen baru ada saat Scene 07 (fase tv), jadi video tidak diunduh saat muat awal */
         onClick={toggle}
         onPlay={() => {
           if (missing.current) return
@@ -96,7 +96,7 @@ export function TvPlayer({ active, status, onStatus, replayKey }: Props) {
             🎬
           </div>
           <p className="tv-missing-title">Video segera hadir</p>
-          <p className="tv-missing-sub">Taruh file ucapan di public/assets/video/ucapan.mp4</p>
+          <p className="tv-missing-sub">Taruh file ucapan di public/assets/video/ucapan-ultah.mp4</p>
           <button type="button" className="tv-skip" onClick={() => onStatus('ended')}>
             Lewati ke penutup
           </button>

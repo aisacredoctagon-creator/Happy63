@@ -3,9 +3,12 @@ import type { MotionValue } from 'framer-motion'
 import { useEffect } from 'react'
 import { audio } from '../audio/audio'
 import type { SfxName } from '../audio/audio'
-import { PartyHat } from './PartyHat'
+import { IMG } from '../config'
+import { Mascot } from './Mascot'
+import type { MascotPose } from './Mascot'
 
-export type GasingState = 'idle' | 'walk' | 'ready' | 'pop'
+/** 'turn': badan berputar (squash singkat) saat berganti pose menghadap TV */
+export type GasingState = 'idle' | 'walk' | 'ready' | 'pop' | 'turn'
 
 interface Props {
   src: string
@@ -18,6 +21,10 @@ interface Props {
   state: GasingState
   /** bunyi saat state 'pop' (bawaan: boing) */
   popSfx?: SfxName
+  /** bingkai tubuh: normal (badan Glossy + mata berkedip), alert (kaget), back (menghadap TV). Selain normal hanya dipakai Scene 06. */
+  pose?: MascotPose
+  /** muat bingkai alert/mirrored sejak awal (Scene 06) */
+  extraPoses?: boolean
 }
 
 /** satu hentakan langkah per siklus gWalk (0,46 s di index.css) */
@@ -28,7 +35,8 @@ const STEP_MS = 460
  * Suara mengikuti state: langkah tiap siklus jalan, boing saat 'pop'.
  * TODO: ganti `src` dengan sprite Gasing final (PNG transparan) bila sudah tersedia.
  */
-export function GasingSprite({ src, width, height, x, y, state, popSfx = 'boing' }: Props) {
+export function GasingSprite({ src, width, height, x, y, state, popSfx = 'boing', pose = 'normal', extraPoses = false }: Props) {
+  const reflSrc = pose === 'alert' ? IMG.gasingAlert : pose === 'back' ? IMG.gasingMirrored : src
   useEffect(() => {
     if (state === 'walk') {
       const id = setInterval(() => audio.playSfx('step', { scope: 'scene' }), STEP_MS)
@@ -46,11 +54,10 @@ export function GasingSprite({ src, width, height, x, y, state, popSfx = 'boing'
         <i className={`g-shadow-i g-s-${state}`} />
       </div>
       <div className="g-refl" style={{ width, height: height * 0.5, left: -width / 2 }} aria-hidden>
-        <img src={src} alt="" draggable={false} style={{ width, height }} />
+        <img src={reflSrc} alt="" draggable={false} style={{ width, height }} />
       </div>
       <div className={`g-body g-${state}`} style={{ width, height, left: -width / 2, top: -height }}>
-        <img src={src} alt="Gasing" draggable={false} style={{ width, height }} />
-        <PartyHat />
+        <Mascot width={width} height={height} pose={pose} extraPoses={extraPoses} />
       </div>
     </motion.div>
   )
