@@ -16,6 +16,7 @@ export const IMG = {
   langit1: asset('images/langit1.webp'),
   awan1: asset('images/awan1.webp'),
   awan2: asset('images/awan2.webp'),
+  transisi: asset('images/transisi.webp'), // satu gambar awan lebar untuk transisi antar scene (dari Transisi.webp)
   // nama file gambar di bawah mengikuti naskah desain lama (scene2-bg dst.), bukan nomor scene baru (lihat SCENES.md)
   langitBg: asset('images/scene2-bg.webp'), // Scene 03
   pesawatLangit: asset('images/scene2-plane.png'), // Scene 03

@@ -40,7 +40,7 @@ interface Props {
 }
 
 /** keluarga font pop-up (sinkron dengan .letter[data-font] di index.css): di-prefetch agar kartu pertama tidak menunggu unduhan */
-const POPUP_FONTS = ['Mali', 'Gaegu', 'Grandstander', 'Sniglet', 'Baloo 2', 'Kalam', 'Comic Neue', 'Fredoka', 'Atma']
+const POPUP_FONTS = ['Mali', 'Gaegu', 'Grandstander', 'Sniglet', 'Baloo 2', 'Kalam', 'Comic Neue', 'Fredoka', 'Bricolage Grotesque']
 const FONT_WAIT_MS = 700
 
 /** pastikan font kartu sudah termuat sebelum Genie mengukur/menyalin kartu (batas tunggu FONT_WAIT_MS, lalu lanjut dengan cadangan) */
@@ -56,7 +56,7 @@ const CLOSE_MS = 400
 const REDUCED_MS = 180
 
 /** ukuran judul mengikuti panjang teks supaya ucapan panjang tidak meluap */
-const titleSize = (t: string) => (t.length <= 28 ? 'l' : t.length <= 60 ? 'm' : 's')
+const titleSize = (t: string) => (t.length <= 28 ? 'l' : t.length <= 46 ? 'm' : 's')
 
 /**
  * Surat/kartu pop-up. Selalu tepat di tengah layar (flex center pada .letter-backdrop, yang satu pusat dengan .stage dan
