@@ -1,21 +1,26 @@
 // Scene 03 - Pesawat di Langit
 // 03a Pesawat Masuk (0,3-1,7 s) -> 03b Pesawat Melayang (sampai 5,6 s) -> 03c Awan Menutup ke Peta (CloudTransition, 2,6 s)
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useLoop } from '../audio/audio'
 import { DriftClouds, SpeedLines } from '../components/Atmosphere'
 import { EdgeExtend } from '../components/EdgeExtend'
-import { IMG, SKY, SPRITE, STAGE_H, STAGE_W } from '../config'
+import { SmokeTrail } from '../components/SmokeTrail'
+import { IMG, PLANE_SIDE_ASPECT, SKY, SPRITE, STAGE_H, STAGE_W } from '../config'
 import { useSceneTag } from '../dev/sceneTag'
 import { useSequence } from '../hooks/useSequence'
 
 const P = SPRITE.scene2Plane
+// Pesawat baru (pesawat-samping.webp) mengisi kotak pesawat lama: posisi tengah dan LEBAR sama persis, tinggi mengikuti proporsi gambar baru
+const planeH = P.width / PLANE_SIDE_ASPECT
 const pos = {
   left: `${(P.x / SKY.srcW) * 100}%`,
-  top: `${(P.y / SKY.srcH) * 100}%`,
+  top: `${((P.y + P.height / 2 - planeH / 2) / SKY.srcH) * 100}%`,
   width: `${(P.width / SKY.srcW) * 100}%`,
-  height: `${(P.height / SKY.srcH) * 100}%`,
+  height: `${(planeH / SKY.srcH) * 100}%`,
 }
+/** knalpot mesin (belakang nacelle) pada gambar pesawat, dalam persen lebar/tinggi gambar */
+const EXHAUST = { left: '52%', top: '85.5%' }
 
 interface Props {
   /** dipanggil saat awan harus masuk (03c, transisi ke Scene 04) */
@@ -27,6 +32,7 @@ export function Scene03PesawatDiLangit({ onDone }: Props) {
   useSceneTag('03')
   // angin fade out halus selama transisi awan (bukan setelah scene hilang)
   const [leaving, setLeaving] = useState(false)
+  const exhaust = useRef<HTMLDivElement>(null)
   useLoop('wind', { enabled: !leaving, fadeIn: 1.8, fadeOut: 2 })
   useSequence(async (seq) => {
     seq.sfx('planeFlyby', { delay: 0.3 }) // 03a Pesawat Masuk (animasi mulai di 0,3 s)
@@ -48,7 +54,6 @@ export function Scene03PesawatDiLangit({ onDone }: Props) {
         <EdgeExtend src={IMG.langitBg} w={STAGE_W} h={STAGE_H} />
         <DriftClouds yMin={60} yMax={300} count={4} opacity={0.95} speed={26} size={[320, 520]} />
         <SpeedLines yMin={330} yMax={680} count={14} />
-        {/* TODO: ganti dengan sprite pesawat terpisah (PNG transparan) */}
         <motion.div
           className="abs"
           style={pos}
@@ -58,8 +63,11 @@ export function Scene03PesawatDiLangit({ onDone }: Props) {
         >
           <div className="plane2-idle">
             <img src={IMG.pesawatLangit} alt="Pesawat terbang" draggable={false} className="fill-img" />
+            <div ref={exhaust} className="exhaust-marker" style={EXHAUST} aria-hidden />
           </div>
         </motion.div>
+        {/* jejak asap dari knalpot; berhenti dan hilang saat scene berganti (komponen dilepas) */}
+        <SmokeTrail originRef={exhaust} flow={330} size={1} rate={44} emitting={!leaving} />
         <SpeedLines yMin={430} yMax={660} count={7} />
         <DriftClouds yMin={760} yMax={940} count={3} opacity={0.95} speed={18} size={[520, 760]} />
       </motion.div>

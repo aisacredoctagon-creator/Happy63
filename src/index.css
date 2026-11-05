@@ -821,55 +821,21 @@ button {
   inset: 0;
   animation: plane3Float 2.8s ease-in-out infinite alternate;
 }
-.contrail {
+/* titik knalpot (penanda untuk SmokeTrail) dan kanvas jejak asap */
+.exhaust-marker {
   position: absolute;
-  left: 40px;
-  top: 98px;
-  width: 0;
-  height: 0;
+  width: 2px;
+  height: 2px;
+  pointer-events: none;
 }
-.ct {
+.smoke-canvas {
   position: absolute;
-  right: 0;
-  height: 9px;
-  border-radius: 9px;
-  background: linear-gradient(to left, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
-  transform-origin: right center;
-  animation: ctPulse 1.3s ease-in-out infinite alternate;
-}
-.ct1 {
-  width: 330px;
-  top: -34px;
-}
-.ct2 {
-  width: 440px;
-  top: -6px;
-  height: 12px;
-  animation-delay: -0.4s;
-}
-.ct3 {
-  width: 290px;
-  top: 22px;
-  animation-delay: -0.8s;
-}
-.puff {
-  position: absolute;
-  right: 0;
-  top: -26px;
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #fff, #e6efff 70%);
-  opacity: 0;
-  animation: puffOut 4.3s ease-out infinite;
-}
-.puff:nth-of-type(odd) {
-  top: -12px;
-}
-.puff:nth-of-type(3n) {
-  top: 8px;
-  width: 40px;
-  height: 40px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 7;
+  pointer-events: none;
 }
 
 /* ============ scene 4 & 5 ============ */
@@ -969,6 +935,9 @@ button {
 .g-pop {
   animation: gPop 0.85s ease-out 1;
 }
+.g-turn {
+  animation: gTurn 0.7s ease-in-out 1;
+}
 .g-s-idle {
   animation: gShIdle 1.8s ease-in-out infinite alternate;
 }
@@ -997,13 +966,14 @@ button {
   z-index: 20;
   background: #2b2b3a;
 }
+/* layar pada tv-monitor.webp: x 65-1609, y 58-863 px gambar 1672x941 (di-stretch ke kanvas 1920x1080, faktor 1,148) */
 .tv-window {
   position: absolute;
-  left: 160px;
-  top: 106px;
-  width: 1604px;
-  height: 820px;
-  border-radius: 6px;
+  left: 75px;
+  top: 67px;
+  width: 1773px;
+  height: 925px;
+  border-radius: 4px;
   overflow: hidden;
   background: #000;
 }
@@ -1540,26 +1510,6 @@ button {
     transform: rotate(360deg);
   }
 }
-@keyframes ctPulse {
-  from {
-    transform: scaleX(0.82);
-    opacity: 0.7;
-  }
-  to {
-    transform: scaleX(1.08);
-    opacity: 1;
-  }
-}
-@keyframes puffOut {
-  0% {
-    transform: translateX(0) scale(0.3);
-    opacity: 0.95;
-  }
-  100% {
-    transform: translateX(-440px) translateY(12px) scale(1.5);
-    opacity: 0;
-  }
-}
 @keyframes slats {
   from {
     transform: translateX(0);
@@ -1622,6 +1572,18 @@ button {
   }
   100% {
     transform: scale(1, 1);
+  }
+}
+/* berbalik menghadap TV: badan menyempit seperti berputar, bingkai tukar di puncak (40%), lalu melebar kembali */
+@keyframes gTurn {
+  0% {
+    transform: translateY(0) scale(1, 1);
+  }
+  40% {
+    transform: translateY(-16px) scale(0.6, 1.05);
+  }
+  100% {
+    transform: translateY(0) scale(1, 1);
   }
 }
 @keyframes gShIdle {
@@ -1695,8 +1657,6 @@ button {
   .wave,
   .sun-glow,
   .sun-rays,
-  .puff,
-  .ct,
   .gift-float,
   .belt-slats,
   .belt-suitcase,
@@ -2269,8 +2229,64 @@ button {
   max-width: none;
   display: block;
   pointer-events: none;
-  transform-origin: 50% 90%;
+  transform-origin: 56.25% 80.35%; /* pusat bibir topi: topi berputar/bergeser di sekitar dudukannya di tanduk */
   filter: var(--soft-shadow-drop);
+  transition: left 0.22s ease-out, top 0.22s ease-out, width 0.22s ease-out, transform 0.22s ease-out;
+}
+/* ============ maskot: tumpukan bingkai pose + kedipan (Mascot.tsx) ============ */
+.mascot {
+  position: relative;
+  flex: none;
+}
+.mascot-img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  max-width: none;
+  transition: opacity 0.16s linear;
+}
+/* kedip: gasing.png memudar ke bingkai mata terpejam (110 ms), tahan 70 ms, memudar kembali (110 ms); periode 4,4-5,6 s per maskot */
+.m-blink-eyes {
+  opacity: 0;
+  animation: mBlinkEyes 4.8s linear infinite;
+}
+.m-blink-base {
+  animation: mBlinkBase 4.8s linear infinite;
+}
+@keyframes mBlinkEyes {
+  0%,
+  93.5% {
+    opacity: 0;
+  }
+  95.8%,
+  97.3% {
+    opacity: 1;
+  }
+  99.6%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes mBlinkBase {
+  0%,
+  93.5% {
+    opacity: 1;
+  }
+  95.8%,
+  97.3% {
+    opacity: 0;
+  }
+  99.6%,
+  100% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .m-blink-eyes,
+  .m-blink-base {
+    animation: none !important;
+  }
 }
 /* ============ tombol layar penuh (pojok kanan bawah, di kanan tombol suara) ============ */
 .fs-toggle {

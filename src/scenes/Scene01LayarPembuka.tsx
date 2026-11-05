@@ -2,8 +2,7 @@
 // 01a Gasing Berpatroli (PatrollingGasing, selama loading) -> 01b Tombol Mulai (muncul setelah aset siap)
 import { AnimatePresence, motion } from 'framer-motion'
 import { PrimaryButton } from '../components/PrimaryButton'
-import { IMG } from '../config'
-import { PartyHat } from '../components/PartyHat'
+import { Mascot } from '../components/Mascot'
 import { useSceneTag } from '../dev/sceneTag'
 
 /** 01a: Gasing berjalan-jalan (patrol kiri-kanan, berbalik arah di ujung) selagi loading. */
@@ -14,8 +13,7 @@ function PatrollingGasing() {
         <div className="patrol-flip">
           <div className="patrol-shadow" />
           <div className="patrol-hop">
-            <img src={IMG.gasing} alt="" draggable={false} />
-            <PartyHat />
+            <Mascot width={200} height={239} />
           </div>
         </div>
       </div>

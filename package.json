@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "assets": "node tools/process-assets.mjs",
     "assets:v2": "node tools/process-assets-v2.mjs",
+    "assets:visual": "node tools/process-visual.mjs",
+    "video": "node tools/process-video.mjs",
     "audio": "node scripts/normalize-audio.mjs"
   },
   "dependencies": {

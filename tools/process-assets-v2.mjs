@@ -15,7 +15,9 @@ const need = [
 for (const f of need) if (!fs.existsSync(`${SRC}/${f}`)) throw new Error(`Aset tidak ditemukan: ${SRC}/${f}`)
 
 const png = (img, name) => img.png({ compressionLevel: 9 }).toFile(`${OUT}/${name}`)
-const webp = (img, name, q = 90) => img.webp({ quality: q, alphaQuality: 95, effort: 5 }).toFile(`${OUT}/${name}`)
+// bandara.webp sudah DIGANTI (tools/process-visual.mjs): jangan ditulis ulang
+const RETIRED = new Set(['bandara.webp'])
+const webp = (img, name, q = 90) => RETIRED.has(name) ? Promise.resolve() : img.webp({ quality: q, alphaQuality: 95, effort: 5 }).toFile(`${OUT}/${name}`)
 
 /** bounding box alpha > thr */
 async function alphaBox(file, thr = 12) {

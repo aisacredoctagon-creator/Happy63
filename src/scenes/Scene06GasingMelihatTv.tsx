@@ -1,11 +1,12 @@
 // Scene 06 - Gasing Melihat TV
 // Satu komponen untuk tiga scene berurutan (satu rangkaian dengan state bersama):
-//   Scene 06 Gasing Melihat TV : 06a Gasing Masuk -> 06b Gasing Kaget -> 06c TV Menyala -> 06d Zoom ke TV   (fase 'room')
+//   Scene 06 Gasing Melihat TV : 06a Gasing Masuk -> 06b Gasing Kaget (bingkai Alert) -> 06b2 Gasing Berbalik Menghadap TV (bingkai Mirrored)
+//                                -> 06c TV Menyala -> 06d Zoom ke TV   (fase 'room')
 //   Scene 07 Video Ucapan      : 07a Video Diputar / 07b Video Belum Ada (placeholder)                      (fase 'tv')
 //   Scene 08 Kartu Penutup     : 08a Konfeti dan Kartu -> 08b Putar Ulang                                   (status 'ended')
 // Tombol "Kembali ke Peta" (07c Awan Menutup ke Peta, CloudTransition) tersedia di ketiganya.
 import { AnimatePresence, motion, useAnimationFrame, useMotionValue } from 'framer-motion'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Confetti } from '../components/Confetti'
 import { GasingSprite } from '../components/GasingSprite'
 import { EdgeExtend } from '../components/EdgeExtend'
@@ -14,30 +15,33 @@ import { PrimaryButton } from '../components/PrimaryButton'
 import { Baggage, bagHeight } from '../components/Baggage'
 import { TvPlayer } from '../components/TvPlayer'
 import type { TvStatus } from '../components/TvPlayer'
-import { GASING_ASPECT, IMG, WIDE } from '../config'
+import { GASING_ASPECT, IMG, LOBBY } from '../config'
+import type { MascotPose } from '../components/Mascot'
 import { audio, useLoop } from '../audio/audio'
 import { useSceneTag } from '../dev/sceneTag'
 import { useSequence } from '../hooks/useSequence'
 
-const F = WIDE.f
+const F = LOBBY.f
 const GH = 370
 const GW = GH * GASING_ASPECT
-const FLOOR_Y = 937
+const FLOOR_Y = 950
 const BAG_W = 150
 const BAG_H = bagHeight(1, BAG_W)
-/** kamera diam: menampilkan dunia mulai x = CAM_X */
-const CAM_X = 560
+/** kamera diam: menampilkan dunia mulai x = CAM_X (TV berada di tengah layar 1920) */
+const CAM_X = 94
 /** posisi telapak Gasing = posisi akhir di Scene 05 (layar x=1020) */
 const ENTER_X = 1020 + CAM_X
 const STOP_X = ENTER_X + 130
 
-// layar TV pada gambar asli (px): kiri-atas, kanan-atas, kanan-bawah, kiri-bawah
-const TV_QUAD = [[1014, 92], [1757, 62], [1757, 472], [1014, 472]]
+// layar TV pada bandara-lobi.webp (px gambar 1752x897): kiri-atas, kanan-atas, kanan-bawah, kiri-bawah (di dalam bezel)
+const TV_QUAD = [[557, 153], [1194, 153], [1194, 515], [557, 515]]
 const TV_POLY = TV_QUAD.map(([x, y]) => `${(x * F).toFixed(0)}px ${(y * F).toFixed(0)}px`).join(',')
-const TV_CENTER = { x: ((1014 + 1757) / 2) * F, y: ((92 + 62 + 472 + 472) / 4) * F }
-/** pusat layar TV pada bingkai Scene 07 dalam piksel kanvas 1920x1080, dan skala zoom agar sama besar */
-const TV_FRAME_CENTER = { x: 962, y: 515 }
-const TV_ZOOM = 1.58
+const TV_CENTER = { x: ((557 + 1194) / 2) * F, y: ((153 + 515) / 2) * F }
+/** cahaya layar TV: elips di tengah layar, jari-jari mengikuti lebar/tinggi layar */
+const TV_GLOW = `radial-gradient(ellipse ${Math.round(((1194 - 557) / 2) * F * 0.95)}px ${Math.round(((515 - 153) / 2) * F * 0.95)}px at ${Math.round(TV_CENTER.x)}px ${Math.round(TV_CENTER.y)}px, #ffffff 0%, #dff2ff 38%, #9bd2f7 78%, #6fb9ee 100%)`
+/** pusat layar pada tv-monitor.webp (bingkai Scene 07) dalam piksel kanvas 1920x1080, dan skala zoom agar sama besar */
+const TV_FRAME_CENTER = { x: 961, y: 529 }
+const TV_ZOOM = 2.21
 
 interface Props {
   onBack: () => void
@@ -56,11 +60,13 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Pro
   const gx = useMotionValue(ENTER_X)
   const gy = useMotionValue(FLOOR_Y)
   const [gState, setGState] = useState<GasingState>('walk')
-  const [surprised, setSurprised] = useState(false)
+  const [pose, setPose] = useState<MascotPose>('normal')
   const [tvOn, setTvOn] = useState(false)
   const [phase, setPhase] = useState<'room' | 'tv'>('room')
   const [status, setStatus] = useState<TvStatus>('idle')
   const [replayKey, setReplayKey] = useState(0)
+  // keluar dari scene saat video berputar: musik/ambient tidak boleh tetap dibisukan
+  useEffect(() => () => onVideoPlaying(false), []) // eslint-disable-line react-hooks/exhaustive-deps
   useSceneTag(status === 'ended' ? '08' : phase === 'tv' ? '07' : '06')
 
   // koper mengekor
@@ -82,6 +88,7 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Pro
       ty.set(TV_FRAME_CENTER.y - TV_CENTER.y * TV_ZOOM)
       sc.set(TV_ZOOM)
       setGState('idle')
+      setPose('back')
       setTvOn(true)
       setPhase('tv')
       if (devStart === 'ended') {
@@ -96,7 +103,7 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Pro
     gx.set(ENTER_X)
     sx.set(ENTER_X - 330)
     setGState('walk')
-    setSurprised(false)
+    setPose('normal')
     setTvOn(false)
     setPhase('room')
 
@@ -106,9 +113,16 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Pro
     setGState('idle')
     await seq.wait(0.4)
     if (seq.dead) return
-    setSurprised(true)
-    setGState('pop') // 06b Gasing Kaget
+    setPose('alert')
+    setGState('pop') // 06b Gasing Kaget: bingkai Alert (tanda seru sudah ada di gambar)
     await seq.wait(1.6)
+    if (seq.dead) return
+    // 06b2 Gasing berbalik menghadap TV: badan menyempit (gTurn 0,7 s), bingkai Mirrored (membelakangi kamera) ditukar di puncaknya
+    setGState('turn')
+    await seq.wait(0.28)
+    if (seq.dead) return
+    setPose('back')
+    await seq.wait(0.45)
     if (seq.dead) return
     setGState('idle')
     setTvOn(true) // 06c TV Menyala: layar kedip lalu terang
@@ -137,10 +151,10 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Pro
 
   return (
     <div className="scene scene06">
-      <motion.div className="world" style={{ width: WIDE.worldW, x: tx, y: ty, scale: sc, transformOrigin: '0 0' }}>
-        <EdgeExtend src={IMG.ruangTvBg} w={WIDE.worldW} h={1080} />
-        <img className="world-img" src={IMG.ruangTvBg} alt="Bandara dengan TV besar" draggable={false} width={WIDE.worldW} height={1080} />
-        <div className={`tv-glow ${tvOn ? 'on' : ''}`} style={{ clipPath: `polygon(${TV_POLY})` }} aria-hidden />
+      <motion.div className="world" style={{ width: LOBBY.worldW, x: tx, y: ty, scale: sc, transformOrigin: '0 0' }}>
+        <EdgeExtend src={IMG.ruangTvBg} w={LOBBY.worldW} h={1080} />
+        <img className="world-img" src={IMG.ruangTvBg} alt="Lobi bandara dengan TV besar" draggable={false} width={LOBBY.worldW} height={1080} />
+        <div className={`tv-glow ${tvOn ? 'on' : ''}`} style={{ clipPath: `polygon(${TV_POLY})`, background: TV_GLOW }} aria-hidden />
 
         <motion.div className="abs-zero" style={{ x: sx, y: sy, rotate: srot }}>
           <div className="suitcase-anchor" style={{ left: -BAG_W / 2, top: -BAG_H }}>
@@ -148,31 +162,7 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Pro
             </div>
         </motion.div>
 
-        <GasingSprite src={IMG.gasing} width={GW} height={GH} x={gx} y={gy} state={gState} popSfx="surprise" />
-
-        {/* tanda seru "kaget" */}
-        <motion.div className="abs-zero" style={{ x: gx, y: gy }} aria-hidden>
-          <AnimatePresence>
-            {surprised && (
-              <motion.svg
-                className="marks"
-                width="150"
-                height="130"
-                viewBox="0 0 150 130"
-                style={{ left: 40, top: -GH - 52 }}
-                initial={{ scale: 0, opacity: 0, rotate: -25 }}
-                animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                transition={{ type: 'spring', stiffness: 520, damping: 13 }}
-              >
-                <g stroke="#ffcf1f" strokeWidth="13" strokeLinecap="round">
-                  <path d="M38 96 L28 42" />
-                  <path d="M72 88 L82 28" />
-                  <path d="M104 100 L132 52" />
-                </g>
-              </motion.svg>
-            )}
-          </AnimatePresence>
-        </motion.div>
+        <GasingSprite src={IMG.gasing} width={GW} height={GH} x={gx} y={gy} state={gState} popSfx="surprise" pose={pose} extraPoses />
       </motion.div>
 
       {/* Scene 07 Video Ucapan: bingkai TV layar penuh + video (07a Video Diputar, 07b Video Belum Ada = placeholder di TvPlayer) */}

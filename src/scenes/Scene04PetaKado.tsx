@@ -12,6 +12,7 @@ import { BgmPicker } from '../components/BgmPicker'
 import { GiftHotspot } from '../components/GiftHotspot'
 import { LandIconButton } from '../components/LandIconButton'
 import { PartyHat } from '../components/PartyHat'
+import { SmokeTrail } from '../components/SmokeTrail'
 import { EdgeExtend } from '../components/EdgeExtend'
 import { LetterModal } from '../components/LetterModal'
 import { PrimaryButton } from '../components/PrimaryButton'
@@ -50,6 +51,7 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
   /** titik kado yang diklik (asal/tujuan animasi Genie pop-up); posisinya dibaca LetterModal tiap frame */
   const [originEl, setOriginEl] = useState<HTMLElement | null>(null)
   const [landing, setLanding] = useState(false)
+  const exhaust = useRef<HTMLDivElement>(null)
 
   // musik hanya ada di scene ini; saat mendarat di-fade out lalu berhenti
   useLoop('music', { enabled: !landing, fadeIn: 2.8, fadeOut: 2.6 })
@@ -203,19 +205,14 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
 
         {/* pesawat berisi Gasing (kiri atas). TODO: ganti dengan sprite pesawat+Gasing terpisah */}
         <motion.div className="plane3" style={{ ...planeBox, top: planeBox.top + planeLift, x: px, y: py, rotate: rot }}>
-          <div className="contrail" aria-hidden>
-            <i className="ct ct1" />
-            <i className="ct ct2" />
-            <i className="ct ct3" />
-            {Array.from({ length: 7 }, (_, i) => (
-              <b key={i} className="puff" style={{ animationDelay: `${-i * 0.62}s` }} />
-            ))}
-          </div>
           <div className="plane3-idle">
             <img src={IMG.planeMascot} alt="Pesawat berisi Gasing" draggable={false} className="fill-img" />
             <PartyHat variant="plane" />
+            <div ref={exhaust} className="exhaust-marker" style={{ left: '47.5%', top: '88.5%' }} aria-hidden />
           </div>
         </motion.div>
+        {/* jejak asap dari knalpot mesin; mengikuti lintasan pesawat (partikel tertinggal di peta), lepas bersama scene */}
+        <SmokeTrail originRef={exhaust} flow={140} size={0.6} rate={34} />
 
         {/* 04b Surat Kado: klik kado membuka LetterModal (di bawah) */}
         {GIFTS.map((g, i) => (

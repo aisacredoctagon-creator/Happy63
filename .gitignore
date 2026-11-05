@@ -6,3 +6,6 @@ dist
 # cadangan sumber musik BGM (WAV 18-52 MB): disimpan lokal, tidak di-commit agar repo tetap ringan
 aset proyek/original/3a. Orang Jenius Suka Berhitung 2024.wav
 aset proyek/original/Gasing Medley v4 Mastered (1).wav
+
+# video sumber ucapan (17 MB): disimpan lokal; hasil kompres ada di public/assets/video (npm run video)
+aset proyek/Ucapan Ultah Prof 63.mp4

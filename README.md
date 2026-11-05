@@ -19,8 +19,8 @@ Hanya saat `npm run dev`: label nama scene aktif di pojok kiri bawah, dan lompat
 | Isi surat, nama divisi, daftar anggota, warna, posisi kado (%) | `src/data/gifts.ts` |
 | Judul pop-up surat (berbeda tiap divisi) | field `title` tiap kado di `src/data/gifts.ts` |
 | Font pop-up (satu keluarga font) | token `--font-popup` di `src/index.css` + `<link>` Google Fonts di `index.html` |
-| Topi ulang tahun Gasing | `public/assets/images/party-hat.svg`; posisi per aset di `src/components/PartyHat.tsx` |
-| Video ucapan | `public/assets/video/ucapan.mp4` (timpa file; jika belum ada tampil "Video segera hadir") |
+| Topi ulang tahun Gasing | `public/assets/images/topi-pesta.webp` (sumber: `aset proyek/Striped Party Hat with Yellow Puffs.png`); posisi per pose di `src/components/PartyHat.tsx` (harus menutup seluruh tanduk) |
+| Video ucapan | `public/assets/video/ucapan-ultah.mp4`, hasil kompres `npm run video` dari `aset proyek/Ucapan Ultah Prof 63.mp4` (set `FFMPEG=` ke ffmpeg dengan encoder H.264). Jika file tidak ada tampil "Video segera hadir" |
 | Audio (SFX, ambient, musik) | Campuran file (3 lagu BGM pilihan di Scene 04 lewat `src/audio/bgm.ts`, ambience kabin/bandara, roda koper, `paperDrop`, `airplaneChimes`) dan sintesis (`src/audio/synth.ts`). Tambah/normalisasi file: `npm run audio`; hierarki volume: `src/audio/mix.ts`. Lihat `AUDIO_CREDITS.md` |
 | Teks penutup (Scene 08 - Kartu Penutup) | `src/scenes/Scene06GasingMelihatTv.tsx` (blok `end-card`) |
 
@@ -51,10 +51,10 @@ Aset di `public/assets/images/` dihasilkan otomatis oleh `npm run assets` dari g
 Semua penanda `TODO: ganti dengan sprite terpisah` ada di kode. Ganti dengan menimpa file di `public/assets/images/` (atau mengubah komponen terkait).
 
 1. **Gasing, PNG transparan** (pose berjalan/berdiri, dan versi duduk untuk Scene 02). Sementara: dipotong otomatis dari Scene 05/06 (`gasing.png`, `gasing-s5.png`).
-2. **Pesawat, PNG transparan**: Scene 03 (polos) dan Scene 04 (berisi Gasing). Sementara: dipotong otomatis (`scene2-plane.png`, `scene3-plane.png`).
+2. **Pesawat, PNG transparan**: Scene 03 (polos) dan Scene 04 (berisi Gasing). Scene 03 sudah memakai `pesawat-samping.webp` (aset final); Scene 04 masih `plane-mascot.png`.
 3. **Ikon kado, PNG/SVG** (9 warna, idealnya ada versi terbuka). Sementara: SVG buatan sendiri di `src/components/GiftIcon.tsx`; kado di gambar peta dihapus dari latar.
 4. **Koper**, sprite sederhana. Sementara: SVG di `src/components/Suitcase.tsx`.
-5. **Video ucapan** `ucapan.mp4` dan **musik** `bgm.mp3`.
+5. ~~Video ucapan~~ sudah ada (`ucapan-ultah.mp4`); **musik** lihat `src/audio/bgm.ts`.
 6. Opsional: **layer penumpang** Scene 02 (kepala, tangan, laptop, buku). Sementara: gerak mikro memakai salinan area gambar dengan tepi memudar (`Region` di `Scene02KabinPesawat.tsx`).
 7. Latar bersih tanpa karakter untuk Scene 04/05/06. Sementara: hasil tambal otomatis; di Scene 05/06 masih terlihat sedikit buram di bekas posisi Gasing.
 
