@@ -12,39 +12,39 @@ export const VIDEO_SRC = asset('video/ucapan.mp4')
 
 export const IMG = {
   cabinShell: asset('images/cabin-shell.webp'),
-  cabinWindows: asset('images/cabin-windows.png'),
+  cabinWindows: asset('images/cabin-windows.webp'),
   langit1: asset('images/langit1.webp'),
   awan1: asset('images/awan1.webp'),
   awan2: asset('images/awan2.webp'),
   transisi: asset('images/transisi.webp'), // satu gambar awan lebar untuk transisi antar scene (dari Transisi.webp)
   // nama file gambar di bawah mengikuti naskah desain lama (scene2-bg dst.), bukan nomor scene baru (lihat SCENES.md)
   langitBg: asset('images/scene2-bg.webp'), // Scene 03
-  pesawatLangit: asset('images/scene2-plane.png'), // Scene 03
+  pesawatLangit: asset('images/scene2-plane.webp'), // Scene 03
   petaBg: asset('images/scene3-bg.webp'), // Scene 04
-  planeMascot: asset('images/plane-mascot.png'), // Scene 04
+  planeMascot: asset('images/plane-mascot.webp'), // Scene 04
   partyHat: asset('images/party-hat.svg'), // topi pesta Gasing (dari teman)
-  btnMendarat: asset('images/btn-mendarat.png'), // ikon Mendarat di peta (Scene 04, dari teman)
+  btnMendarat: asset('images/btn-mendarat.webp'), // ikon Mendarat di peta (Scene 04, dari teman)
   bandara: asset('images/bandara.webp'), // Scene 05
   ruangTvBg: asset('images/scene5-bg.webp'), // Scene 06
-  gasing: asset('images/gasing.png'),
+  gasing: asset('images/gasing.webp'),
   tv: asset('images/scene6-tv.webp'), // Scene 07-08
-  charMan: asset('images/char-man.png'),
-  charBoy: asset('images/char-boy.png'),
-  charGirl: asset('images/char-girl.png'),
-  charWoman: asset('images/char-woman.png'),
-  charZz: asset('images/char-zz.png'),
-  charBMan: asset('images/char-bMan.png'),
-  charBBoy: asset('images/char-bBoy.png'),
-  charBWoman: asset('images/char-bWoman.png'),
-  charBGirl: asset('images/char-bGirl.png'),
+  charMan: asset('images/char-man.webp'),
+  charBoy: asset('images/char-boy.webp'),
+  charGirl: asset('images/char-girl.webp'),
+  charWoman: asset('images/char-woman.webp'),
+  charZz: asset('images/char-zz.webp'),
+  charBMan: asset('images/char-bMan.webp'),
+  charBBoy: asset('images/char-bBoy.webp'),
+  charBWoman: asset('images/char-bWoman.webp'),
+  charBGirl: asset('images/char-bGirl.webp'),
 }
 export const CLOUDS = [IMG.awan1, IMG.awan2]
 
 /** Kado: indeks 0-8 mengikuti urutan baris pada Giftbox1.png / Giftbox2.png (kiri ke kanan, atas ke bawah). */
-export const giftImg = (index: number, kind: 'closed' | 'open') => asset(`images/gift-${kind}-${index}.png`)
+export const giftImg = (index: number, kind: 'closed' | 'open') => asset(`images/gift-${kind}-${index}.webp`)
 export const GIFT_SIZE = spriteMetaV2.gifts
 /** Koper dari Baggage.png: 0 kuning, 1 biru, 2 ungu, 3 pink. */
-export const bagImg = (index: number) => asset(`images/bag-${index}.png`)
+export const bagImg = (index: number) => asset(`images/bag-${index}.webp`)
 export const BAG_SIZE = spriteMetaV2.bags
 
 export const PRELOAD_IMAGES = [

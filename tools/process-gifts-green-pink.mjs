@@ -6,7 +6,7 @@
 //             tiap sheet berisi 2 kado (kiri hijau lama, kanan pink), yang diambil hanya yang pink.
 // Hasilnya ditulis ke gift-closed-N.png / gift-open-N.png dan ukurannya ditambahkan ke tools/sprite-meta-v2.json
 // (aman dijalankan berulang). Dipisah dari process-assets-v2.mjs agar kado manual (4, 5, 7) tidak tertimpa.
-//   node tools/process-gifts-green-pink.mjs
+//   node tools/process-gifts-green-pink.mjs   (lalu: node tools/convert-to-webp.mjs, karena aset dipakai sebagai .webp)
 import sharp from 'sharp'
 import fs from 'node:fs'
 

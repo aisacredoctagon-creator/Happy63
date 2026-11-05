@@ -1,5 +1,5 @@
 // Memproses aset desain baru di "aset proyek/" -> public/assets/images/ (sprite terpisah, trim, resize).
-//   node tools/process-assets-v2.mjs
+//   node tools/process-assets-v2.mjs   (lalu: node tools/convert-to-webp.mjs, karena aset dipakai sebagai .webp)
 import sharp from 'sharp'
 import fs from 'node:fs'
 
