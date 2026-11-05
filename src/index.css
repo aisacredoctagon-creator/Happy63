@@ -821,14 +821,14 @@ button {
   inset: 0;
   animation: plane3Float 2.8s ease-in-out infinite alternate;
 }
-/* titik knalpot (penanda untuk SmokeTrail) dan kanvas jejak asap */
+/* titik knalpot (penanda untuk PlaneTrail) dan kanvas jejak pesawat */
 .exhaust-marker {
   position: absolute;
   width: 2px;
   height: 2px;
   pointer-events: none;
 }
-.smoke-canvas {
+.trail-canvas {
   position: absolute;
   left: 0;
   top: 0;
@@ -2229,7 +2229,7 @@ button {
   max-width: none;
   display: block;
   pointer-events: none;
-  transform-origin: 56.25% 80.35%; /* pusat bibir topi: topi berputar/bergeser di sekitar dudukannya di tanduk */
+  transform-origin: 56.25% 80.35%; /* pusat bibir topi: topi berputar/ditekan di sekitar dudukannya di tanduk */
   filter: var(--soft-shadow-drop);
   transition: left 0.22s ease-out, top 0.22s ease-out, width 0.22s ease-out, transform 0.22s ease-out;
 }
@@ -2246,47 +2246,23 @@ button {
   max-width: none;
   transition: opacity 0.16s linear;
 }
-/* kedip: gasing.png memudar ke bingkai mata terpejam (110 ms), tahan 70 ms, memudar kembali (110 ms); periode 4,4-5,6 s per maskot */
-.m-blink-eyes {
-  opacity: 0;
-  animation: mBlinkEyes 4.8s linear infinite;
+/* layer mata (terbuka + tertutup) di atas badan; kedip dijalankan oleh Mascot.tsx (Web Animations). Tanpa bayangan: badan sudah punya. */
+/* potongan mata+alis pose kaget (di atas topi): tanpa bayangan tambahan, badan sudah punya */
+.mascot .mascot-img-bare {
+  filter: none;
 }
-.m-blink-base {
-  animation: mBlinkBase 4.8s linear infinite;
+.mascot-eyes {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.16s linear;
+  pointer-events: none;
 }
-@keyframes mBlinkEyes {
-  0%,
-  93.5% {
-    opacity: 0;
-  }
-  95.8%,
-  97.3% {
-    opacity: 1;
-  }
-  99.6%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes mBlinkBase {
-  0%,
-  93.5% {
-    opacity: 1;
-  }
-  95.8%,
-  97.3% {
-    opacity: 0;
-  }
-  99.6%,
-  100% {
-    opacity: 1;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .m-blink-eyes,
-  .m-blink-base {
-    animation: none !important;
-  }
+.mascot .mascot-eye {
+  position: absolute;
+  display: block;
+  max-width: none;
+  height: auto;
+  filter: none;
 }
 /* ============ tombol layar penuh (pojok kanan bawah, di kanan tombol suara) ============ */
 .fs-toggle {

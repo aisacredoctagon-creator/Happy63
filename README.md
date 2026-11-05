@@ -50,7 +50,7 @@ Aset di `public/assets/images/` dihasilkan otomatis oleh `npm run assets` dari g
 
 Semua penanda `TODO: ganti dengan sprite terpisah` ada di kode. Ganti dengan menimpa file di `public/assets/images/` (atau mengubah komponen terkait).
 
-1. **Gasing, PNG transparan** (pose berjalan/berdiri, dan versi duduk untuk Scene 02). Sementara: dipotong otomatis dari Scene 05/06 (`gasing.png`, `gasing-s5.png`).
+1. ~~Gasing, PNG transparan~~ sudah ada: badan Glossy + layer mata terbuka/tertutup (`gasing-badan.webp`, `mata-buka.webp`, `mata-tutup.webp`) plus pose kaget/menghadap TV.
 2. **Pesawat, PNG transparan**: Scene 03 (polos) dan Scene 04 (berisi Gasing). Scene 03 sudah memakai `pesawat-samping.webp` (aset final); Scene 04 masih `plane-mascot.png`.
 3. **Ikon kado, PNG/SVG** (9 warna, idealnya ada versi terbuka). Sementara: SVG buatan sendiri di `src/components/GiftIcon.tsx`; kado di gambar peta dihapus dari latar.
 4. **Koper**, sprite sederhana. Sementara: SVG di `src/components/Suitcase.tsx`.

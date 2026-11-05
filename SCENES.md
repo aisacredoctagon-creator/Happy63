@@ -23,7 +23,7 @@ Sumber kebenaran di kode: `src/data/scenes.ts` (`SCENE_LIST`). **Setiap ada scen
 | --- | --- | --- | --- |
 | 01 | Layar Pembuka | Layar loading dengan Gasing berpatroli dan tombol "Mulai Perjalanan". | `src/scenes/Scene01LayarPembuka.tsx` |
 | 02 | Kabin Pesawat | Gasing duduk di kabin pesawat, kamera zoom keluar, lalu crossfade ke langit. | `src/scenes/Scene02KabinPesawat.tsx` |
-| 03 | Pesawat di Langit | Pesawat meluncur masuk dan melayang di antara awan dengan jejak asap dari knalpot mesin, lalu awan menutup layar. | `src/scenes/Scene03PesawatDiLangit.tsx`, `components/SmokeTrail.tsx` |
+| 03 | Pesawat di Langit | Pesawat meluncur masuk dan melayang di antara awan dengan jejak garis putih dari knalpot mesin, lalu awan menutup layar. | `src/scenes/Scene03PesawatDiLangit.tsx`, `components/PlaneTrail.tsx` |
 | 04 | Peta Kado | Peta Indonesia dengan 9 kado berisi surat (pop-up Genie); setelah semua terbuka, pesawat mendarat. Di layar kotak/ponsel peta bisa digeser. | `src/scenes/Scene04PetaKado.tsx`, `components/LetterModal.tsx`, `components/GiftHotspot.tsx`, `data/gifts.ts` |
 | 05 | Bandara Bagasi | Gasing mengambil koper dari ban berjalan lalu berjalan ke kanan. | `src/scenes/Scene05BandaraBagasi.tsx`, `components/GasingSprite.tsx`, `components/Baggage.tsx` |
 | 06 | Gasing Melihat TV | Gasing tiba di lobi dengan TV besar, kaget, berbalik menghadap TV, TV menyala, lalu kamera zoom ke layar. | `src/scenes/Scene06GasingMelihatTv.tsx` (fase `room`) |
@@ -47,13 +47,13 @@ Sumber kebenaran di kode: `src/data/scenes.ts` (`SCENE_LIST`). **Setiap ada scen
 | 04a | Peta Terbuka | Peta masuk, petunjuk "Klik kado..." | ~2,6 s |
 | 04b | Surat Kado | Tiap kado diklik membuka surat (`LetterModal`) | per kado |
 | 04c | Semua Kado Terbuka | Semua kado terbuka: ronde 1 tombol teks "Mendarat"; ronde 2 (setelah pernah mendarat) tombol "Mendarat" berupa ikon pesawat di peta (`LandIconButton`) dan "Mulai Ulang" | - |
-| 04d | Pesawat Lepas Landas | Pesawat terbang melengkung keluar layar, jejak asap tertinggal di lintasan | 3,4 s |
+| 04d | Pesawat Lepas Landas | Pesawat terbang melengkung keluar layar, jejak garis putih tertinggal di lintasan | 3,4 s |
 | 04e | Awan Menutup (ke Bandara) | `CloudTransition` ke Scene 05 | 2,6 s |
 | 04f | Pilih BGM | Tombol not musik di pojok kanan atas membuka panel 3 lagu (`components/BgmPicker.tsx`, daftar di `audio/bgm.ts`); bisa dipakai kapan saja selama di peta | kapan saja |
 | 05a | Ban Berjalan | Koper bergerak di ban, Gasing datang menjemput | 0 - 5,2 s |
 | 05b | Koper Melompat | Koper melompat dari ban ke belakang Gasing | ~1 s |
 | 05c | Berjalan ke Kanan | Gasing menarik koper, kamera ikut bergeser | ~4,4 s |
-| 06a | Gasing Masuk | Gasing berjalan ke depan TV | 0,5 - 1,8 s |
+| 06a | Gasing Masuk | Gasing berjalan masuk dari luar layar kiri (bobbing + langkah) dan berhenti di kiri bawah TV | 0,5 - 3,5 s |
 | 06b | Gasing Kaget | Bingkai `gasing-alert` (tanda seru ada di gambar), Gasing melonjak | ~1,6 s |
 | 06b2 | Gasing Berbalik Menghadap TV | Badan menyempit (`gTurn` 0,7 s), bingkai berganti ke `gasing-mirrored` (membelakangi kamera); topi ikut bergeser halus | ~0,7 s |
 | 06c | TV Menyala | Layar berkedip lalu terang | 1,4 s |
@@ -117,13 +117,15 @@ Aset visual terbaru (dari `aset proyek/`, diproses oleh `npm run assets:visual` 
 | Scene 06 latar | `images/bandara-lobi.webp` (`IMG.ruangTvBg`, ukuran `LOBBY` di `config.ts`) | Modern Airport Lobby with Scenic Views.png |
 | Scene 07-08 bingkai TV | `images/tv-monitor.webp` (`IMG.tv`); layar = `.tv-window` di `index.css` (x 65-1609, y 58-863 px gambar) | Hyper-Realistic Dark Screen Monitor.png |
 | Semua maskot: topi | `images/topi-pesta.webp` (`IMG.partyHat`), penempatan per pose di `components/PartyHat.tsx` | Striped Party Hat with Yellow Puffs.png |
-| Kedipan (semua scene bermaskot) | `images/gasing-sleepy.webp` | Sleepy Green Spinning Top Mascot.png |
+| Scene 06b: mata+alis kaget di depan topi | `images/gasing-alert-mata.webp` (potongan dari gambar Alert, posisi identik) | Alert Green Spinning Top Mascot.png |
+| Semua maskot: badan | `images/gasing-badan.webp` (`IMG.gasingBadan`) | Glossy Green Spinning Top Mascot.png |
+| Semua maskot: mata terbuka / tertutup (kedip) | `images/mata-buka.webp`, `images/mata-tutup.webp` | Glossy Cartoon Eyes with Arched Brows.png, Sleeping Eyes and Arched Brows.png |
 | Scene 06b kaget | `images/gasing-alert.webp` | Alert Green Spinning Top Mascot.png |
 | Scene 06b2 menghadap TV | `images/gasing-mirrored.webp` | Mirrored Lime Green Spinning Top.png |
 | Scene 07 video | `video/ucapan-ultah.mp4` (H.264 1280x720, dimuat lazy saat Scene 07) | Ucapan Ultah Prof 63.mp4 (disimpan lokal, tidak di-commit) |
 
-Maskot memakai satu komponen (`components/Mascot.tsx`): tumpukan bingkai pose (crossfade 160 ms) + kedipan acak (fade 110 ms, tahan 70 ms, periode 4,4-5,6 s per maskot) + topi. Dipakai di Scene 01, 02, 05, 06; Scene 04 memakai ilustrasi pesawat+Gasing yang menyatu (`plane-mascot.png`), jadi hanya topinya yang diganti.
+Maskot memakai satu komponen (`components/Mascot.tsx`). Urutan layer dari belakang ke depan: **badan** (Glossy; saat pose khusus bingkai utuh alert / mirrored, crossfade 160 ms), **topi pesta**, lalu **mata + alis paling depan** (menimpa topi). Saat normal, mata = layer mata terbuka + mata tertutup (satu transformasi, tanpa lompatan posisi; posisinya dinaikkan agar sejajar dengan mata aset maskot lama). Saat kaget, mata + alis dipotong dari gambar alert dan digambar lagi di atas topi; pose menghadap TV tidak punya wajah. Kedip lewat Web Animations: terbuka -> tertutup 80 ms, tertutup 65 ms, tertutup -> terbuka 80 ms; jeda acak 2-6 detik, 22% kedip ganda; pose khusus tidak berkedip. Topi: kerapatan "A" untuk normal/menghadap TV/pesawat dan lebih rapat ("B": ditekan 90% dan sedikit miring) saat kaget, berubah halus (transisi 0,22 s) dan selalu menutupi seluruh tanduk. Dipakai di Scene 01, 02, 05, 06; Scene 04 memakai ilustrasi pesawat+Gasing yang menyatu (`plane-mascot.png`), jadi hanya topinya yang diganti.
 
-Jejak asap pesawat: `components/SmokeTrail.tsx` (kanvas 2D, kolam 110 partikel dipakai ulang). Titik asal = elemen penanda `.exhaust-marker` di dalam pesawat, jadi mengikuti posisi/gerak pesawat; berhenti saat scene dilepas.
+Jejak pesawat: `components/PlaneTrail.tsx` (kanvas 2D): satu garis putih tapered yang wavy, sempit di knalpot lalu melebar dan memudar. Titik asal = elemen penanda `.exhaust-marker` di dalam pesawat, jadi mengikuti posisi/gerak pesawat; berhenti dan hilang saat scene dilepas.
 
 Nama file aset lama (yang tidak diganti) mengikuti naskah desain, bukan nomor scene: `scene3-bg.webp` = **Scene 04**. Skrip `tools/process-assets*.mjs` tidak lagi menulis ulang aset yang sudah diganti (daftar `RETIRED`).

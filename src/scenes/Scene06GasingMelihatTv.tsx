@@ -29,9 +29,9 @@ const BAG_W = 150
 const BAG_H = bagHeight(1, BAG_W)
 /** kamera diam: menampilkan dunia mulai x = CAM_X (TV berada di tengah layar 1920) */
 const CAM_X = 94
-/** posisi telapak Gasing = posisi akhir di Scene 05 (layar x=1020) */
-const ENTER_X = 1020 + CAM_X
-const STOP_X = ENTER_X + 130
+/** 06a: Gasing masuk dari LUAR layar kiri (telapak di layar x=-300; sprite+koper sepenuhnya di luar) dan berhenti di kiri bawah TV (layar x=560), menghadap TV */
+const ENTER_X = -300 + CAM_X
+const STOP_X = 560 + CAM_X
 
 // layar TV pada bandara-lobi.webp (px gambar 1752x897): kiri-atas, kanan-atas, kanan-bawah, kiri-bawah (di dalam bezel)
 const TV_QUAD = [[557, 153], [1194, 153], [1194, 515], [557, 515]]
@@ -108,7 +108,8 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Pro
     setPhase('room')
 
     await seq.wait(0.5) // 06a Gasing Masuk
-    await seq.to(gx, STOP_X, { duration: 1.3, ease: [0.2, 0.7, 0.3, 1] })
+    // berjalan masuk (state walk: goyang/bobbing + bunyi langkah tiap siklus), melambat halus mendekati tujuan
+    await seq.to(gx, STOP_X, { duration: 3, ease: [0.3, 0.1, 0.25, 1] })
     if (seq.dead) return
     setGState('idle')
     await seq.wait(0.4)
@@ -162,7 +163,7 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, devStart }: Pro
             </div>
         </motion.div>
 
-        <GasingSprite src={IMG.gasing} width={GW} height={GH} x={gx} y={gy} state={gState} popSfx="surprise" pose={pose} extraPoses />
+        <GasingSprite src={IMG.gasingBadan} width={GW} height={GH} x={gx} y={gy} state={gState} popSfx="surprise" pose={pose} extraPoses />
       </motion.div>
 
       {/* Scene 07 Video Ucapan: bingkai TV layar penuh + video (07a Video Diputar, 07b Video Belum Ada = placeholder di TvPlayer) */}

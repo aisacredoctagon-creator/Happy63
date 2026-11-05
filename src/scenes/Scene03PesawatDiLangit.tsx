@@ -5,7 +5,7 @@ import { useRef, useState } from 'react'
 import { useLoop } from '../audio/audio'
 import { DriftClouds, SpeedLines } from '../components/Atmosphere'
 import { EdgeExtend } from '../components/EdgeExtend'
-import { SmokeTrail } from '../components/SmokeTrail'
+import { PlaneTrail } from '../components/PlaneTrail'
 import { IMG, PLANE_SIDE_ASPECT, SKY, SPRITE, STAGE_H, STAGE_W } from '../config'
 import { useSceneTag } from '../dev/sceneTag'
 import { useSequence } from '../hooks/useSequence'
@@ -66,8 +66,8 @@ export function Scene03PesawatDiLangit({ onDone }: Props) {
             <div ref={exhaust} className="exhaust-marker" style={EXHAUST} aria-hidden />
           </div>
         </motion.div>
-        {/* jejak asap dari knalpot; berhenti dan hilang saat scene berganti (komponen dilepas) */}
-        <SmokeTrail originRef={exhaust} flow={330} size={1} rate={44} emitting={!leaving} />
+        {/* jejak garis putih dari knalpot; berhenti dan hilang saat scene berganti (komponen dilepas) */}
+        <PlaneTrail originRef={exhaust} flow={330} size={1} emitting={!leaving} />
         <SpeedLines yMin={430} yMax={660} count={7} />
         <DriftClouds yMin={760} yMax={940} count={3} opacity={0.95} speed={18} size={[520, 760]} />
       </motion.div>

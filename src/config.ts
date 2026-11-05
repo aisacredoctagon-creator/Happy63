@@ -26,9 +26,11 @@ export const IMG = {
   btnMendarat: asset('images/btn-mendarat.webp'), // ikon Mendarat di peta (Scene 04, dari teman)
   bandara: asset('images/bandara-bagasi.webp'), // Scene 05
   ruangTvBg: asset('images/bandara-lobi.webp'), // Scene 06
-  gasing: asset('images/gasing.webp'),
-  gasingSleepy: asset('images/gasing-sleepy.webp'), // mata terpejam (kedipan, semua scene)
+  gasingBadan: asset('images/gasing-badan.webp'), // badan Gasing saja (layer bawah); mata di atasnya, lihat Mascot.tsx
+  mataBuka: asset('images/mata-buka.webp'), // layer mata terbuka
+  mataTutup: asset('images/mata-tutup.webp'), // layer mata tertutup (kedip)
   gasingAlert: asset('images/gasing-alert.webp'), // kaget (Scene 06b)
+  gasingAlertMata: asset('images/gasing-alert-mata.webp'), // mata+alis pose kaget saja (layer di atas topi)
   gasingMirrored: asset('images/gasing-mirrored.webp'), // membelakangi kamera, menghadap TV (Scene 06)
   tv: asset('images/tv-monitor.webp'), // Scene 07-08
   charMan: asset('images/char-man.webp'),

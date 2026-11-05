@@ -21,7 +21,7 @@ interface Props {
   state: GasingState
   /** bunyi saat state 'pop' (bawaan: boing) */
   popSfx?: SfxName
-  /** bingkai tubuh: normal (gasing.png + kedip), alert (kaget), back (menghadap TV). Selain normal hanya dipakai Scene 06. */
+  /** bingkai tubuh: normal (badan Glossy + mata berkedip), alert (kaget), back (menghadap TV). Selain normal hanya dipakai Scene 06. */
   pose?: MascotPose
   /** muat bingkai alert/mirrored sejak awal (Scene 06) */
   extraPoses?: boolean

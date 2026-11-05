@@ -29,15 +29,8 @@ async function alphaBox(file, thr = 12) {
   return { left: x0, top: y0, width: x1 - x0 + 1, height: y1 - y0 + 1 }
 }
 
-// ---- Gasing (sprite utama, diperkecil dari 14171x16913)
-{
-  const f = `${SRC}/Character GASING.png`
-  const box = await alphaBox(f)
-  const img = sharp(f, { limitInputPixels: false }).extract(box).resize({ width: 900 })
-  await png(img, 'gasing.png')
-  const m = await sharp(`${OUT}/gasing.png`).metadata()
-  meta.gasing = { width: m.width, height: m.height }
-}
+// ---- Gasing: sprite lama (gasing.png) sudah DIGANTI badan Glossy + layer mata (tools/process-visual.mjs); proporsi kotak sprite 1148x1371
+meta.gasing = { width: 1148, height: 1371 }
 
 // ---- Awan (alpha) trim
 for (const [src, dst] of [['awan.png', 'awan1.webp'], ['awan2.png', 'awan2.webp']]) {

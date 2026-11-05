@@ -17,7 +17,7 @@ fs.mkdirSync(OUT, { recursive: true })
 const meta = {}
 
 // aset di bawah sudah DIGANTI aset baru (tools/process-visual.mjs, npm run assets:visual) dan filenya dihapus: jangan ditulis ulang
-export const RETIRED = new Set(['scene2-bg.webp', 'scene2-plane.png', 'scene5-bg.webp', 'scene6-tv.webp', 'bandara.webp'])
+export const RETIRED = new Set(['scene2-bg.webp', 'scene2-plane.png', 'scene5-bg.webp', 'scene6-tv.webp', 'bandara.webp', 'gasing.png'])
 const saveWebp = (img, name, q = 92) => (RETIRED.has(name) ? Promise.resolve() : img.webp({ quality: q, effort: 5 }).toFile(path.join(OUT, name)))
 const saveSprite = async (name, s) => {
   if (RETIRED.has(name)) return

@@ -12,7 +12,7 @@ import { BgmPicker } from '../components/BgmPicker'
 import { GiftHotspot } from '../components/GiftHotspot'
 import { LandIconButton } from '../components/LandIconButton'
 import { PartyHat } from '../components/PartyHat'
-import { SmokeTrail } from '../components/SmokeTrail'
+import { PlaneTrail } from '../components/PlaneTrail'
 import { EdgeExtend } from '../components/EdgeExtend'
 import { LetterModal } from '../components/LetterModal'
 import { PrimaryButton } from '../components/PrimaryButton'
@@ -211,8 +211,8 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
             <div ref={exhaust} className="exhaust-marker" style={{ left: '47.5%', top: '88.5%' }} aria-hidden />
           </div>
         </motion.div>
-        {/* jejak asap dari knalpot mesin; mengikuti lintasan pesawat (partikel tertinggal di peta), lepas bersama scene */}
-        <SmokeTrail originRef={exhaust} flow={140} size={0.6} rate={34} />
+        {/* jejak garis putih dari knalpot mesin; mengikuti lintasan pesawat (titik tertinggal di peta), lepas bersama scene */}
+        <PlaneTrail originRef={exhaust} flow={140} size={0.6} />
 
         {/* 04b Surat Kado: klik kado membuka LetterModal (di bawah) */}
         {GIFTS.map((g, i) => (

@@ -1,7 +1,7 @@
 // Memproses aset visual baru dari "aset proyek/" ke public/assets/images (nama tanpa spasi, webp, bersih).
 //   npm run assets:visual
 // - pesawat: bersihkan bintik/serpihan di tepi alpha, potong ke bounding box, antialias tepi
-// - maskot (sleepy/alert/mirrored) dan topi: bersihkan serpihan alpha, ubah ke webp
+// - maskot (badan Glossy, alert, mirrored), mata terbuka/tertutup topi, dan potongan mata+alis pose kaget: bersihkan serpihan alpha, ubah ke webp
 // - latar (langit, bagasi, lobi) dan monitor TV: webp
 // Video diproses terpisah oleh tools/process-video.mjs
 import { mkdirSync, statSync } from 'node:fs'
@@ -163,18 +163,83 @@ async function save(pipeline, name, srcName, opts = {}) {
   await save(sharp(png).resize({ width: 1600 }), 'pesawat-samping.webp', 'Blue and White Airplane Side View.png', { q: 90 })
   console.log('pesawat bbox', JSON.stringify(box), 'aspect', (box.width / box.height).toFixed(3))
 }
-// maskot (Sleepy/Alert/Mirrored) dan topi: bersihkan serpihan, 900 px lebar (sama dengan gasing.png lama)
+// maskot (badan Glossy, Alert, Mirrored) dan topi: bersihkan serpihan, 900 px lebar (sama dengan gasing.png lama)
 for (const [src, out] of [
-  ['Sleepy Green Spinning Top Mascot.png', 'gasing-sleepy.webp'],
+  ['Glossy Green Spinning Top Mascot.png', 'gasing-badan.webp'],
   ['Alert Green Spinning Top Mascot.png', 'gasing-alert.webp'],
   ['Mirrored Lime Green Spinning Top.png', 'gasing-mirrored.webp'],
 ]) {
   const c = await cleanRgba(join(SRC, src), { open: 0, keep: 0.002, thr: 60, inset: 0 })
   await save(c.resize({ width: 900 }), out, src, { q: 90 })
 }
+// mata (terbuka/tertutup): satu kanvas 1536x1024 yang sama, dipotong ke bounding box gabungan yang sama (posisi relatif terjaga), 0,5x
+{
+  const files = [['Glossy Cartoon Eyes with Arched Brows.png', 'mata-buka.webp'], ['Sleeping Eyes and Arched Brows.png', 'mata-tutup.webp']]
+  const raws = []
+  for (const [f] of files) raws.push(await sharp(join(SRC, f)).ensureAlpha().raw().toBuffer({ resolveWithObject: true }))
+  let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1
+  for (const { data, info } of raws)
+    for (let y = 0; y < info.height; y++)
+      for (let x = 0; x < info.width; x++) if (data[(y * info.width + x) * 4 + 3] > 24) (x0 = Math.min(x0, x)), (x1 = Math.max(x1, x)), (y0 = Math.min(y0, y)), (y1 = Math.max(y1, y))
+  const box = { left: x0 - 8, top: y0 - 8, width: x1 - x0 + 17, height: y1 - y0 + 17 }
+  console.log('mata crop (kanvas 1536x1024)', JSON.stringify(box))
+  for (let i = 0; i < files.length; i++) {
+    const { data, info } = raws[i]
+    for (let j = 0; j < info.width * info.height; j++) if (data[j * 4 + 3] < 24) data[j * 4 + 3] = 0 // buang halo tipis
+    const png = await sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } }).extract(box).png().toBuffer()
+    await save(sharp(png).resize({ width: Math.round(box.width / 2) }), files[i][1], files[i][0], { q: 92 })
+  }
+}
 {
   const c = await cleanRgba(join(SRC, 'Striped Party Hat with Yellow Puffs.png'), { open: 0, keep: 0.002, thr: 60, inset: 0 })
   await save(c.resize({ width: 640 }), 'topi-pesta.webp', 'Striped Party Hat with Yellow Puffs.png', { q: 90 })
+}
+// mata + alis pose kaget sebagai layer terpisah di atas topi: potongan dari Alert Green Spinning Top Mascot.png (kanvas sama,
+// posisi identik). Putih mata ditutup (pupil) lalu diperluas 34 px agar garis tepi dan bayangan ikut; goresan tipis (< 6 px) dibuang; hanya piksel putih/gelap yang diambil (hijau badan tidak).
+{
+  const { data, info } = await sharp(join(SRC, 'Alert Green Spinning Top Mascot.png')).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  const w = info.width, h = info.height
+  const lum = (i) => (data[i * 4] + data[i * 4 + 1] + data[i * 4 + 2]) / 3
+  const white = new Uint8Array(w * h)
+  for (let i = 0; i < w * h; i++) {
+    const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2]
+    if (data[i * 4 + 3] > 200 && r > 215 && g > 210 && b > 190 && Math.abs(r - b) < 50) white[i] = 1
+  }
+  // komponen putih terbesar dua (mata kiri dan kanan), lalu dilatasi 16 px
+  const { label, areas } = components(white, w, h)
+  const order = areas.map((a, i) => [a, i]).sort((x, y) => y[0] - x[0]).slice(0, 3).filter(([a]) => a > 5000).map(([, i]) => i)
+  const eyes = new Uint8Array(w * h)
+  for (let i = 0; i < w * h; i++) if (order.includes(label[i])) eyes[i] = 1
+  // tutup lubang pupil (dilatasi lalu erosi 40 px), lalu lebarkan 20 px untuk garis tepi dan bayangan
+  const closed = morph(morph(eyes, w, h, 40, false), w, h, 40, true)
+  const near = morph(closed, w, h, 34, false)
+  const keep = new Uint8Array(w * h)
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x
+      if (!near[i] || data[i * 4 + 3] < 128) continue
+      const l = lum(i)
+      const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2]
+      const isWhiteish = l > 170 && Math.abs(r - b) < 60 && g - r < 14 && g - b < 70 // putih/abu bayangan mata (bukan hijau muda)
+      const isDark = l < 110 && !(g > r + 25) // garis tepi dan pupil (bukan hijau tua)
+      if (isWhiteish || isDark) keep[i] = 1
+    }
+  // alis kiri: goresan gelap kecil di sekitar pangkal tanduk (x 425-545, y 255-370)
+  for (let y = 255; y < 370; y++)
+    for (let x = 425; x < 545; x++) {
+      const i = y * w + x
+      if (data[i * 4 + 3] > 128 && lum(i) < 90) keep[i] = 1
+    }
+  const opened = morph(morph(keep, w, h, 3, true), w, h, 3, false) // buang goresan tipis (garis badan) yang ikut
+  for (let i = 0; i < w * h; i++) keep[i] = keep[i] && opened[i] ? 1 : 0
+  const comp = components(keep, w, h)
+  const big = new Set(comp.areas.map((a, i) => [a, i]).filter(([a]) => a > 250).map(([, i]) => i))
+  const maskBuf = Buffer.alloc(w * h)
+  for (let i = 0; i < w * h; i++) maskBuf[i] = keep[i] && big.has(comp.label[i]) ? 255 : 0
+  const soft = await sharp(maskBuf, { raw: { width: w, height: h, channels: 1 } }).blur(0.7).extractChannel(0).raw().toBuffer()
+  const out = Buffer.from(data)
+  for (let i = 0; i < w * h; i++) out[i * 4 + 3] = Math.round(Math.max(0, Math.min(1, (soft[i] / 255 - 0.1) / 0.8)) * 255) * (data[i * 4 + 3] > 0 ? 1 : 0)
+  await save(sharp(out, { raw: { width: w, height: h, channels: 4 } }).resize({ width: 900 }), 'gasing-alert-mata.webp', 'Alert Green Spinning Top Mascot.png', { q: 92 })
 }
 // latar dan monitor (RGB): ukuran asli, webp
 for (const [src, out, q] of [
