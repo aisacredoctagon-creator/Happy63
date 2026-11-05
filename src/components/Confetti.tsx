@@ -1,10 +1,12 @@
 import { useMemo } from 'react'
 import type { CSSProperties } from 'react'
+import { useLite } from '../perf'
 
 const COLORS = ['#ffd23f', '#ff6b6b', '#4dabf7', '#51cf66', '#cc5de8', '#ff922b', '#ffffff']
 
 /** Konfeti ringan: hanya transform + opacity, jalan sekali lalu berhenti. */
-export function Confetti({ count = 70 }: { count?: number }) {
+export function Confetti({ count: fullCount = 70 }: { count?: number }) {
+  const count = useLite() ? Math.ceil(fullCount / 2) : fullCount // mode hemat: separuh konfeti
   const pieces = useMemo(
     () =>
       Array.from({ length: count }, (_, i) => ({

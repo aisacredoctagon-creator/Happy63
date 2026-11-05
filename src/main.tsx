@@ -4,6 +4,9 @@ import '@fontsource-variable/fredoka'
 import '@fontsource-variable/nunito'
 import './index.css'
 import App from './App'
+import { initPerf } from './perf'
+
+initPerf()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { audio, useAudioSettings, useMuted } from '../audio/audio'
 import type { Category } from '../audio/audio'
+import { setLite, useLite } from '../perf'
 
 /** Satu baris bisa mengatur beberapa kategori sekaligus: "Musik" menggerakkan musik latar dan suasana bersamaan. */
 const ROWS: Array<{ cats: Category[]; label: string }> = [
@@ -12,6 +13,7 @@ const ROWS: Array<{ cats: Category[]; label: string }> = [
 export function AudioToggle() {
   const muted = useMuted()
   const settings = useAudioSettings()
+  const lite = useLite()
   const [open, setOpen] = useState(false)
   const dock = useRef<HTMLDivElement>(null)
 
@@ -48,6 +50,10 @@ export function AudioToggle() {
               />
             </label>
           ))}
+          <label className="audio-row lite-row">
+            <span>Mode hemat</span>
+            <input type="checkbox" checked={lite} aria-label="Mode hemat (animasi lebih ringan)" onChange={(e) => setLite(e.target.checked)} />
+          </label>
         </div>
       )}
       <button

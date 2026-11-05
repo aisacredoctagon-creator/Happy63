@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { CSSProperties } from 'react'
 import { CLOUDS } from '../config'
+import { useLite } from '../perf'
 
 function rng(seed: number) {
   let a = seed
@@ -23,7 +24,10 @@ interface DriftProps {
 }
 
 /** Awan (awan.png / awan2.png) yang melayang dari kanan ke kiri, loop mulus. */
-export function DriftClouds({ yMin, yMax, count = 5, opacity = 0.9, speed = 120, size = [260, 520] }: DriftProps) {
+export function DriftClouds({ yMin, yMax, count: fullCount = 5, opacity = 0.9, speed = 120, size = [260, 520] }: DriftProps) {
+  // mode hemat: separuh jumlah awan (minimal 2)
+  const lite = useLite()
+  const count = lite ? Math.max(2, Math.ceil(fullCount / 2)) : fullCount
   const items = useMemo(() => {
     const r = rng(99 + count)
     return Array.from({ length: count }, (_, i) => {
@@ -54,7 +58,7 @@ const SPARK_PATH = 'M0 -12 C1 -4 4 -1 12 0 C4 1 1 4 0 12 C-1 4 -4 1 -12 0 C-4 -1
 
 /** Kilau/partikel kecil yang berkedip. Posisi dalam persen kanvas. */
 export function Sparkles({
-  count = 18,
+  count: fullCount = 18,
   region = [0, 0, 100, 100],
   seed = 5,
 }: {
@@ -62,6 +66,8 @@ export function Sparkles({
   region?: [number, number, number, number]
   seed?: number
 }) {
+  const lite = useLite()
+  const count = lite ? Math.ceil(fullCount / 2) : fullCount // mode hemat: separuh kilau
   const items = useMemo(() => {
     const r = rng(seed)
     return Array.from({ length: count }, () => ({

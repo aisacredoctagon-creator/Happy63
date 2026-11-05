@@ -34,7 +34,7 @@ const FADE_OUT = 1.2
 const DRIFT = -360
 
 /** gambar awan besar: rasio dan bagian tengah yang padat penuh (lihat analisis alpha: 25%-75% lebar, tinggi penuh) */
-const BIG_ASPECT = 3000 / 1003
+const BIG_ASPECT = 2000 / 669
 const SOLID_FRAC = 0.5
 /** sisa aman di dalam zona padat, di tiap sisi area yang terlihat */
 const MARGIN = 160

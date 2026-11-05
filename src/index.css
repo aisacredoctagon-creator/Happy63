@@ -2505,3 +2505,48 @@ button {
 .stage[data-compact] .sun-rays {
   mix-blend-mode: normal;
 }
+
+/* ===== MODE HEMAT (html.lite; lihat src/perf.ts) =====
+   Aktif otomatis di perangkat lemah (RAM/CPU kecil, Penghemat Data) atau lewat panel pengaturan (gerigi) / ?lite=1.
+   Tujuan: mengurangi pekerjaan GPU per frame. Bentuk dan warna tetap sama, hanya efek tambahannya yang disederhanakan. */
+/* filter drop-shadow pada sprite yang terus bergerak harus dihitung ulang tiap frame; bayangan elips di lantai tetap ada */
+html.lite .g-body img,
+html.lite .patrol-hop img,
+html.lite .bag-img,
+html.lite .party-hat,
+html.lite .letter-envelope {
+  filter: none;
+}
+/* matahari raksasa di peta: tanpa blend mode, tanpa putaran 100 detik dan denyut (lapisan 1500x1500 berputar terus) */
+html.lite .sun-glow,
+html.lite .sun-rays {
+  mix-blend-mode: normal;
+  animation: none;
+}
+html.lite .sun-glow {
+  opacity: 0.6;
+}
+html.lite .sun-rays {
+  opacity: 0.5;
+}
+/* bayangan besar (blur 70 px) di bawah pop-up surat dan kartu penutup */
+html.lite .letter {
+  box-shadow: 0 0 0 4px #f2d99a, 0 14px 26px rgba(5, 40, 100, 0.4);
+}
+html.lite .end-card-inner {
+  box-shadow: 0 0 0 5px #f2d99a, 0 14px 26px rgba(0, 0, 0, 0.4);
+}
+/* tombol: bayangan lembut ber-blur besar diganti yang lebih kecil */
+html.lite .pill-btn {
+  box-shadow: 0 9px 0 rgba(10, 60, 140, 0.18), 0 10px 16px rgba(10, 70, 160, 0.32);
+}
+/* baris sakelar di panel pengaturan */
+.lite-row {
+  grid-template-columns: 1fr auto;
+}
+.lite-row input[type='checkbox'] {
+  width: 36px;
+  height: 36px;
+  accent-color: #3b8be0;
+  cursor: pointer;
+}
