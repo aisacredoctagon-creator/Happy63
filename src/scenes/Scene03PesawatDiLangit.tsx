@@ -4,9 +4,8 @@ import { motion } from 'framer-motion'
 import { useRef, useState } from 'react'
 import { useLoop } from '../audio/audio'
 import { DriftClouds, SpeedLines } from '../components/Atmosphere'
-import { EdgeExtend } from '../components/EdgeExtend'
 import { PlaneTrail } from '../components/PlaneTrail'
-import { IMG, PLANE_SIDE_ASPECT, SKY, SPRITE, STAGE_H, STAGE_W } from '../config'
+import { IMG, PLANE_SIDE_ASPECT, SKY, SPRITE } from '../config'
 import { useSceneTag } from '../dev/sceneTag'
 import { useSequence } from '../hooks/useSequence'
 
@@ -51,7 +50,6 @@ export function Scene03PesawatDiLangit({ onDone }: Props) {
         transition={{ duration: 2.8, ease: [0.22, 1, 0.36, 1] }}
       >
         <img className="fill-img" src={IMG.langitBg} alt="Langit biru dengan awan" draggable={false} />
-        <EdgeExtend src={IMG.langitBg} w={STAGE_W} h={STAGE_H} />
         <DriftClouds yMin={60} yMax={300} count={4} opacity={0.95} speed={26} size={[320, 520]} />
         <SpeedLines yMin={330} yMax={680} count={14} />
         <motion.div

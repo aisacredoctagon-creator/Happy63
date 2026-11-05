@@ -9,7 +9,6 @@ import { AnimatePresence, motion, useAnimationFrame, useMotionValue } from 'fram
 import { useEffect, useState } from 'react'
 import { Confetti } from '../components/Confetti'
 import { GasingSprite } from '../components/GasingSprite'
-import { EdgeExtend } from '../components/EdgeExtend'
 import type { GasingState } from '../components/GasingSprite'
 import { PrimaryButton } from '../components/PrimaryButton'
 import { Baggage, bagHeight } from '../components/Baggage'
@@ -161,7 +160,6 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, onHideControls,
   return (
     <div className="scene scene06">
       <motion.div className="world" style={{ width: LOBBY.worldW, x: tx, y: ty, scale: sc, transformOrigin: '0 0' }}>
-        <EdgeExtend src={IMG.ruangTvBg} w={LOBBY.worldW} h={1080} />
         <img className="world-img" src={IMG.ruangTvBg} alt="Lobi bandara dengan TV besar" draggable={false} width={LOBBY.worldW} height={1080} />
         <div className={`tv-glow ${tvOn ? 'on' : ''}`} style={{ clipPath: `polygon(${TV_POLY})`, background: TV_GLOW }} aria-hidden />
 
@@ -179,7 +177,6 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, onHideControls,
         {phase === 'tv' && (
           <motion.div className="tv-frame" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.7 }}>
             <img className="fill-img" src={IMG.tv} alt="Layar TV" draggable={false} />
-            <EdgeExtend src={IMG.tv} w={1920} h={1080} />
             <div className="tv-window">
               <TvPlayer active={phase === 'tv'} status={status} onStatus={handleStatus} replayKey={replayKey} />
               <div className="tv-glare" aria-hidden />

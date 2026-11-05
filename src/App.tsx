@@ -183,7 +183,7 @@ export default function App() {
   return (
     <>
       {/* peta (Scene 04) bisa digeser dan diisi sampai bawah di layar kotak/mobile (dari teman) */}
-      <Stage overlay={cloudOverlay} pannable={scene === 'scene04'} fillBottom={scene === 'scene04'}>
+      <Stage overlay={cloudOverlay} pannable={scene === 'scene04'} fillBottom={scene === 'scene04'} cover={scene !== 'scene04'}>
         <AnimatePresence custom={fade}>
           {started && (
             <motion.div

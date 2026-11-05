@@ -3,7 +3,6 @@
 import { motion, useAnimationFrame, useMotionValue, useTransform } from 'framer-motion'
 import { useRef, useState } from 'react'
 import { GasingSprite } from '../components/GasingSprite'
-import { EdgeExtend } from '../components/EdgeExtend'
 import type { GasingState } from '../components/GasingSprite'
 import { Baggage, bagHeight } from '../components/Baggage'
 import { GASING_ASPECT, IMG, WIDE } from '../config'
@@ -125,7 +124,6 @@ export function Scene05BandaraBagasi({ onDone }: Props) {
   return (
     <div className="scene scene05">
       <motion.div className="world" style={{ width: WIDE.worldW, x: worldX }}>
-        <EdgeExtend src={IMG.bandara} w={WIDE.worldW} h={1080} />
         <img className="world-img" src={IMG.bandara} alt="Area pengambilan bagasi di bandara" draggable={false} width={WIDE.worldW} height={1080} />
 
         {/* ban berjalan bergerak */}

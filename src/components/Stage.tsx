@@ -19,6 +19,12 @@ interface Props {
    * memakainya wajib menggeser lapisan petanya ke atas sebesar `cropY` (lihat Scene04PetaKado), karena Stage sendiri tetap berpusat.
    */
   fillBottom?: boolean
+  /**
+   * Mode "cover" murni: kanvas diperbesar sampai MENUTUP seluruh layar (tanpa batas MAX_FILL) dan tetap berpusat, sehingga latar
+   * selalu penuh tanpa perlu perluasan tepi (EdgeExtend); kelebihan terpotong simetris di tepi dan isi tengah scene tetap aman.
+   * Scene peta (04) tidak memakainya karena sudah punya penanganan sendiri (pannable, fillBottom, EdgeExtend).
+   */
+  cover?: boolean
 }
 
 /** info tampilan kanvas untuk scene: skala, bagian kanvas yang terpotong per sisi (px kanvas), dan apakah mode geser aktif */
@@ -71,7 +77,7 @@ const MOBILE_BELOW_H = 600
 /** celah (px kanvas) + margin, dibulatkan ke atas per 50 agar tidak memicu render ulang tiap perubahan kecil */
 const pad = (gap: number) => Math.min(1200, Math.ceil((Math.max(0, gap) + 60) / 50) * 50)
 
-export function Stage({ children, overlay, pannable, fillBottom }: Props) {
+export function Stage({ children, overlay, pannable, fillBottom, cover }: Props) {
   const viewport = useRef<HTMLDivElement>(null)
   const [view, setView] = useState<StageViewInfo>({ scale: 1, cropX: 0, cropY: 0, panMode: false, anchorBottom: false, padX: 800, padY: 800 })
   useLayoutEffect(() => {
@@ -85,7 +91,8 @@ export function Stage({ children, overlay, pannable, fillBottom }: Props) {
       if (!vw || !vh) return
       const panMode = !!pannable && vw / vh < PAN_BELOW_ASPECT
       const anchorBottom = !!fillBottom && !panMode && vh < MOBILE_BELOW_H
-      const scale = panMode ? vh / STAGE_H : anchorBottom ? Math.max(vw / STAGE_W, vh / STAGE_H) : stageScale(vw, vh)
+      const coverScale = Math.max(vw / STAGE_W, vh / STAGE_H)
+      const scale = panMode ? vh / STAGE_H : anchorBottom || cover ? coverScale : stageScale(vw, vh)
       setView({
         scale,
         cropX: Math.max(0, (STAGE_W - vw / scale) / 2),
@@ -110,7 +117,7 @@ export function Stage({ children, overlay, pannable, fillBottom }: Props) {
       document.removeEventListener('fullscreenchange', update)
       document.removeEventListener('webkitfullscreenchange', update)
     }
-  }, [pannable, fillBottom])
+  }, [pannable, fillBottom, cover])
   const style = {
     transform: `translate(-50%, -50%) scale(${view.scale})`,
     '--crop-x': `${Math.round(view.cropX)}px`,
