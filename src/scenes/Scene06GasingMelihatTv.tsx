@@ -4,13 +4,12 @@
 //                                -> 06c TV Menyala -> 06d Zoom ke TV   (fase 'room')
 //   Scene 07 Video Ucapan      : 07a Video Diputar / 07b Video Belum Ada (placeholder)                      (fase 'tv')
 //   Scene 08 Kartu Penutup     : 08a Konfeti dan Kartu -> 08b Putar Ulang                                   (status 'ended')
-// Tombol "Kembali ke Peta" (07c Awan Menutup ke Peta, CloudTransition) tersedia di ketiganya.
+// Tombol "Kembali ke peta" (07c Awan Menutup ke Peta, CloudTransition) hanya ada di kartu penutup Scene 08.
 import { AnimatePresence, motion, useAnimationFrame, useMotionValue } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { Confetti } from '../components/Confetti'
 import { GasingSprite } from '../components/GasingSprite'
 import type { GasingState } from '../components/GasingSprite'
-import { PrimaryButton } from '../components/PrimaryButton'
 import { Baggage, bagHeight } from '../components/Baggage'
 import { TvPlayer } from '../components/TvPlayer'
 import type { TvStatus } from '../components/TvPlayer'
@@ -186,8 +185,8 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, onHideControls,
         )}
       </AnimatePresence>
 
-      {/* Scene 08 Kartu Penutup: 08a Konfeti dan Kartu, 08b Putar Ulang / Kembali ke Peta. Lapisan sendiri (z-index 160) di atas
-          tombol Kembali ke Peta di kiri atas dan tombol kanan atas: peredam gelapnya membuat tombol-tombol itu satu lapis di bawah pop-up. */}
+      {/* Scene 08 Kartu Penutup: 08a Konfeti dan Kartu, 08b Putar Ulang / 07c Kembali ke Peta (awan menutup, CloudTransition).
+          Lapisan sendiri (z-index 160) di atas tombol kanan atas: peredam gelapnya membuat tombol-tombol itu satu lapis di bawah pop-up. */}
       <AnimatePresence>
         {status === 'ended' && (
           <motion.div className="end-card" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }}>
@@ -220,13 +219,6 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, onHideControls,
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* 07c Awan Menutup ke Peta: tombol tersedia di Scene 06-08 */}
-      <div className="corner-btn">
-        <PrimaryButton tone="sky" delay={0.4} onClick={onBack}>
-          ← Kembali ke Peta
-        </PrimaryButton>
-      </div>
     </div>
   )
 }
