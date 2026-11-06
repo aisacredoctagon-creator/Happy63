@@ -84,7 +84,7 @@ Kami tim Digital Learning berharap dapat terus bersama-sama menjadi bagian dari 
     color: '#ff2fa8',
     letter: `Kami dari tim Material mengucapkan selamat ulang tahun Prof. Yohanes.
 
-Semoga panjang umur dan sehat selalu agar lebih banyak anak Indonesia bisa merasakan manfaat belajar dengan Metode Gasing. God bless always`,
+Semoga panjang umur, sehat selalu, selalu dipermudah dan diperlancar untuk segala urusan, dan selalu diberkati dalam setiap langkah yang diambil. Semoga di umur ke-63 ini Prof bisa tetap terus berkarya agar lebih banyak anak Indonesia bisa merasakan belajar dengan Metode Gasing. Terima kasih atas semangat dan inspirasinya yang luar biasa, Prof. God bless always!`,
   },
   {
     id: 'kalimantan',

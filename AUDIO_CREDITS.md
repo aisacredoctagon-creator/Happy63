@@ -50,17 +50,18 @@ Tombol not musik di pojok kanan atas Scene 04 membuka panel pilihan lagu. Daftar
 
 | Lagu (bawaan = pertama) | File | Sumber (di `aset proyek/original/`) | Ukuran sebelum → sesudah | LUFS | Dipotong awal / akhir |
 | --- | --- | --- | --- | --- | --- |
-| **Orang Jenius Suka Berhitung** (bawaan) | `bgm-orang-jenius.m4a` | `3a. Orang Jenius Suka Berhitung 2024.wav` | 18,6 MB → 1,5 MB (−92%) | −14,0 → −20,0 | 487 ms / 4,7 s (fade-out) |
-| **Coba Soal Gasing** | `bgm-coba-soal-gasing.m4a` | `2b. Coba Soal Gasing Loop.mp3` | 3,2 MB → 1,9 MB (−41%) | −13,8 → −20,0 | 587 ms / 4,5 s (peluruhan) |
+| **Orang Jenius Suka Berhitung** | `bgm-orang-jenius-loop.m4a` | `3b. Orang Jenius Suka Berhitung Loop.mp3` (loop 100 BPM, 42 birama) | 4,2 MB → 2,6 MB | −14,2 → −20,0 | tidak dipotong (kisi loop dijaga) |
+| **Coba Soal Gasing** (bawaan) | `bgm-coba-soal-gasing-loop.m4a` | `2b. Coba Soal Gasing Loop.mp3` (loop 110 BPM, 36 birama) | 3,2 MB → 2,0 MB | −13,8 → −20,0 | tidak dipotong (kisi loop dijaga) |
 | **Gasing Medley** | `bgm-gasing-medley.m4a` | `Gasing Medley v4 Mastered (1).wav` | 52,2 MB → 4,2 MB (−92%) | −14,0 → −20,1 | 1,5 s / 8,3 s (fade-out) |
 
 Total 74,0 MB menjadi 7,6 MB.
 
 - **Satu BGM pada satu waktu:** pilihan baru dimuat dulu, lalu crossfade 0,8 s; lagu lama berhenti setelahnya. Berganti cepat berkali-kali aman (hanya pilihan terakhir yang dipakai).
 - **Streaming + lazy-load:** BGM **di-stream lewat `<audio>`** (`src/audio/bgmPlayer.ts`), tidak di-decode utuh ke memori (decode lagu 3 menit ±70-80 MB PCM membuat tab iPhone dimatikan Safari). Hanya lagu terpilih yang diunduh; lagu lain baru saat dipilih. Tetap tersambung ke jalur gain manager, jadi mute, volume "Musik", dan duck berlaku.
-- **Loop mulus:** fade-out/peluruhan akhir dipotong saat konversi. Saat sisa waktu lagu tinggal 2 detik (1,5 detik untuk Coba Soal Gasing), elemen `<audio>` kedua mulai dari awal dan keduanya di-crossfade equal-power, lalu yang lama dilepas (dua elemen bergantian). Lagu "Coba Soal Gasing" aslinya punya senyap di awal dan akhir file (jeda tiap putaran); sekarang tanpa jeda.
+- **Loop mulus (Coba Soal Gasing dan Orang Jenius):** file loop = 1 ketukan senyap + N birama + 2 birama ekor reverb, jadi diputar dengan **overlap ekor** (salinan berikutnya mulai tiap N birama, ekor lama dibiarkan habis di bawahnya; tanpa fade dan tanpa jeda). Analisis dan alasan lengkap: `docs/BGM-LOOP.md`.
+- **Loop mulus (Gasing Medley, lagu utuh):** fade-out/peluruhan akhir dipotong saat konversi. Saat sisa waktu lagu tinggal 2 detik (1,5 detik untuk Coba Soal Gasing), elemen `<audio>` kedua mulai dari awal dan keduanya di-crossfade equal-power, lalu yang lama dilepas (dua elemen bergantian). Lagu "Coba Soal Gasing" aslinya punya senyap di awal dan akhir file (jeda tiap putaran); sekarang tanpa jeda.
 - **Pilihan tersimpan** di `localStorage` (`gasing-bgm-v2`; kunci lama `gasing-bgm` sengaja diabaikan agar semua pemain mulai dari bawaan "Coba Soal Gasing") dan berlaku di seluruh project (juga setelah pindah scene dan reload). Mute dan slider "Musik" di panel volume berlaku untuk BGM.
-- **Menambah lagu:** taruh sumbernya di `aset proyek/`, tambahkan item `{ "category": "music", "register": false, "bitrate": "192k", "trimHeadDb": -60, "trimTailDb": -32 }` di `scripts/audio-sources.json`, jalankan `npm run audio`, lalu tambahkan satu entri di `BGM_TRACKS`.
+- **Menambah lagu:** taruh sumbernya di `aset proyek/`, tambahkan item `{ "category": "music", "register": false, "bitrate": "192k", "trimHeadDb": -60, "trimTailDb": -32 }` di `scripts/audio-sources.json` (untuk file loop ekspor DAW pakai `"trim": "none"`, lihat `docs/BGM-LOOP.md`), jalankan `npm run audio`, lalu tambahkan satu entri di `BGM_TRACKS`.
 - Cadangan WAV besar (`3a...` dan `Gasing Medley...`, total 71 MB) disimpan lokal di `aset proyek/original/` tetapi tidak di-commit (di `.gitignore`).
 
 Format `.m4a` (AAC) dipilih karena ringan dan didukung semua browser; titik awalnya akurat (latensi awal < 5 ms, sudah diuji).
