@@ -64,11 +64,22 @@ function initialBgm(): string {
 }
 
 /**
- * Kunci dinaikkan (v2): suara menyala adalah bawaan, jadi pengaturan lama (mute/volume yang tertinggal di browser pemain,
- * juga kunci lama 'gasing-audio' dan 'gasing-muted') sengaja diabaikan. Perubahan berikutnya tersimpan di kunci ini.
+ * Penyimpanan pengaturan suara. SFX WAJIB menyala sebagai bawaan di setiap halaman yang dimuat (pertama kali atau refresh), jadi
+ * status SFX TIDAK dipersistenkan: `muted` (tombol suara; juga membisukan musik dan suasana) dan volume "Efek" (`sfx`) selalu
+ * mulai dari DEFAULTS. Yang tetap diingat hanya volume "Musik" dan "Suasana" (`ambient`). Nilai muted/sfx yang tertinggal di
+ * browser dari versi sebelumnya (kunci 'gasing-audio-v2' berisi muted/sfx) diabaikan dan dibuang saat memuat.
  */
 const STORAGE_KEY = 'gasing-audio-v2'
 const DEFAULTS: AudioSettings = { muted: false, sfx: 1, ambient: 1, music: 1 }
+
+/** hanya bagian yang boleh disimpan (volume Musik dan Suasana) */
+function persist(s: AudioSettings) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ambient: s.ambient, music: s.music }))
+  } catch {
+    /* abaikan */
+  }
+}
 
 function loadSettings(): AudioSettings {
   try {
@@ -76,12 +87,14 @@ function loadSettings(): AudioSettings {
     if (raw) {
       const j = JSON.parse(raw) as Partial<AudioSettings>
       const vol = (v: unknown, d: number) => (typeof v === 'number' && v >= 0 && v <= 1 ? v : d)
-      return { muted: !!j.muted, sfx: vol(j.sfx, 1), ambient: vol(j.ambient, 1), music: vol(j.music, 1) }
+      const s: AudioSettings = { ...DEFAULTS, ambient: vol(j.ambient, 1), music: vol(j.music, 1) } // muted dan sfx: selalu bawaan (SFX ON)
+      if ('muted' in j || 'sfx' in j) persist(s) // buang sisa status SFX/mute dari versi lama
+      return s
     }
-    return { ...DEFAULTS }
   } catch {
-    return { ...DEFAULTS }
+    /* abaikan */
   }
+  return { ...DEFAULTS }
 }
 
 interface LoopState {
@@ -429,7 +442,7 @@ class AudioManager {
     if (this.ctx && this.loopBus) this.loopBus.gain.setTargetAtTime(v, this.ctx.currentTime, 0.25)
   }
 
-  // ---- pengaturan (mute + volume per kategori), tersimpan di localStorage ----
+  // ---- pengaturan (mute + volume per kategori); hanya volume Musik/Suasana yang tersimpan di localStorage, SFX tidak ----
   get settings() {
     return this._settings
   }
@@ -438,11 +451,7 @@ class AudioManager {
   }
   private commit(next: AudioSettings) {
     this._settings = next
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-    } catch {
-      /* abaikan */
-    }
+    persist(next)
     const ctx = this.ctx
     if (ctx && this.master) {
       this.master.gain.setTargetAtTime(next.muted ? 0 : 1, ctx.currentTime, 0.05)

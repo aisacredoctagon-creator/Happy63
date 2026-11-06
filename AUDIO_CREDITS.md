@@ -60,7 +60,7 @@ Total 74,0 MB menjadi 7,6 MB.
 - **Streaming + lazy-load:** BGM **di-stream lewat `<audio>`** (`src/audio/bgmPlayer.ts`), tidak di-decode utuh ke memori (decode lagu 3 menit ±70-80 MB PCM membuat tab iPhone dimatikan Safari). Hanya lagu terpilih yang diunduh; lagu lain baru saat dipilih. Tetap tersambung ke jalur gain manager, jadi mute, volume "Musik", dan duck berlaku.
 - **Loop mulus (Coba Soal Gasing dan Orang Jenius):** file loop = 1 ketukan senyap + N birama + 2 birama ekor reverb, jadi diputar dengan **overlap ekor** (salinan berikutnya mulai tiap N birama, ekor lama dibiarkan habis di bawahnya; tanpa fade dan tanpa jeda). Analisis dan alasan lengkap: `docs/BGM-LOOP.md`.
 - **Loop mulus (Gasing Medley, lagu utuh):** fade-out/peluruhan akhir dipotong saat konversi. Saat sisa waktu lagu tinggal 2 detik (1,5 detik untuk Coba Soal Gasing), elemen `<audio>` kedua mulai dari awal dan keduanya di-crossfade equal-power, lalu yang lama dilepas (dua elemen bergantian). Lagu "Coba Soal Gasing" aslinya punya senyap di awal dan akhir file (jeda tiap putaran); sekarang tanpa jeda.
-- **Pilihan lagu TIDAK disimpan:** tiap halaman dimuat (pertama kali atau refresh) BGM selalu kembali ke bawaan "Coba Soal Gasing" (`BGM_DEFAULT`); pilihan hanya berlaku selama sesi halaman, termasuk saat pindah scene. Kunci lama `gasing-bgm` dan `gasing-bgm-v2` dibersihkan dari browser. Mute dan volume tetap tersimpan di `localStorage` seperti biasa.
+- **Pilihan lagu TIDAK disimpan:** tiap halaman dimuat (pertama kali atau refresh) BGM selalu kembali ke bawaan "Coba Soal Gasing" (`BGM_DEFAULT`); pilihan hanya berlaku selama sesi halaman, termasuk saat pindah scene. Kunci lama `gasing-bgm` dan `gasing-bgm-v2` dibersihkan dari browser. Volume "Musik" tetap tersimpan, sedangkan mute dan volume "Efek" tidak (SFX selalu menyala saat dimuat).
 - **Menambah lagu:** taruh sumbernya di `aset proyek/`, tambahkan item `{ "category": "music", "register": false, "bitrate": "192k", "trimHeadDb": -60, "trimTailDb": -32 }` di `scripts/audio-sources.json` (untuk file loop ekspor DAW pakai `"trim": "none"`, lihat `docs/BGM-LOOP.md`), jalankan `npm run audio`, lalu tambahkan satu entri di `BGM_TRACKS`.
 - Cadangan WAV besar (`3a...` dan `Gasing Medley...`, total 71 MB) disimpan lokal di `aset proyek/original/` tetapi tidak di-commit (di `.gitignore`).
 
@@ -132,7 +132,7 @@ SFX per scene: lihat `SCENES.md`.
 
 ## Kontrol pengguna
 
-Tombol speaker (kanan bawah) = mute global. Tombol gerigi di atasnya membuka panel volume untuk tiga kategori (Efek, Suasana, Musik). Pengaturan tersimpan di `localStorage` (`gasing-audio-v2`; kunci lama sengaja diabaikan agar suara menyala sebagai bawaan). Audio otomatis dijeda saat tab disembunyikan.
+Tombol speaker (kanan bawah) = mute global. Tombol gerigi di atasnya membuka panel volume untuk tiga kategori (Efek, Suasana, Musik). **SFX selalu menyala sebagai bawaan:** status mute (tombol speaker, yang juga membisukan musik dan suasana) dan volume "Efek" TIDAK disimpan, jadi setiap halaman dimuat (pertama kali atau refresh) suara menyala penuh; keduanya tetap bisa diubah selama sesi. Yang tetap diingat di `localStorage` (`gasing-audio-v2`) hanya volume "Musik" dan "Suasana". Audio otomatis dijeda saat tab disembunyikan.
 
 ## Sumber aset bebas lisensi (bila ingin menambah file)
 
