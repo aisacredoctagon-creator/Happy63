@@ -59,7 +59,7 @@ Total 74,0 MB menjadi 7,6 MB.
 - **Satu BGM pada satu waktu:** pilihan baru dimuat dulu, lalu crossfade 0,8 s; lagu lama berhenti setelahnya. Berganti cepat berkali-kali aman (hanya pilihan terakhir yang dipakai).
 - **Streaming + lazy-load:** BGM **di-stream lewat `<audio>`** (`src/audio/bgmPlayer.ts`), tidak di-decode utuh ke memori (decode lagu 3 menit ±70-80 MB PCM membuat tab iPhone dimatikan Safari). Hanya lagu terpilih yang diunduh; lagu lain baru saat dipilih. Tetap tersambung ke jalur gain manager, jadi mute, volume "Musik", dan duck berlaku.
 - **Loop mulus:** fade-out/peluruhan akhir dipotong saat konversi. Saat sisa waktu lagu tinggal 2 detik (1,5 detik untuk Coba Soal Gasing), elemen `<audio>` kedua mulai dari awal dan keduanya di-crossfade equal-power, lalu yang lama dilepas (dua elemen bergantian). Lagu "Coba Soal Gasing" aslinya punya senyap di awal dan akhir file (jeda tiap putaran); sekarang tanpa jeda.
-- **Pilihan tersimpan** di `localStorage` (`gasing-bgm`) dan berlaku di seluruh project (juga setelah pindah scene dan reload). Mute dan slider "Musik" di panel volume berlaku untuk BGM.
+- **Pilihan tersimpan** di `localStorage` (`gasing-bgm-v2`; kunci lama `gasing-bgm` sengaja diabaikan agar semua pemain mulai dari bawaan "Coba Soal Gasing") dan berlaku di seluruh project (juga setelah pindah scene dan reload). Mute dan slider "Musik" di panel volume berlaku untuk BGM.
 - **Menambah lagu:** taruh sumbernya di `aset proyek/`, tambahkan item `{ "category": "music", "register": false, "bitrate": "192k", "trimHeadDb": -60, "trimTailDb": -32 }` di `scripts/audio-sources.json`, jalankan `npm run audio`, lalu tambahkan satu entri di `BGM_TRACKS`.
 - Cadangan WAV besar (`3a...` dan `Gasing Medley...`, total 71 MB) disimpan lokal di `aset proyek/original/` tetapi tidak di-commit (di `.gitignore`).
 
@@ -131,7 +131,7 @@ SFX per scene: lihat `SCENES.md`.
 
 ## Kontrol pengguna
 
-Tombol speaker (kanan bawah) = mute global. Tombol gerigi di atasnya membuka panel volume untuk tiga kategori (Efek, Suasana, Musik). Pengaturan tersimpan di `localStorage` (`gasing-audio`). Audio otomatis dijeda saat tab disembunyikan.
+Tombol speaker (kanan bawah) = mute global. Tombol gerigi di atasnya membuka panel volume untuk tiga kategori (Efek, Suasana, Musik). Pengaturan tersimpan di `localStorage` (`gasing-audio-v2`; kunci lama sengaja diabaikan agar suara menyala sebagai bawaan). Audio otomatis dijeda saat tab disembunyikan.
 
 ## Sumber aset bebas lisensi (bila ingin menambah file)
 

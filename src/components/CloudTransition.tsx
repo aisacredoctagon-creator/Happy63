@@ -21,14 +21,20 @@ interface Props {
   runId: number
   /** true selama transisi berlangsung: lapisan menangkap klik (cegah klik ganda) */
   busy: boolean
-  onCovered?: () => void
+  /**
+   * dipanggil begitu layar tertutup penuh (waktunya mengganti scene). Mengembalikan Promise yang selesai saat scene baru sudah
+   * tergambar: awan baru mulai memudar sesudahnya (maksimal SWAP_WAIT detik).
+   */
+  onCovered?: () => void | Promise<void>
   onDone?: () => void
 }
 
-/** durasi total siklus (detik); layar tertutup penuh di COVER_AT, mulai memudar di HOLD_END */
+/** durasi siklus normal (detik); layar tertutup penuh di COVER_AT, paling cepat mulai memudar di HOLD_END, memudar selama FADE_OUT */
 export const CLOUD_TOTAL = 2.6
 const COVER_AT = 1.1
 const HOLD_END = 1.3
+/** batas tunggu (detik) scene baru tergambar sebelum awan memudar juga */
+const SWAP_WAIT = 1.5
 /** lama awan besar memudar (detik) dan jarak hanyutnya ke kiri saat memudar (px kanvas) */
 const FADE_OUT = 1.2
 const DRIFT = -360
@@ -175,41 +181,50 @@ export function CloudTransition({ runId, busy, onCovered, onDone }: Props) {
 
     function runTimeline() {
       const stops: Array<() => void> = []
-      const T = CLOUD_TOTAL
       const { offscreenX, coverX, padX } = geoRef.current
+      let alive = true
+      stops.push(() => (alive = false))
+      const wait = (ms: number) =>
+        new Promise<void>((r) => {
+          const t = setTimeout(r, ms)
+          stops.push(() => clearTimeout(t))
+        })
 
-      // awan besar: masuk dari kanan (melambat), tahan saat tertutup, lalu hanyut pelan ke kiri sambil memudar
-      const fadeEnd = Math.min(T, HOLD_END + FADE_OUT)
-      let finishAt = fadeEnd
-      const move = animate(bigX, [offscreenX, coverX, coverX, coverX + DRIFT], {
-        duration: T,
-        times: [0, COVER_AT / T, HOLD_END / T, fadeEnd / T],
-        ease: [EASE_IN_PHASE, 'linear', EASE_FADE],
-      })
-      const fade = animate(bigO, [1, 1, 0], {
-        duration: T,
-        times: [0, HOLD_END / T, fadeEnd / T],
-        ease: ['linear', EASE_FADE],
-      })
-      stops.push(() => move.stop(), () => fade.stop())
-
-      // 2 awan dari kiri: mulai di luar tepi kiri, menyapu melewati layar, keluar di tepi kanan
-      SWEEPERS.forEach((sw, i) => {
+      // 2 awan dari kiri: mulai di luar tepi kiri, menyapu melewati layar, keluar di tepi kanan (jalan sendiri sejak awal)
+      const sweepsDone = SWEEPERS.map((sw, i) => {
         const from = -(padX + sw.width + 120)
         const to = STAGE_W + padX + 120
-        finishAt = Math.max(finishAt, sw.delay + sw.dur)
         const sweep = animate(sweepX[i], [from, from, to], {
           duration: sw.delay + sw.dur,
           times: [0, sw.delay / (sw.delay + sw.dur), 1],
           ease: ['linear', EASE_SWEEP],
         })
         stops.push(() => sweep.stop())
+        return sweep.finished.then(() => undefined)
       })
 
-      const doneTimer = setTimeout(() => done.current?.(), finishAt * 1000 + 60)
-      // scene diganti tepat ketika layar sudah tertutup penuh
-      const t = setTimeout(() => covered.current?.(), ((COVER_AT + HOLD_END) / 2) * 1000)
-      stops.push(() => clearTimeout(t), () => clearTimeout(doneTimer))
+      // fase 1: awan besar masuk dari kanan (melambat) sampai menutup layar penuh
+      bigO.set(1)
+      const enter = animate(bigX, [offscreenX, coverX], { duration: COVER_AT, ease: EASE_IN_PHASE })
+      stops.push(() => enter.stop())
+
+      void enter.finished.then(async () => {
+        if (!alive) return
+        // layar tertutup penuh: scene diganti. Awan TETAP menutup sampai scene baru benar-benar sudah dipasang dan tergambar
+        // (onCovered boleh mengembalikan Promise), supaya scene lama tidak sempat terlihat saat awan mulai memudar
+        // (batas tunggu SWAP_WAIT supaya tidak menggantung).
+        const swapped = Promise.resolve(covered.current?.()).catch(() => undefined)
+        await Promise.all([wait((HOLD_END - COVER_AT) * 1000), Promise.race([swapped, wait(SWAP_WAIT * 1000)])])
+        if (!alive) return
+        // fase 2: awan besar hanyut pelan ke kiri sambil memudar, menampakkan scene baru
+        const move = animate(bigX, coverX + DRIFT, { duration: FADE_OUT, ease: EASE_FADE })
+        const fade = animate(bigO, 0, { duration: FADE_OUT, ease: EASE_FADE })
+        stops.push(() => move.stop(), () => fade.stop())
+        await Promise.all([move.finished, fade.finished, ...sweepsDone])
+        if (!alive) return
+        await wait(60)
+        if (alive) done.current?.()
+      })
       return () => stops.forEach((s) => s())
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

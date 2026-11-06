@@ -1,7 +1,9 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useIsPresent } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { AudioToggle } from './components/AudioToggle'
+import { BgmPicker } from './components/BgmPicker'
 import { CloudTransition } from './components/CloudTransition'
 import { FullscreenToggle } from './components/FullscreenToggle'
 import { RotateNotice } from './components/RotateNotice'
@@ -28,8 +30,36 @@ const PRELOAD = PRELOAD_IMAGES
 const sceneVariants: Variants = {
   initial: (d: number) => ({ opacity: d > 0 ? 0 : 1 }),
   animate: (d: number) => ({ opacity: 1, transition: { duration: d } }),
-  // scene lama tetap utuh selama scene baru memudar masuk di atasnya (tidak ada dip gelap di tengah cross-fade)
-  exit: (d: number) => ({ opacity: 1, transition: { duration: d } }),
+  // scene lama tetap utuh selama scene baru memudar masuk di atasnya (tidak ada dip gelap di tengah cross-fade).
+  // Durasi exit dibaca dari exitDuration (bukan dari `custom`, yang di elemen yang sedang keluar bisa sudah usang).
+  // 0 = potong: scene lama langsung tak terlihat (opacity 0) walau masih dipasang sebentar (lihat SceneLayer).
+  exit: () => (exitDuration.current > 0 ? { opacity: 1, transition: { duration: exitDuration.current } } : { opacity: 0, transition: { duration: 0 } }),
+}
+/** lama scene lama dipertahankan saat scene berganti; diisi tepat sebelum setScene (0 = langsung dilepas) */
+const exitDuration = { current: 1 }
+
+/**
+ * Lapisan satu scene. Scene yang sedang keluar tidak langsung dilepas dari DOM: animasi exit tombol-tombol di dalamnya
+ * (PrimaryButton: pegas + delay) membuat AnimatePresence menahannya ~1,2 detik. Karena .scene-layer bukan stacking context,
+ * elemen ber-z-index di scene lama (bingkai TV, tombol "Kembali ke Peta", kartu penutup) tetap tergambar DI ATAS scene baru
+ * selama itu: itulah "flash bandara" saat kembali ke peta. Selama keluar lapisan ini tidak bisa diklik/difokus.
+ */
+function SceneLayer({ children, custom }: { children: ReactNode; custom: number }) {
+  const present = useIsPresent()
+  return (
+    <motion.div
+      className="scene-layer"
+      style={present ? undefined : { pointerEvents: 'none' }}
+      inert={present ? undefined : true}
+      custom={custom}
+      variants={sceneVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      {children}
+    </motion.div>
+  )
 }
 
 interface CloudState {
@@ -56,6 +86,20 @@ export default function App() {
   const [controlsHidden, setControlsHidden] = useState(false)
   const cloudId = useRef(0)
   const cloudNext = useRef<SceneId | null>(null)
+  /** selesai (resolve) begitu scene baru hasil pergantian di balik awan sudah dipasang dan tergambar */
+  const swapDone = useRef<(() => void) | null>(null)
+
+  useEffect(() => {
+    if (!swapDone.current) return
+    // commit sudah terjadi: tunggu dua frame supaya scene baru benar-benar sudah dicat sebelum awan memudar
+    let raf = requestAnimationFrame(() => {
+      raf = requestAnimationFrame(() => {
+        swapDone.current?.()
+        swapDone.current = null
+      })
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [scene])
 
   useEffect(() => {
     if (scene !== 'scene06') {
@@ -104,6 +148,7 @@ export default function App() {
   /** ganti scene; SFX bercakupan scene lama dipotong halus */
   const changeScene = useCallback((next: SceneId) => {
     audio.stopScene()
+    exitDuration.current = 1
     setDevStart(undefined)
     setScene(next)
   }, [])
@@ -120,9 +165,14 @@ export default function App() {
   }, [])
   /** layar tertutup penuh: ganti scene langsung (tanpa cross-fade: dua scene penuh tidak perlu bertumpuk di balik awan) */
   const onCloudCovered = useCallback(() => {
-    if (!cloudNext.current) return
-    setFade(0)
-    changeScene(cloudNext.current)
+    const next = cloudNext.current
+    if (!next) return Promise.resolve()
+    return new Promise<void>((resolve) => {
+      swapDone.current = resolve
+      setFade(0)
+      changeScene(next)
+      exitDuration.current = 0 // scene lama dilepas seketika, tidak menumpuk di bawah scene baru
+    })
   }, [changeScene])
   const onCloudDone = useCallback(() => {
     cloudNext.current = null
@@ -134,6 +184,7 @@ export default function App() {
     void prepareScene(next).then(() => {
       setFade(duration)
       changeScene(next)
+      exitDuration.current = duration
     })
   }, [changeScene])
 
@@ -186,21 +237,15 @@ export default function App() {
       <Stage overlay={cloudOverlay} pannable={scene === 'scene04'} fillBottom={scene === 'scene04'} cover={scene !== 'scene04'}>
         <AnimatePresence custom={fade}>
           {started && (
-            <motion.div
-              key={`${scene}-${runKey}`}
-              className="scene-layer"
-              custom={fade}
-              variants={sceneVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
+            <SceneLayer key={`${scene}-${runKey}`} custom={fade}>
               {content}
-            </motion.div>
+            </SceneLayer>
           )}
         </AnimatePresence>
 
+        {/* tiga tombol kanan atas (gerigi, mute, musik) tampil sejak layar pembuka */}
         <AudioToggle hidden={controlsHidden} />
+        <BgmPicker hidden={controlsHidden} />
         <FullscreenToggle hidden={controlsHidden} />
         <Scene01LayarPembuka progress={progress} ready={done} visible={!started} onStart={() => {
             audio.unlock() // interaksi pertama: buka audio (aturan autoplay browser)

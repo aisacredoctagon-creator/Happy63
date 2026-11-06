@@ -3,13 +3,18 @@ import { audio, useBgm } from '../audio/audio'
 import { BGM_TRACKS } from '../audio/bgm'
 
 /**
- * Tombol (ikon not musik) di pojok kanan atas Scene 04 yang membuka panel kecil untuk memilih BGM dari BGM_TRACKS.
- * Pilihan disimpan oleh audio.setBgm (localStorage) dan berlaku di seluruh project. Panel di atas area kado (tidak menutupinya).
+ * Tombol (ikon not musik) di pojok kanan atas, tampil sejak layar pembuka, yang membuka panel kecil untuk memilih BGM dari
+ * BGM_TRACKS. Pilihan disimpan oleh audio.setBgm (localStorage) dan berlaku di seluruh project (musik sendiri baru berbunyi
+ * di Scene 04). `hidden`: disembunyikan dengan fade bersama tombol suara (Scene 07); komponen tetap terpasang.
  */
-export function BgmPicker() {
+export function BgmPicker({ hidden = false }: { hidden?: boolean }) {
   const current = useBgm()
   const [open, setOpen] = useState(false)
   const box = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (hidden) setOpen(false)
+  }, [hidden])
 
   // panel tertutup saat klik di luar atau menekan Esc
   useEffect(() => {
@@ -30,7 +35,9 @@ export function BgmPicker() {
     <div ref={box} className="bgm-dock">
       <button
         type="button"
-        className={`bgm-btn ${open ? 'is-open' : ''}`}
+        className={`bgm-btn ui-fade ${open ? 'is-open' : ''} ${hidden ? 'is-hidden' : ''}`}
+        aria-hidden={hidden || undefined}
+        tabIndex={hidden ? -1 : undefined}
         onClick={() => setOpen((o) => !o)}
         aria-label="Pilih musik latar"
         aria-expanded={open}

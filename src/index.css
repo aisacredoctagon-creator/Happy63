@@ -1118,7 +1118,7 @@ button {
 .end-card {
   position: absolute;
   inset: 0;
-  z-index: 30;
+  z-index: 160; /* sejajar peredam pop-up surat: di atas tombol kembali (50) dan tombol kanan atas (150), di bawah awan (300) */
   display: grid;
   place-items: center;
   background: rgba(6, 22, 66, 0.55);
@@ -1129,6 +1129,8 @@ button {
   padding: 44px 70px 50px;
   text-align: center;
   color: #7a3b00;
+  /* kartu penutup memakai Nobile (Google Fonts, index.html); Nunito jadi cadangan */
+  --font-popup: 'Nobile', 'Nunito', 'Nunito Variable', ui-rounded, system-ui, sans-serif;
   font-family: var(--font-popup);
   background: #fff8e3;
   border: 10px solid #fff;
@@ -1178,12 +1180,12 @@ button {
 }
 
 /* ============ audio ============ */
-/* deretan kanan atas, dari kanan ke kiri: pengaturan (gerigi), mute, musik (BGM, hanya di Scene 04); semua 66 px, jarak 16 px */
+/* deretan kanan atas, dari kanan ke kiri: pengaturan (gerigi), mute, musik (BGM); tampil sejak layar pembuka; semua 66 px, jarak 16 px */
 .audio-toggle {
   position: absolute;
   right: 112px;
   top: 28px;
-  z-index: 150;
+  z-index: 210; /* di atas layar loading (200): tombol tampil sejak awal; diturunkan ke 150 saat pop-up terbuka (lihat :has di bawah) */
   width: 66px;
   height: 66px;
   border-radius: 50%;
@@ -1209,7 +1211,7 @@ button {
   position: absolute;
   right: 30px;
   top: 28px;
-  z-index: 150;
+  z-index: 210;
   width: 66px;
   height: 66px;
   border-radius: 50%;
@@ -1229,7 +1231,7 @@ button {
   position: absolute;
   right: 30px;
   top: 110px;
-  z-index: 150;
+  z-index: 210;
   width: 380px;
   padding: 22px 26px;
   display: grid;
@@ -1255,7 +1257,7 @@ button {
   cursor: pointer;
 }
 
-/* ============ pilih BGM (Scene 04, pojok kanan atas; kado ada di y >= 650 sehingga tidak tertutup) ============ */
+/* ============ pilih BGM (pojok kanan atas; kado di Scene 04 ada di y >= 650 sehingga tidak tertutup) ============ */
 .bgm-dock {
   display: contents;
 }
@@ -1263,7 +1265,7 @@ button {
   position: absolute;
   right: 194px;
   top: 28px;
-  z-index: 90;
+  z-index: 210;
   width: 66px;
   height: 66px;
   border-radius: 50%;
@@ -1283,7 +1285,7 @@ button {
   position: absolute;
   right: 194px;
   top: 110px;
-  z-index: 90;
+  z-index: 210;
   width: 480px;
   padding: 18px 20px 20px;
   display: grid;
@@ -2485,8 +2487,8 @@ button {
   translate: none;
 }
 
-/* saat pop-up surat terbuka, tombol layar penuh ikut berada di bawah peredam gelap (seperti tombol suara) agar tidak menimpa kartu */
-.stage:has(.letter-backdrop) .fs-toggle {
+/* saat pop-up surat atau kartu penutup terbuka, tombol layar penuh dan tombol kanan atas ikut berada di bawah peredam gelap agar tidak menimpa kartu */
+.stage:has(.letter-backdrop, .end-card) :is(.fs-toggle, .audio-toggle, .audio-more, .audio-panel, .bgm-btn, .bgm-panel) {
   z-index: 150;
 }
 
@@ -2552,4 +2554,50 @@ html.lite .pill-btn {
   visibility: hidden; /* setelah fade: tidak bisa diklik atau difokus */
   pointer-events: none;
   transition: opacity 0.25s ease, visibility 0s linear 0.25s, transform 0.15s;
+}
+
+/* ============ kartu penutup: tombol Putar ulang video + Kembali ke Peta berdampingan, berfont pop-up (Nobile) ============ */
+.end-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+.end-card-inner .end-replay {
+  font-family: var(--font-popup);
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  min-width: 330px; /* dua tombol sama lebar, rapi berdampingan */
+  /* Nobile punya ruang descender besar: teks tampak naik di dalam pil bila padding simetris, jadi atas dilebihkan dan bawah dikurangi */
+  padding-block: calc(15px + var(--ring)) calc(7px + var(--ring));
+}
+/* Nobile lebih berat dan rapat dari Nunito: kartu dirampingkan, ritme vertikal dan pemotongan baris disetel ulang */
+.end-card-inner {
+  width: 1120px;
+  padding: 52px 80px 58px;
+}
+.end-card-inner .end-kicker {
+  font-size: 38px;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  padding-block: calc(11px + var(--ring)) calc(3px + var(--ring));
+}
+.end-card-inner h2 {
+  margin: 28px auto 18px;
+  max-width: 940px;
+  font-size: 68px;
+  font-weight: 700;
+  line-height: 1.14;
+  letter-spacing: 0.005em;
+  text-wrap: balance; /* dua baris seimbang, tidak "Prof." menggantung di ujung baris pertama */
+}
+.end-card-inner p:not(.end-kicker) {
+  margin: 0 auto 40px;
+  max-width: 900px;
+  font-size: 35px;
+  font-weight: 400;
+  line-height: 1.45;
+  text-wrap: balance;
 }
