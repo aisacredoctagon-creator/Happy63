@@ -182,34 +182,41 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, onHideControls,
               <div className="tv-glare" aria-hidden />
             </div>
 
-            <AnimatePresence>
-              {/* Scene 08 Kartu Penutup: 08a Konfeti dan Kartu, 08b Putar Ulang (tombol end-replay) */}
-              {status === 'ended' && (
-                <motion.div className="end-card" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }}>
-                  <Confetti />
-                  <motion.div
-                    className="end-card-inner"
-                    initial={{ scale: 0.6, y: 40, opacity: 0 }}
-                    animate={{ scale: 1, y: 0, opacity: 1 }}
-                    transition={{ type: 'spring', stiffness: 220, damping: 15, delay: 0.25 }}
-                  >
-                    <p className="end-kicker">Selesai</p>
-                    <h2>Selamat Ulang Tahun, Prof. Yohanes Surya!</h2>
-                    <p>Terima kasih telah mengajarkan kami bahwa belajar itu Gampang, Asyik, dan Menyenangkan.</p>
-                    <button
-                      type="button"
-                      className="end-replay"
-                      onClick={() => {
-                        setStatus('idle')
-                        setReplayKey((k) => k + 1)
-                      }}
-                    >
-                      Putar ulang video
-                    </button>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Scene 08 Kartu Penutup: 08a Konfeti dan Kartu, 08b Putar Ulang / Kembali ke Peta. Lapisan sendiri (z-index 160) di atas
+          tombol Kembali ke Peta di kiri atas dan tombol kanan atas: peredam gelapnya membuat tombol-tombol itu satu lapis di bawah pop-up. */}
+      <AnimatePresence>
+        {status === 'ended' && (
+          <motion.div className="end-card" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }}>
+            <Confetti />
+            <motion.div
+              className="end-card-inner"
+              initial={{ scale: 0.6, y: 40, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 15, delay: 0.25 }}
+            >
+              <p className="end-kicker">Selesai</p>
+              <h2>Selamat Ulang Tahun, Prof. Yohanes Surya!</h2>
+              <p>Terima kasih telah mengajarkan kami bahwa belajar itu Gampang, Asyik, dan Menyenangkan.</p>
+              <div className="end-actions">
+                <button
+                  type="button"
+                  className="end-replay"
+                  onClick={() => {
+                    setStatus('idle')
+                    setReplayKey((k) => k + 1)
+                  }}
+                >
+                  Putar ulang video
+                </button>
+                <button type="button" className="end-replay" onClick={onBack}>
+                  Kembali ke peta
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

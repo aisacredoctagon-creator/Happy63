@@ -25,10 +25,13 @@ export const BGM_TRACKS: BgmTrack[] = [
 ]
 
 /** lagu bawaan sebelum pengguna memilih */
-export const BGM_DEFAULT = 'orang-jenius'
+export const BGM_DEFAULT = 'coba-soal-gasing'
 
 /** lama crossfade saat berganti lagu (detik) */
 export const BGM_FADE = 0.8
 
-/** kunci localStorage untuk pilihan lagu */
-export const BGM_STORAGE_KEY = 'gasing-bgm'
+/**
+ * kunci localStorage untuk pilihan lagu. Versi kunci dinaikkan (v2) saat bawaan diganti ke "Coba Soal Gasing" supaya pilihan
+ * lama semua pemain diabaikan dan mereka mulai dari bawaan baru; pilihan berikutnya tersimpan lagi di kunci ini.
+ */
+export const BGM_STORAGE_KEY = 'gasing-bgm-v2'

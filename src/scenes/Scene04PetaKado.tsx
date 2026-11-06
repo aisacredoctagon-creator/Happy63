@@ -1,14 +1,13 @@
 // Scene 04 - Peta Kado
 // 04a Peta Terbuka (masuk + petunjuk) -> 04b Surat Kado (tiap kado diklik, LetterModal) -> 04c Semua Kado Terbuka
 // (tombol Mendarat / Mulai Ulang) -> 04d Pesawat Lepas Landas (3,4 s) -> 04e Awan Menutup ke Bandara (CloudTransition)
-// 04f Pilih BGM (tombol not musik di pojok kanan atas, BgmPicker)
+// (Pilih BGM: tombol not musik di pojok kanan atas, BgmPicker, kini global di App sejak layar pembuka)
 import { AnimatePresence, animate, motion, useMotionValue, useTransform } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react'
 import { audio, useLoop } from '../audio/audio'
 import { useStageView } from '../components/Stage'
 import { DriftClouds, Sparkles } from '../components/Atmosphere'
-import { BgmPicker } from '../components/BgmPicker'
 import { GiftHotspot } from '../components/GiftHotspot'
 import { LandIconButton } from '../components/LandIconButton'
 import { PartyHat } from '../components/PartyHat'
@@ -276,9 +275,6 @@ export function Scene04PetaKado({ opened, hasCompletedOnce, onOpenGift, onLand, 
 
       {/* 04b Surat Kado */}
       <LetterModal gift={active} originEl={originEl} onClose={close} />
-
-      {/* 04f Pilih BGM (pojok kanan atas, di atas area kado) */}
-      {!landing && <BgmPicker />}
     </div>
   )
 }

@@ -58,7 +58,11 @@ function loadBgm(): string {
   return BGM_DEFAULT
 }
 
-const STORAGE_KEY = 'gasing-audio'
+/**
+ * Kunci dinaikkan (v2): suara menyala adalah bawaan, jadi pengaturan lama (mute/volume yang tertinggal di browser pemain,
+ * juga kunci lama 'gasing-audio' dan 'gasing-muted') sengaja diabaikan. Perubahan berikutnya tersimpan di kunci ini.
+ */
+const STORAGE_KEY = 'gasing-audio-v2'
 const DEFAULTS: AudioSettings = { muted: false, sfx: 1, ambient: 1, music: 1 }
 
 function loadSettings(): AudioSettings {
@@ -69,8 +73,7 @@ function loadSettings(): AudioSettings {
       const vol = (v: unknown, d: number) => (typeof v === 'number' && v >= 0 && v <= 1 ? v : d)
       return { muted: !!j.muted, sfx: vol(j.sfx, 1), ambient: vol(j.ambient, 1), music: vol(j.music, 1) }
     }
-    // kompatibel dengan versi lama yang hanya menyimpan mute
-    return { ...DEFAULTS, muted: localStorage.getItem('gasing-muted') === '1' }
+    return { ...DEFAULTS }
   } catch {
     return { ...DEFAULTS }
   }
