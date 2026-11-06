@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { asset } from '../config'
-import { BGM_DEFAULT, BGM_FADE, BGM_STORAGE_KEY, BGM_TRACKS } from './bgm'
+import { BGM_DEFAULT, BGM_FADE, BGM_TRACKS } from './bgm'
 import { BgmPlayer } from './bgmPlayer'
 import { MAX_CONCURRENT, MAX_VARY, VOLUME } from './mix'
 import { SFX, makeNoise, synthLoop } from './synth'
@@ -16,7 +16,7 @@ import type { SfxName, SynthLoopName } from './synth'
  *    lihat AUDIO_CREDITS.md); file itu menggantikan versi bawaan.
  *  - Keseimbangan volume: file dinormalisasi dan SFX sintesis dikalibrasi ke level acuan (levels.json), lalu gain per tingkat
  *    (ambience / minor / main / key, diatur di mix.ts) membentuk hierarki; soft-clipper di keluaran mencegah clipping.
- *  - BGM (loop 'music'): lagu dipilih lewat setBgm() (disimpan di localStorage), di-STREAM lewat <audio> (bgmPlayer.ts; tidak
+ *  - BGM (loop 'music'): lagu dipilih lewat setBgm() (TIDAK disimpan: tiap halaman dimuat ulang mulai dari BGM_DEFAULT), di-STREAM lewat <audio> (bgmPlayer.ts; tidak
  *    di-decode utuh agar iPhone tidak kehabisan memori) dan hanya lagu terpilih yang diunduh; berganti dengan crossfade, hanya
  *    satu lagu berbunyi pada satu waktu.
  *  - SFX bercakupan "scene" (seq.sfx / scope: 'scene') dipotong halus saat pindah scene (audio.stopScene()).
@@ -48,22 +48,38 @@ const SEAMLESS: Partial<Record<LoopName, number>> = { cabin: 1.5, wind: 1.5, air
 /** batas total suara SFX yang berbunyi bersamaan; suara prioritas 0 (hover/tick) dibuang bila penuh */
 const MAX_VOICES = 14
 
-function loadBgm(): string {
+/**
+ * Pilihan BGM TIDAK dipersistenkan: tiap halaman dimuat (pertama kali atau refresh) selalu mulai dari BGM_DEFAULT ("Coba Soal Gasing").
+ * Pilihan hanya hidup selama sesi halaman (tetap berlaku saat pindah scene). Kunci localStorage lama dari versi sebelumnya
+ * (gasing-bgm, gasing-bgm-v2) dibersihkan sekali di sini supaya tidak tertinggal di browser pemain.
+ */
+function initialBgm(): string {
   try {
-    const v = localStorage.getItem(BGM_STORAGE_KEY)
-    if (v && BGM_TRACKS.some((t) => t.id === v)) return v
+    localStorage.removeItem('gasing-bgm')
+    localStorage.removeItem('gasing-bgm-v2')
   } catch {
-    /* abaikan */
+    /* penyimpanan diblokir: tidak masalah */
   }
   return BGM_DEFAULT
 }
 
 /**
- * Kunci dinaikkan (v2): suara menyala adalah bawaan, jadi pengaturan lama (mute/volume yang tertinggal di browser pemain,
- * juga kunci lama 'gasing-audio' dan 'gasing-muted') sengaja diabaikan. Perubahan berikutnya tersimpan di kunci ini.
+ * Penyimpanan pengaturan suara. SFX WAJIB menyala sebagai bawaan di setiap halaman yang dimuat (pertama kali atau refresh), jadi
+ * status SFX TIDAK dipersistenkan: `muted` (tombol suara; juga membisukan musik dan suasana) dan volume "Efek" (`sfx`) selalu
+ * mulai dari DEFAULTS. Yang tetap diingat hanya volume "Musik" dan "Suasana" (`ambient`). Nilai muted/sfx yang tertinggal di
+ * browser dari versi sebelumnya (kunci 'gasing-audio-v2' berisi muted/sfx) diabaikan dan dibuang saat memuat.
  */
 const STORAGE_KEY = 'gasing-audio-v2'
 const DEFAULTS: AudioSettings = { muted: false, sfx: 1, ambient: 1, music: 1 }
+
+/** hanya bagian yang boleh disimpan (volume Musik dan Suasana) */
+function persist(s: AudioSettings) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ambient: s.ambient, music: s.music }))
+  } catch {
+    /* abaikan */
+  }
+}
 
 function loadSettings(): AudioSettings {
   try {
@@ -71,12 +87,14 @@ function loadSettings(): AudioSettings {
     if (raw) {
       const j = JSON.parse(raw) as Partial<AudioSettings>
       const vol = (v: unknown, d: number) => (typeof v === 'number' && v >= 0 && v <= 1 ? v : d)
-      return { muted: !!j.muted, sfx: vol(j.sfx, 1), ambient: vol(j.ambient, 1), music: vol(j.music, 1) }
+      const s: AudioSettings = { ...DEFAULTS, ambient: vol(j.ambient, 1), music: vol(j.music, 1) } // muted dan sfx: selalu bawaan (SFX ON)
+      if ('muted' in j || 'sfx' in j) persist(s) // buang sisa status SFX/mute dari versi lama
+      return s
     }
-    return { ...DEFAULTS }
   } catch {
-    return { ...DEFAULTS }
+    /* abaikan */
   }
+  return { ...DEFAULTS }
 }
 
 interface LoopState {
@@ -120,7 +138,7 @@ class AudioManager {
   private sfxFiles = new Map<string, AudioBuffer>()
   private loops = new Map<LoopName, LoopState>()
   /** BGM: pilihan lagu dan lagu lama yang sedang memudar saat berganti */
-  private _bgm = loadBgm()
+  private _bgm = initialBgm()
   private bgmOld?: { stop: () => void; gain: GainNode }
   private bgmOldTimer?: ReturnType<typeof setTimeout>
   private voices: Voice[] = []
@@ -192,17 +210,12 @@ class AudioManager {
   }
 
   /**
-   * Pilih lagu BGM. Pilihan disimpan dan dipakai di seluruh project. Bila musik sedang berbunyi: lagu lama memudar dan lagu
+   * Pilih lagu BGM. Berlaku di seluruh project selama sesi halaman ini (tidak disimpan; refresh kembali ke bawaan). Bila musik sedang berbunyi: lagu lama memudar dan lagu
    * baru (stream) masuk bersamaan (BGM_FADE detik), lalu lagu lama dilepas, jadi hanya satu lagu yang terdengar.
    */
   setBgm(id: string) {
     if (id === this._bgm || !BGM_TRACKS.some((t) => t.id === id)) return
     this._bgm = id
-    try {
-      localStorage.setItem(BGM_STORAGE_KEY, id)
-    } catch {
-      /* abaikan */
-    }
     this.emit()
     const ctx = this.ctx
     const s = this.loops.get('music')
@@ -429,7 +442,7 @@ class AudioManager {
     if (this.ctx && this.loopBus) this.loopBus.gain.setTargetAtTime(v, this.ctx.currentTime, 0.25)
   }
 
-  // ---- pengaturan (mute + volume per kategori), tersimpan di localStorage ----
+  // ---- pengaturan (mute + volume per kategori); hanya volume Musik/Suasana yang tersimpan di localStorage, SFX tidak ----
   get settings() {
     return this._settings
   }
@@ -438,11 +451,7 @@ class AudioManager {
   }
   private commit(next: AudioSettings) {
     this._settings = next
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-    } catch {
-      /* abaikan */
-    }
+    persist(next)
     const ctx = this.ctx
     if (ctx && this.master) {
       this.master.gain.setTargetAtTime(next.muted ? 0 : 1, ctx.currentTime, 0.05)

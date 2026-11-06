@@ -11,6 +11,7 @@ import { Confetti } from '../components/Confetti'
 import { GasingSprite } from '../components/GasingSprite'
 import type { GasingState } from '../components/GasingSprite'
 import { Baggage, bagHeight } from '../components/Baggage'
+import { IconMap, IconRefreshCcw } from '../components/icons'
 import { TvPlayer } from '../components/TvPlayer'
 import type { TvStatus } from '../components/TvPlayer'
 import { GASING_ASPECT, IMG, LOBBY } from '../config'
@@ -209,9 +210,11 @@ export function Scene06GasingMelihatTv({ onBack, onVideoPlaying, onHideControls,
                     setReplayKey((k) => k + 1)
                   }}
                 >
-                  Putar ulang video
+                  <IconRefreshCcw />
+                  Ulangi video
                 </button>
                 <button type="button" className="end-replay" onClick={onBack}>
+                  <IconMap />
                   Kembali ke peta
                 </button>
               </div>

@@ -2556,7 +2556,7 @@ html.lite .pill-btn {
   transition: opacity 0.25s ease, visibility 0s linear 0.25s, transform 0.15s;
 }
 
-/* ============ kartu penutup: tombol Putar ulang video + Kembali ke Peta berdampingan, berfont pop-up (Nobile) ============ */
+/* ============ kartu penutup: tombol Ulangi video + Kembali ke peta (dengan ikon Lucide) berdampingan, berfont pop-up (Nobile) ============ */
 .end-actions {
   display: flex;
   justify-content: center;
@@ -2566,12 +2566,29 @@ html.lite .pill-btn {
 .end-card-inner .end-replay {
   font-family: var(--font-popup);
   font-weight: 700;
-  font-size: 34px;
+  font-size: 30px;
   line-height: 1.1;
   letter-spacing: 0.01em;
   min-width: 330px; /* dua tombol sama lebar, rapi berdampingan */
+  /* ikon + label seperti tombol standar (mis. Material/Bootstrap): rata tengah vertikal, jarak ~0,4 em; hanya tombol kartu penutup */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  white-space: nowrap;
   /* Nobile punya ruang descender besar: teks tampak naik di dalam pil bila padding simetris, jadi atas dilebihkan dan bawah dikurangi */
-  padding-block: calc(15px + var(--ring)) calc(7px + var(--ring));
+  padding-block: calc(13px + var(--ring)) calc(6px + var(--ring));
+}
+/* ikon Lucide ~1,15 em (label 30 px -> ikon ~34 px), sedikit lebih besar dari huruf besar seperti ikon pada tombol standar; warna = teks */
+.end-card-inner .end-replay svg {
+  flex: none;
+  width: 1.15em;
+  height: 1.15em;
+  stroke-width: 2.25;
+  /* Nobile punya ruang descender besar: kotak teks lebih rendah dari huruf yang tampak, jadi ikon yang rata tengah di kotak teks
+     terlihat turun. Diukur (canvas measureText): pusat ikon 0,12 em di bawah pusat tinggi huruf besar; digeser naik 0,12 em supaya
+     rata tengah dengan kata (sejajar tengah huruf besar). */
+  transform: translateY(-0.12em);
 }
 /* Nobile lebih berat dan rapat dari Nunito: kartu dirampingkan, ritme vertikal dan pemotongan baris disetel ulang */
 .end-card-inner {
