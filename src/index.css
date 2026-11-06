@@ -2585,6 +2585,10 @@ html.lite .pill-btn {
   width: 29px;
   height: 29px;
   stroke-width: 2.4;
+  /* Nobile punya ruang descender besar: kotak teks lebih rendah dari huruf yang tampak, jadi ikon yang rata tengah di kotak teks
+     terlihat turun. Diukur (canvas measureText): pusat ikon 4,2 px di bawah pusat tinggi huruf besar; digeser naik 4 px supaya ikon
+     duduk di garis dasar dan puncaknya sejajar tinggi huruf besar (sejajar dengan tengah kata). */
+  transform: translateY(-4px);
 }
 /* Nobile lebih berat dan rapat dari Nunito: kartu dirampingkan, ritme vertikal dan pemotongan baris disetel ulang */
 .end-card-inner {
