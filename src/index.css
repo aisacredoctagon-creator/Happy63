@@ -2570,17 +2570,21 @@ html.lite .pill-btn {
   line-height: 1.1;
   letter-spacing: 0.01em;
   min-width: 330px; /* dua tombol sama lebar, rapi berdampingan */
-  /* ikon Lucide di kiri teks: sejajar vertikal, jarak 8 px, warna mengikuti teks (currentColor); hanya tombol kartu penutup */
+  /* ikon Lucide di kiri teks: sejajar vertikal, jarak 10 px, warna mengikuti teks (currentColor); hanya tombol kartu penutup */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   white-space: nowrap;
   /* Nobile punya ruang descender besar: teks tampak naik di dalam pil bila padding simetris, jadi atas dilebihkan dan bawah dikurangi */
   padding-block: calc(15px + var(--ring)) calc(7px + var(--ring));
 }
+/* ikon seukuran tinggi huruf besar teks 34 px (setara ~0,85 em) supaya seimbang dengan huruf tebal Nobile */
 .end-card-inner .end-replay svg {
   flex: none;
+  width: 29px;
+  height: 29px;
+  stroke-width: 2.4;
 }
 /* Nobile lebih berat dan rapat dari Nunito: kartu dirampingkan, ritme vertikal dan pemotongan baris disetel ulang */
 .end-card-inner {

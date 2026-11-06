@@ -2,7 +2,7 @@ import type { SVGProps } from 'react'
 
 /**
  * Ikon dari Lucide (https://lucide.dev, lisensi ISC) sebagai SVG inline: ringan, tanpa dependensi tambahan. Warna mengikuti
- * teks tombol (currentColor), jadi ikut berubah saat hover/active/disabled. Ukuran bawaan 20 px.
+ * teks tombol (currentColor), jadi ikut berubah saat hover/active/disabled. Ukuran bawaan 20 px (ikon di kartu penutup Scene 08 memakai 29 px lewat CSS).
  */
 function Icon({ size = 20, children, ...rest }: SVGProps<SVGSVGElement> & { size?: number }) {
   return (
