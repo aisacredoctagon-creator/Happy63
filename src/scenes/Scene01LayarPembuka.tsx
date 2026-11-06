@@ -48,7 +48,7 @@ export function Scene01LayarPembuka({ progress, ready, visible, onStart }: Props
         <motion.div className="loading" exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
           <SceneTag />
           <PatrollingGasing />
-          <h1 className="loading-title">Suatu Hari di sebuah Pesawat...</h1>
+          <h1 className="loading-title">Suatu hari di sebuah pesawat...</h1>
           <p className="loading-sub">Gasing mau ke mana ya?</p>
           <div className="loading-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
             <motion.i animate={{ scaleX: progress }} initial={{ scaleX: 0 }} transition={{ ease: 'easeOut', duration: 0.3 }} />
