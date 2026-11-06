@@ -2556,7 +2556,7 @@ html.lite .pill-btn {
   transition: opacity 0.25s ease, visibility 0s linear 0.25s, transform 0.15s;
 }
 
-/* ============ kartu penutup: tombol Putar ulang video + Kembali ke Peta berdampingan, berfont pop-up (Nobile) ============ */
+/* ============ kartu penutup: tombol Ulangi video + Kembali ke peta (dengan ikon Lucide) berdampingan, berfont pop-up (Nobile) ============ */
 .end-actions {
   display: flex;
   justify-content: center;
@@ -2570,8 +2570,17 @@ html.lite .pill-btn {
   line-height: 1.1;
   letter-spacing: 0.01em;
   min-width: 330px; /* dua tombol sama lebar, rapi berdampingan */
+  /* ikon Lucide di kiri teks: sejajar vertikal, jarak 8 px, warna mengikuti teks (currentColor); hanya tombol kartu penutup */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
   /* Nobile punya ruang descender besar: teks tampak naik di dalam pil bila padding simetris, jadi atas dilebihkan dan bawah dikurangi */
   padding-block: calc(15px + var(--ring)) calc(7px + var(--ring));
+}
+.end-card-inner .end-replay svg {
+  flex: none;
 }
 /* Nobile lebih berat dan rapat dari Nunito: kartu dirampingkan, ritme vertikal dan pemotongan baris disetel ulang */
 .end-card-inner {

@@ -38,14 +38,8 @@ export const BGM_TRACKS: BgmTrack[] = [
   { id: 'gasing-medley', title: 'Gasing Medley', file: 'bgm-gasing-medley.m4a', crossfade: 2 },
 ]
 
-/** lagu bawaan sebelum pengguna memilih */
+/** lagu bawaan: WAJIB "Coba Soal Gasing". Tiap halaman dimuat (juga setelah refresh) mulai dari lagu ini; pilihan lagu tidak disimpan. */
 export const BGM_DEFAULT = 'coba-soal-gasing'
 
 /** lama crossfade saat berganti lagu (detik) */
 export const BGM_FADE = 0.8
-
-/**
- * kunci localStorage untuk pilihan lagu. Versi kunci dinaikkan (v2) saat bawaan diganti ke "Coba Soal Gasing" supaya pilihan
- * lama semua pemain diabaikan dan mereka mulai dari bawaan baru; pilihan berikutnya tersimpan lagi di kunci ini.
- */
-export const BGM_STORAGE_KEY = 'gasing-bgm-v2'

@@ -4,8 +4,8 @@ import { BGM_TRACKS } from '../audio/bgm'
 
 /**
  * Tombol (ikon not musik) di pojok kanan atas, tampil sejak layar pembuka, yang membuka panel kecil untuk memilih BGM dari
- * BGM_TRACKS. Pilihan disimpan oleh audio.setBgm (localStorage) dan berlaku di seluruh project (musik sendiri baru berbunyi
- * di Scene 04). `hidden`: disembunyikan dengan fade bersama tombol suara (Scene 07); komponen tetap terpasang.
+ * BGM_TRACKS. Pilihan ditangani audio.setBgm: berlaku selama sesi halaman (tidak disimpan; refresh kembali ke "Coba Soal Gasing") dan di
+ * seluruh project (musik sendiri baru berbunyi di Scene 04). `hidden`: disembunyikan dengan fade bersama tombol suara (Scene 07); komponen tetap terpasang.
  */
 export function BgmPicker({ hidden = false }: { hidden?: boolean }) {
   const current = useBgm()
