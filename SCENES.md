@@ -60,7 +60,7 @@ Sumber kebenaran di kode: `src/data/scenes.ts` (`SCENE_LIST`). **Setiap ada scen
 | 06d | Zoom ke TV | Kamera zoom sampai TV memenuhi layar | 2,2 s |
 | 07a | Video Diputar | Video ucapan (kontrol: putar/jeda, volume, layar penuh) | durasi video |
 | 07b | Video Belum Ada | Placeholder "Video segera hadir" + "Lewati ke penutup" | bila `ucapan-ultah.mp4` tidak ada |
-| 07c | Awan Menutup (ke Peta) | Tombol "Kembali ke Peta" (tersedia di Scene 06-08) | 2,6 s |
+| 07c | Awan Menutup (ke Peta) | Tombol "Kembali ke peta" (di kartu penutup Scene 08) | 2,6 s |
 | 08a | Konfeti dan Kartu | Kartu penutup muncul setelah video selesai | ~3 s |
 | 08b | Putar Ulang | Tombol "Putar ulang video" | - |
 
